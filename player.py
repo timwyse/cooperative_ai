@@ -53,7 +53,7 @@ class Player:
             r, c, steps, collected, path = q.popleft()
 
             # Count resource if it's the player's own
-            if grid.get_color(c, r) == self.color:
+            if grid.get_color(r, c) == self.color:
                 collected += 1
 
             # If we reached target
@@ -111,7 +111,7 @@ class Player:
 
                     Your best route is: {self.best_route(grid)}.
                     
-                    Output your next move in the format (x, y) where x and y are the coordinates of the tile you want to move to. If you do not want to move, say exactly: "n". Don't include any other information.
+                    Output your next move in the format (x, y) where x and y are the coordinates of the tile you want to move to. If you do not want to move, say exactly: "n". Don't include any other information. Your next move should be one tile away from your current position, and you must have enough resources to pay for the tile you are moving to.
                     """
             
             # Your task:

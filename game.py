@@ -1,7 +1,7 @@
 import pygame
 import copy
 from time import sleep
-from constants import WIDTH, HEIGHT, COLOR_MAP, TILE_SIZE, FPS, DEFAULT_PLAYERS
+from constants import WIDTH, HEIGHT, COLOR_MAP, TILE_SIZE, FPS, DEFAULT_PLAYERS, GRID_SIZE
 from utils import freeze
 from grid import Grid
 from player import Player
@@ -21,7 +21,7 @@ class Game:
         self.players = [Player(self.player_colors[i], self.n_players, player) for i, player in enumerate(players)]
 
         # Create grid with player colors
-        self.grid = Grid(len(self.player_colors), self.player_colors)
+        self.grid = Grid(GRID_SIZE, self.player_colors)
 
         self.turn = 0
         self.running = True
@@ -217,7 +217,7 @@ class Game:
         else:
             print(f"{player_to_trade_with.name} rejected the trade.")    
 
-    def run(self, full_draw=False):
+    def run(self, full_draw=True):
         while self.running and not all(p.has_finished() for p in self.players):
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -241,7 +241,7 @@ class Game:
             # Wait for Enter to proceed
             # input("Press Enter to proceed to the next turn...")
             print(f"End of turn {self.turn}. Waiting for next turn...")
-            sleep(5)
+            sleep(10)
         
         print("Game over!")
         self.draw_basic_grid()
