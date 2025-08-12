@@ -6,7 +6,7 @@ load_dotenv(override=True)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Game constants
-GRID_SIZE = 3
+GRID_SIZE = 5
 TILE_SIZE = 100
 WIDTH = HEIGHT = GRID_SIZE * TILE_SIZE
 SURPLUS = 1.5
