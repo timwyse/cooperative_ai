@@ -1,6 +1,7 @@
 from collections import defaultdict, deque
 from openai import OpenAI
 import json
+import re
 from constants import GRID_SIZE, SURPLUS, DEFAULT_SYSTEM_PROMPT, OPENAI_API_KEY, AVAILABLE_COLORS
 from grid import Grid
 
@@ -17,6 +18,7 @@ class Player:
         self.model = model.value
         self.model_name = model.name
         self.init_resources()
+
 
     def init_resources(self):
         self.resources[self.color] = round(SURPLUS * 2 * (GRID_SIZE - 1))
@@ -78,6 +80,17 @@ class Player:
                     q.append((nr, nc, steps + 1, collected, path + [(nr, nc)]))
 
         return best_path
+    
+    def generate_player_context_message(self, game, grid):
+        """
+        Generates a reusable message about the board state, player's resources, position, and goal.
+        """
+        return f"""
+        Here is the board: {grid.tile_colors}
+        The board state and everybody's resources: {game.game_state}. Specifically, as {self.name}, your resources are: {dict(self.resources)}, your current position is {self.position}, and your goal is {self.goal}. 
+
+        Your best route is: {self.best_route(grid)}, although other routes may be possible. Note that this is in (x, y) coordinate format, not List access is [y][x] format!
+        """
 
 
     def come_up_with_move(self, game, grid):
@@ -104,12 +117,7 @@ class Player:
                 except (ValueError, IndexError):
                     print("Invalid input: Please enter the coordinates in (x, y) format. Try again.")
         else:
-            user_message = f"""
-                    Here is the board: {grid.tile_colors}.
-                    It starts at (0,0) (top left), which is {grid.get_color(0, 0)}, and ends at ({GRID_SIZE-1},{GRID_SIZE-1}) (bottom right), which is {grid.get_color(GRID_SIZE-1, GRID_SIZE-1)}.
-                    Your resources are: {dict(self.resources)}, your current position is {self.position}, and your goal is {self.goal}. 
-
-                    Your best route is: {self.best_route(grid)}.
+            user_message = self.generate_board_state_message(game, grid) + """
                     
                     Output your next move in the format (x, y) where x and y are the coordinates of the tile you want to move to. If you do not want to move, say exactly: "n". Don't include any other information. Your next move should be one tile away from your current position, and you must have enough resources to pay for the tile you are moving to.
                     """
@@ -212,17 +220,13 @@ class Player:
             return trade_proposal
 
         else:
-            user_message = f"""
-                Here is the board: {grid.tile_colors}
-                The board state and everybody's resources: {game.game_state}. Specifically, as {self.name}, your resources are: {dict(self.resources)}, your current position is {self.position}, and your goal is {self.goal}. 
-                
-                Your best route is: {self.best_route(grid)}.
+            user_message = self.generate_board_state_message(game, grid) + """
                 
                 Your task:
                 1. Consider any trades you could make along the way to reach your goal.
-                2. Propose **one trade** with another player that would help you reach your goal. Note that trades are more likely to be accepted if they are mutually beneficial.
-                - If you don't want to trade, say exactly: "n".
-                If you do want to trade, you must respond ONLY with a valid JSON object that matches this schema:
+                2. Propose at most **one trade** with another player that would help you reach your goal. Note that trades are more likely to be accepted if they are mutually beneficial.
+                
+                After considering your options, respond with a valid JSON object that matches this schema:
                 {{
                 "player_to_trade_with": "string (name of player or 'n' if no trade)",
                 "resource_to_offer_to_other_player": "string (color name)",
@@ -230,7 +234,9 @@ class Player:
                 "resource_to_receive_from_other_player": "string (color name)",
                 "quantity_to_receive_from_other_player": integer
                 }}
-                
+
+                - If you don't want or need to trade to reach your goal, say exactly: "n".
+
                 Keep your response below 1000 characters.
                 """
             open_ai_client = OpenAI(api_key=OPENAI_API_KEY)
@@ -242,9 +248,24 @@ class Player:
             trade_proposal = response.choices[0].message.content.strip().lower()
             print(f"{self.name} proposed a trade: {trade_proposal}")
             if trade_proposal != 'n':
+                print("Attempting to parse trade proposal as JSON...")
                 try:
-                    trade_proposal = json.loads(trade_proposal)
-                    trade_proposal['trade_proposer'] = self.name
+                    match = re.search(r"\{.*\}", trade_proposal, re.DOTALL)
+                    if match:
+                        json_str = match.group(0)
+                        try:
+                            trade_proposal = json.loads(json_str)
+                            trade_proposal['trade_proposer'] = self.name
+                            print("Extracted dictionary:", trade_proposal)
+                        except json.JSONDecodeError as e:
+                            print("Invalid JSON:", e)
+                            trade_proposal = None
+                #     trade_proposal['trade_proposer'] = self.name
+                # except json.JSONDecodeError:
+                #     print("⚠️ Could not parse trade proposal as JSON.")
+                #     trade_proposal = None
+                #     trade_proposal = json.loads(trade_proposal)
+                #     trade_proposal['trade_proposer'] = self.name
                 except json.JSONDecodeError:
                     print("⚠️ Could not parse trade proposal as JSON.")
                     trade_proposal = None
@@ -267,10 +288,8 @@ class Player:
             quantity_to_offer_to_other_player = trade['quantity_to_offer_to_other_player']
             resource_to_receive_from_other_player = trade['resource_to_receive_from_other_player']
             quantity_to_receive_from_other_player = trade['quantity_to_receive_from_other_player']
-            user_message = f"""Here is the board: {grid.tile_colors}
-            The board state and everybody's resources: {game.game_state}. Specifically, as {self.name}, your resources are: {dict(self.resources)}, your current position is {self.position}, and your goal is {self.goal}. 
-
-            Your best route is: {self.best_route(grid)}, although other routes may be possible.
+            
+            user_message = self.generate_board_state_message(game, grid) + f"""
             
             Consider the following trade proposal: {trade_proposer} is offering you {quantity_to_offer_to_other_player} of color {resource_to_offer_to_other_player} in exchange for you giving them {quantity_to_receive_from_other_player} of color {resource_to_receive_from_other_player}.
             Trades often help you to reach your goal. Does this trade help you reach your goal? Briefly consider the resources you will need to reach your goal, and finish your answer with a "yes" or "no". The last word of your response should be either "yes" or "no".
