@@ -195,7 +195,14 @@ class Game:
             return
 
         # Find the player to trade with
-        player_to_trade_with = next((p for p in self.players if p.name.lower() == propose_trade['player_to_trade_with'].lower()), None)
+        def normalize_name(name: str) -> str:
+            return name.lower().replace("player", "").strip()
+
+        player_to_trade_with = next(
+            (p for p in self.players if normalize_name(p.name) == normalize_name(propose_trade['player_to_trade_with'])),
+            None
+        )
+        
         if not player_to_trade_with:
             print(f"The proposed player '{propose_trade['player_to_trade_with']}' does not exist.")
             return
