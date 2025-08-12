@@ -7,8 +7,13 @@ This repository is dedicated to exploring and developing cooperative AI systems,
    ```
    git clone https://github.com/timwyse/cooperative_ai.git
    ```
+2. Install dependencies
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-2. Run the initial experiments:
+
+3. Run the initial experiments:
    ```bash
    python main.py
    ```

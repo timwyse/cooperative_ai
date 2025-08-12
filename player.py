@@ -215,10 +215,12 @@ class Player:
             user_message = f"""
                 Here is the board: {grid.tile_colors}
                 The board state and everybody's resources: {game.game_state}. Specifically, as {self.name}, your resources are: {dict(self.resources)}, your current position is {self.position}, and your goal is {self.goal}. 
+                
+                Your best route is: {self.best_route(grid)}.
+                
                 Your task:
-                1. Consider a route from {self.position} to {self.goal}.
-                2. Consider any trades you could make along the way to reach your goal.
-                3. Finally, propose **one trade** with another player that would help you reach your goal. Note that trades are more likely to be accepted if they are mutually beneficial.
+                1. Consider any trades you could make along the way to reach your goal.
+                2. Propose **one trade** with another player that would help you reach your goal. Note that trades are more likely to be accepted if they are mutually beneficial.
                 - If you don't want to trade, say exactly: "n".
                 If you do want to trade, you must respond ONLY with a valid JSON object that matches this schema:
                 {{
@@ -228,7 +230,7 @@ class Player:
                 "resource_to_receive_from_other_player": "string (color name)",
                 "quantity_to_receive_from_other_player": integer
                 }}
-                Do not include any extra text, explanations, or formatting — only the JSON object (no backticks or json, just the schema). Otherwise if you don't want to trade, say exactly: "n".
+                
                 Keep your response below 1000 characters.
                 """
             open_ai_client = OpenAI(api_key=OPENAI_API_KEY)
@@ -267,8 +269,12 @@ class Player:
             quantity_to_receive_from_other_player = trade['quantity_to_receive_from_other_player']
             user_message = f"""Here is the board: {grid.tile_colors}
             The board state and everybody's resources: {game.game_state}. Specifically, as {self.name}, your resources are: {dict(self.resources)}, your current position is {self.position}, and your goal is {self.goal}. 
+
+            Your best route is: {self.best_route(grid)}, although other routes may be possible.
+            
             Consider the following trade proposal: {trade_proposer} is offering you {quantity_to_offer_to_other_player} of color {resource_to_offer_to_other_player} in exchange for you giving them {quantity_to_receive_from_other_player} of color {resource_to_receive_from_other_player}.
-            Does this trade help you reach your goal? If you think it does and you want to accept it, respond with "yes". If you do not want to accept the trade, respond with "no". BRIEFLY consider the tiles you will likely need to reach your goal, and finish your answer with a "yes" or "no".
+            Trades often help you to reach your goal. Does this trade help you reach your goal? Briefly consider the resources you will need to reach your goal, and finish your answer with a "yes" or "no". The last word of your response should be either "yes" or "no".
+            Keep your response below 1000 characters.
             """
             open_ai_client = OpenAI(api_key=OPENAI_API_KEY)
             response = open_ai_client.chat.completions.create(
@@ -277,6 +283,8 @@ class Player:
                 messages=[{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}, {"role": "user", "content": user_message}],
                 max_completion_tokens=1000)
             accept_trade = response.choices[0].message.content.strip().lower()
+            print(f"Trade proposal message: {user_message}")
+            print(f"{self.name} responded to the trade proposal: {accept_trade}")
             if 'yes' in accept_trade[-5:]:
                 return True
             elif 'no' in accept_trade[-5:]:
