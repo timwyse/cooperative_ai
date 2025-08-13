@@ -105,11 +105,25 @@ class Player:
         if self.model_name == 'human':
             print(f"{self.name}, it's your turn to make a move.")
             while True:
-                move = input("Input the coordinates of where you'd like to move to in (x, y) format. Otherwise type 'n': ").strip().lower()
+                move = input("Input the coordinates of where you'd like to move to in (x, y) format or use WASD. Otherwise type 'n': ").strip().lower()
                 if move == 'n':
                     return None
+                elif move in ['w', 'a', 's', 'd']:
+                    if move == 'w':
+                        x, y = self.position[0], self.position[1] - 1
+                    elif move == 'a':
+                        x, y = self.position[0] - 1, self.position[1]
+                    elif move == 's':
+                        x, y = self.position[0], self.position[1] + 1
+                    elif move == 'd':
+                        x, y = self.position[0] + 1, self.position[1]
+                else:
+                    try:
+                        x, y = map(int, move.strip("()").split(","))
+                    except ValueError:
+                        print("Invalid input: Please enter the coordinates in (x, y) format or use WASD. Try again.")
+                        continue
                 try:
-                    x, y = map(int, move.strip("()").split(","))
                     new_pos = (x, y)
                     if not (0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE):
                         print("Invalid move: The position is out of bounds. Try again.")
