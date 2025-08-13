@@ -1,27 +1,35 @@
 import pygame
 import copy
 from time import sleep
-from constants import WIDTH, HEIGHT, COLOR_MAP, TILE_SIZE, FPS, DEFAULT_PLAYERS, GRID_SIZE
+from constants import COLOR_MAP, TILE_SIZE, FPS
 from utils import freeze
 from grid import Grid
-from player import Player
+from player import Player, NANO, MINI, FOUR_1, FOUR_0, HUMAN, LLAMA_3_3B
 from collections import Counter, defaultdict
 from tabulate import tabulate
 
+DEFAULT_GRID_SIZE = 3
+DEFAULT_SURPLUS = 1.5
+DEFAULT_TEMPERATURE = 1
+DEFAULT_PLAYERS = [HUMAN, HUMAN]
 
 class Game:
-    def __init__(self, players=DEFAULT_PLAYERS):
+    def __init__(self, players=DEFAULT_PLAYERS, temperature=DEFAULT_TEMPERATURE, surplus=DEFAULT_SURPLUS, grid_size=DEFAULT_GRID_SIZE):
         self.n_players = len(players)
         pygame.init()
-        self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
+        self.width = self.height = grid_size * TILE_SIZE
+        self.screen = pygame.display.set_mode((self.width, self.height))
         self.clock = pygame.time.Clock()
+        self.temperature = temperature
+        self.surplus = surplus
+        self.grid_size = grid_size
 
         # Assign player colors
         self.player_colors = [color for color in COLOR_MAP if color not in ('black')][:self.n_players]
-        self.players = [Player(self.player_colors[i], self.n_players, player) for i, player in enumerate(players)]
+        self.players = [Player(self.player_colors[i], self.n_players, player, self.surplus, self.temperature, self.grid_size) for i, player in enumerate(players)]
 
         # Create grid with player colors
-        self.grid = Grid(GRID_SIZE, self.player_colors)
+        self.grid = Grid(self.grid_size, self.player_colors)
 
         self.turn = 0
         self.running = True

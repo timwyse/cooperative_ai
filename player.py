@@ -1,30 +1,72 @@
-from collections import defaultdict, deque
+from collections import defaultdict, deque, namedtuple
 import copy
 from openai import OpenAI
 from together import Together
 import json
 import re
-from constants import GRID_SIZE, SURPLUS, DEFAULT_SYSTEM_PROMPT, OPENAI_API_KEY, TOGETHER_API_KEY, AVAILABLE_COLORS, TEMPERATURE
+from constants import OPENAI_API_KEY, TOGETHER_API_KEY, AVAILABLE_COLORS
 from grid import Grid
 
 
+### AGENTS
+# https://openai.com/api/pricing/
+# https://api.together.ai/models
+Agent = namedtuple("Agent", ["name", "value", "api"])
+HUMAN = Agent(name="human", value=None, api=None)
+NANO = Agent(name="4.1 nano", value="gpt-4.1-nano-2025-04-14", api='open_ai') # $0.40 per million output tokens
+MINI = Agent(name="4.1 mini", value="gpt-4.1-mini", api='open_ai') # $1.60 per million output tokens
+FOUR_1 = Agent(name="4.1", value="gpt-4.1", api='open_ai') # $8 per million output tokens
+FOUR_0 = Agent(name="4o", value="gpt-4o", api='open_ai') # $10 per million output tokens
+DEEPSEEK = Agent(name="DeepSeek_R1", value="deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free", api='together') # free, but slow/ limited
+QWEN_2_7B = Agent(name="QWEN_25_7B", value="Qwen/Qwen2.5-7B-Instruct-Turbo", api='together') # $0.30 per million output tokens
+LLAMA_3_3B = Agent(name="Llama_3_3B", value="meta-llama/Llama-3.2-3B-Instruct-Turbo", api='together')# $0.06 per output million tokens
+
+DEFAULT_SYSTEM_PROMPT = """
+You are a player in a game called Coloured Trails.
+
+Objective:
+- Reach your goal position from your starting position using as few resources as possible.
+- You only care about how many points you finish on; you do not care about outperforming other players.
+
+Movement rules:
+1. You can move one tile per turn, either horizontally or vertically.
+2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+3. You do not pay to remain on your current tile.
+
+Trading rules:
+- You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+- You may propose trades to other players, or accept trades proposed by others.
+
+Scoring:
+- You gain 100 points if you reach your goal.
+- If you do not reach your goal, you get 100 points minus 15 points for each tile between your final position and your goal.
+- You gain 5 points for each resource you still hold at the end of the game.
+
+Your priorities:
+Always maximise your total points. Note that reaching your goal is the most important way to do this. Consider the distance to your goal and the resources you will need to reach it.
+"""
+
+
 class Player:
-    def __init__(self, color, n_players, model):
+    def __init__(self, color, n_players, agent, surplus, temperature, grid_size):
         self.n_total_players = n_players
         self.name = f"Player {color}"
         self.color = color
         self.start_pos = (0, 0)
         self.position = self.start_pos
-        self.goal = (GRID_SIZE - 1, GRID_SIZE - 1)
+        self.grid_size = grid_size
+        self.goal = (grid_size - 1, grid_size - 1)
         self.resources = defaultdict(int)
-        self.model = model.value
-        self.model_name = model.name
-        self.model_api = model.api
+        self.model = agent.value
+        self.model_name = agent.name
+        self.model_api = agent.api
+        self.surplus = surplus
+        self.temperature = temperature
         self.init_resources()
 
 
     def init_resources(self):
-        self.resources[self.color] = round(SURPLUS * 2 * (GRID_SIZE - 1))
+        self.resources[self.color] = round(self.surplus * 2 * (self.grid_size - 1))
 
     def distance_to_goal(self):
         distance = abs(self.position[0] - self.goal[0]) + abs(self.position[1] - self.goal[1])
@@ -83,7 +125,7 @@ class Player:
             # Explore neighbors
             for dr, dc in [(-1,0), (1,0), (0,-1), (0,1)]:
                 nr, nc = r + dr, c + dc
-                if 0 <= nr < GRID_SIZE and 0 <= nc < GRID_SIZE:
+                if 0 <= nr < self.grid_size and 0 <= nc < self.grid_size:
                     q.append((nr, nc, steps + 1, collected, path + [(nr, nc)]))
 
         return best_path
@@ -125,7 +167,7 @@ class Player:
                         continue
                 try:
                     new_pos = (x, y)
-                    if not (0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE):
+                    if not (0 <= x < self.grid_size and 0 <= y < self.grid_size):
                         print("Invalid move: The position is out of bounds. Try again.")
                         continue
                     if new_pos not in grid.get_adjacent(self.position):
@@ -150,7 +192,7 @@ class Player:
                 client = Together(api_key=TOGETHER_API_KEY)
             response = client.chat.completions.create(
                 model=self.model,
-                temperature=TEMPERATURE,
+                temperature=self.temperature,
                 messages=[{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}, {"role": "user", "content": user_message}],
                 max_completion_tokens=1000)
             move = response.choices[0].message.content.strip().lower()
@@ -161,7 +203,7 @@ class Player:
             try:
                 x, y = map(int, move.strip("()").split(","))
                 new_pos = (x, y)
-                if not (0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE):
+                if not (0 <= x < self.grid_size and 0 <= y < self.grid_size):
                     print("Invalid move: The position is out of bounds.")
                     return None
                 if new_pos not in grid.get_adjacent(self.position):
@@ -265,7 +307,7 @@ class Player:
 
             response = client.chat.completions.create(
                 model=self.model,
-                temperature=TEMPERATURE,
+                temperature=self.temperature,
                 messages=[{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}, {"role": "user", "content": user_message}],
                 max_completion_tokens=2000)
             trade_proposal = response.choices[0].message.content.strip().lower()
@@ -319,7 +361,7 @@ class Player:
 
             response = client.chat.completions.create(
                 model=self.model,
-                temperature=TEMPERATURE,
+                temperature=self.temperature,
                 messages=[{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}, {"role": "user", "content": user_message}],
                 max_completion_tokens=1000)
             accept_trade = response.choices[0].message.content.strip().lower()
