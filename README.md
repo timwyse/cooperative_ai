@@ -20,7 +20,11 @@ source .venv/bin/activate
    pip install -r requirements.txt
 ```
 
-### Recommended Usage for Algoverse
+3. Create a .env file in the project root and include your API keys:
+```
+OPENAI_API_KEY=your_openai_api_key_here
+```
+### Recommended Version Control for Algoverse
 
 1. Create your own branch if you want to run experiments without it affecting others.
 
