@@ -5,14 +5,20 @@ from collections import namedtuple
 # Load environment variables
 load_dotenv(override=True)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY")
 
 # Agents
-Agent = namedtuple("Agent", ["name", "value"])
-NANO = Agent(name="4.1 nano", value="gpt-4.1-nano-2025-04-14")
-MINI = Agent(name="4.1 mini", value="gpt-4.1-mini")
-FOUR_1 = Agent(name="4.1", value="gpt-4.1")
-FOUR_0 = Agent(name="4o", value="gpt-4o")
-HUMAN = Agent(name="human", value=None)
+Agent = namedtuple("Agent", ["name", "value", "api"])
+NANO = Agent(name="4.1 nano", value="gpt-4.1-nano-2025-04-14", api='open_ai')
+MINI = Agent(name="4.1 mini", value="gpt-4.1-mini", api='open_ai')
+FOUR_1 = Agent(name="4.1", value="gpt-4.1", api='open_ai')
+FOUR_0 = Agent(name="4o", value="gpt-4o", api='open_ai')
+HUMAN = Agent(name="human", value=None, api=None)
+DEEPSEEK = Agent(name="DeepSeek_R1", value="deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free", api='together') # free, but may be slow or limited
+QWEN_2_7B = Agent(name="QWEN_25_7B", value="Qwen/Qwen2.5-7B-Instruct-Turbo", api='together') # $0.3 per million tokens
+LLAMA_3_3B = Agent(name="Llama_3_3B", value="meta-llama/Llama-3.2-3B-Instruct-Turbo", api='together')# $0.06 per million tokens
+
+
 DEFAULT_PLAYERS = [HUMAN, HUMAN]
 
 # Default system prompt
@@ -48,6 +54,7 @@ TILE_SIZE = 200
 WIDTH = HEIGHT = GRID_SIZE*TILE_SIZE
 SURPLUS = 1.5
 FPS = 0.7
+TEMPERATURE = 1
 
 # Colors
 COLOR_MAP = {

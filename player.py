@@ -1,8 +1,9 @@
 from collections import defaultdict, deque
 from openai import OpenAI
+from together import Together
 import json
 import re
-from constants import GRID_SIZE, SURPLUS, DEFAULT_SYSTEM_PROMPT, OPENAI_API_KEY, AVAILABLE_COLORS
+from constants import GRID_SIZE, SURPLUS, DEFAULT_SYSTEM_PROMPT, OPENAI_API_KEY, TOGETHER_API_KEY, AVAILABLE_COLORS, TEMPERATURE
 from grid import Grid
 
 
@@ -17,6 +18,7 @@ class Player:
         self.resources = defaultdict(int)
         self.model = model.value
         self.model_name = model.name
+        self.model_api = model.api
         self.init_resources()
 
 
@@ -117,21 +119,18 @@ class Player:
                 except (ValueError, IndexError):
                     print("Invalid input: Please enter the coordinates in (x, y) format. Try again.")
         else:
-            user_message = self.generate_board_state_message(game, grid) + """
+            user_message = self.generate_player_context_message(game, grid) + """
                     
                     Output your next move in the format (x, y) where x and y are the coordinates of the tile you want to move to. If you do not want to move, say exactly: "n". Don't include any other information. Your next move should be one tile away from your current position, and you must have enough resources to pay for the tile you are moving to.
                     """
-            
-            # Your task:
-            #         1. Come up with a route from {self.position} to {self.goal} given your resources.
-            #         2. Trading may be necessary to reach your goal.
-            #         3. Routes that mostly requite resources that you currenctly posess are more likely to be successful, as other players may or may not accept trades.
-            #         Be conscise and specific.
             print(user_message)
-            open_ai_client = OpenAI(api_key=OPENAI_API_KEY)
-            response = open_ai_client.chat.completions.create(
+            if self.model_api == 'open_ai':
+                client = OpenAI(api_key=OPENAI_API_KEY)
+            elif self.model_api == 'together':
+                client = Together(api_key=TOGETHER_API_KEY)
+            response = client.chat.completions.create(
                 model=self.model,
-                temperature=1,
+                temperature=TEMPERATURE,
                 messages=[{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}, {"role": "user", "content": user_message}],
                 max_completion_tokens=1000)
             move = response.choices[0].message.content.strip().lower()
@@ -220,7 +219,7 @@ class Player:
             return trade_proposal
 
         else:
-            user_message = self.generate_board_state_message(game, grid) + """
+            user_message = self.generate_player_context_message(game, grid) + """
                 
                 Your task:
                 1. Consider any trades you could make along the way to reach your goal.
@@ -239,10 +238,14 @@ class Player:
 
                 Keep your response below 1000 characters.
                 """
-            open_ai_client = OpenAI(api_key=OPENAI_API_KEY)
-            response = open_ai_client.chat.completions.create(
+            if self.model_api == 'open_ai':
+                client = OpenAI(api_key=OPENAI_API_KEY)
+            elif self.model_api == 'together':
+                client = Together(api_key=TOGETHER_API_KEY)
+
+            response = client.chat.completions.create(
                 model=self.model,
-                temperature=1,
+                temperature=TEMPERATURE,
                 messages=[{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}, {"role": "user", "content": user_message}],
                 max_completion_tokens=2000)
             trade_proposal = response.choices[0].message.content.strip().lower()
@@ -289,16 +292,20 @@ class Player:
             resource_to_receive_from_other_player = trade['resource_to_receive_from_other_player']
             quantity_to_receive_from_other_player = trade['quantity_to_receive_from_other_player']
             
-            user_message = self.generate_board_state_message(game, grid) + f"""
+            user_message = self.generate_player_context_message(game, grid) + f"""
             
             Consider the following trade proposal: {trade_proposer} is offering you {quantity_to_offer_to_other_player} of color {resource_to_offer_to_other_player} in exchange for you giving them {quantity_to_receive_from_other_player} of color {resource_to_receive_from_other_player}.
             Trades often help you to reach your goal. Does this trade help you reach your goal? Briefly consider the resources you will need to reach your goal, and finish your answer with a "yes" or "no". The last word of your response should be either "yes" or "no".
             Keep your response below 1000 characters.
             """
-            open_ai_client = OpenAI(api_key=OPENAI_API_KEY)
-            response = open_ai_client.chat.completions.create(
+            if self.model_api == 'open_ai':
+                client = OpenAI(api_key=OPENAI_API_KEY)
+            elif self.model_api == 'together':
+                client = Together(api_key=TOGETHER_API_KEY)
+
+            response = client.chat.completions.create(
                 model=self.model,
-                temperature=1,
+                temperature=TEMPERATURE,
                 messages=[{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}, {"role": "user", "content": user_message}],
                 max_completion_tokens=1000)
             accept_trade = response.choices[0].message.content.strip().lower()
