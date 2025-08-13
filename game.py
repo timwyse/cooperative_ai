@@ -46,15 +46,24 @@ class Game:
             self.game_state[player.name]["position"] = player.position
             self.game_state[player.name]["resources"] = dict(player.resources)
 
+    def draw_basic_grid(self):
+        grid = copy.deepcopy(self.grid.tile_colors)
+        for i in range(len(grid)):
+            for j in range(len(grid[i])):
+                for player in self.players:
+                    if player.position == (j, i):
+                        grid[i][j] = f"{grid[i][j]} (Player {player.color})"
+                    elif player.goal == (j, i):
+                        grid[i][j] = f"{grid[i][j]} (Goal {player.color})"
+        print(tabulate(grid, tablefmt="fancy_grid"))
+
     def print_game_state(self):
         """Print the current game state to the console."""
         print(f"GAME STATE FOR TURN {self.turn}:")
+        self.draw_basic_grid()
         for player_name, state in self.game_state.items():
             print(f"""{player_name} ({state['model']}):
                   Resources: {state['resources']}""")
-                #   Position: {state['position']}
-                #   Goal: {state['goal']}
-                  
 
     def draw(self):
         self.screen.fill(COLOR_MAP['black'])
@@ -142,16 +151,6 @@ class Game:
 
         pygame.display.flip()
 
-    def draw_basic_grid(self):
-        grid = copy.deepcopy(self.grid.tile_colors)
-        for i in range(len(grid)):
-            for j in range(len(grid[i])):
-                for player in self.players:
-                    if player.position == (j, i):
-                        grid[i][j] = f"{grid[i][j]} (Player {player.color})"
-                    elif player.goal == (j, i):
-                        grid[i][j] = f"{grid[i][j]} (Goal {player.color})"
-        print(tabulate(grid, tablefmt="fancy_grid"))
 
     def handle_turn(self, players):
         """
@@ -175,13 +174,12 @@ class Game:
             # Handle movement
             move = player.come_up_with_move(self, self.grid)
             if move is None:
-                print(f"{player.name} chose not to move.")
+                print(f"{player.name} did not move.")
             else:
                 if player.can_move_to(move, self.grid):
                     player.move(move, self.grid)
                     print(f"{player.name} moved to {move}.")
-                else:
-                    print(f"{player.name} cannot move to {move}. Not adjacent or insufficient resources.")
+                
 
     def handle_trade(self, player, propose_trade):
         """
@@ -231,7 +229,6 @@ class Game:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
-            self.draw_basic_grid()
             if full_draw:
                 self.draw()
             self.print_game_state()
@@ -253,7 +250,6 @@ class Game:
             sleep(0.1)
         
         print("Game over!")
-        self.draw_basic_grid()
         self.print_game_state()
         scores = self.get_scores()
         print(f"Final scores: {scores}")
@@ -271,7 +267,7 @@ class Game:
         
         hashable_states = [freeze(state) for state in self.game_states]
         state_counter = Counter(hashable_states)
-        most_common_item, count = state_counter.most_common(1)[0] 
+        count = state_counter[freeze(self.game_state)]
         if count == n_repeats:
             print(f"{self.print_game_state} has occurs more than 3 times, finishing the game.")
             return True

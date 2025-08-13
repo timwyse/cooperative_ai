@@ -1,4 +1,5 @@
 from collections import defaultdict, deque
+import copy
 from openai import OpenAI
 from together import Together
 import json
@@ -40,8 +41,10 @@ class Player:
         self.position = new_pos
 
     def best_route(self, grid):
-        # n = len(grid)
-        # target = (n - 1, n-1)  # bottom-left corner
+        '''
+        Runs a BFS to find the best route to the player's goal, given their current resources.
+        Returns a list of positions (x, y) that represent the best path.
+        '''
 
         # BFS queue: (row, col, steps, collected_count, path)
         q = deque()
@@ -54,10 +57,12 @@ class Player:
         visited = {}
 
         while q:
+            resources = self.resources.copy()
             r, c, steps, collected, path = q.popleft()
 
             # Count resource if it's the player's own
-            if grid.get_color(r, c) == self.color:
+            if grid.get_color(r, c) in resources and resources[grid.get_color(r, c)] > 0:
+                resources[grid.get_color(r, c)] -= 1
                 collected += 1
 
             # If we reached target
@@ -87,11 +92,12 @@ class Player:
         """
         Generates a reusable message about the board state, player's resources, position, and goal.
         """
+        print(f"Your best route is: {self.best_route(grid)}")
         return f"""
         Here is the board: {grid.tile_colors}
         The board state and everybody's resources: {game.game_state}. Specifically, as {self.name}, your resources are: {dict(self.resources)}, your current position is {self.position}, and your goal is {self.goal}. 
 
-        Your best route is: {self.best_route(grid)}, although other routes may be possible. Note that this is in (x, y) coordinate format, not List access is [y][x] format!
+        Your best route given your resources is: {self.best_route(grid)}, although other routes may be possible. Note that this is in (x, y) coordinate format, not List access is [y][x] format!
         """
 
 
@@ -123,7 +129,7 @@ class Player:
                     
                     Output your next move in the format (x, y) where x and y are the coordinates of the tile you want to move to. If you do not want to move, say exactly: "n". Don't include any other information. Your next move should be one tile away from your current position, and you must have enough resources to pay for the tile you are moving to.
                     """
-            print(user_message)
+
             if self.model_api == 'open_ai':
                 client = OpenAI(api_key=OPENAI_API_KEY)
             elif self.model_api == 'together':
@@ -141,7 +147,6 @@ class Player:
             try:
                 x, y = map(int, move.strip("()").split(","))
                 new_pos = (x, y)
-                print(f"color of tile at new position: {grid.get_color(*new_pos)}")
                 if not (0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE):
                     print("Invalid move: The position is out of bounds.")
                     return None
@@ -159,6 +164,7 @@ class Player:
     def propose_trade(self, grid, game):
         if self.model_name == 'human':
             print(f"{self.name}, it's your turn to propose a trade.")
+            print(f"Your best route is: {self.best_route(grid)}")
             make_trade = input("Do you want to make a trade? y/n ").strip().lower()
             if make_trade != 'y':
                 return None
@@ -197,7 +203,7 @@ class Player:
             if resource_to_offer_to_other_player == 'n':
                 return None
             quantity_to_offer_to_other_player = get_int("Quantity to offer (int): ")
-            if resource_to_offer_to_other_player not in self.resources or self.resources[resource_to_offer_to_other_player] <= 0:
+            if resource_to_offer_to_other_player not in self.resources or self.resources[resource_to_offer_to_other_player] < quantity_to_offer_to_other_player:
                 print(f"You do not have enough {resource_to_offer_to_other_player} to offer. Please try again.")
                 return None
             resource_to_receive_from_other_player = get_valid_resource("Resource to receive (color): ")
@@ -249,7 +255,7 @@ class Player:
                 messages=[{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}, {"role": "user", "content": user_message}],
                 max_completion_tokens=2000)
             trade_proposal = response.choices[0].message.content.strip().lower()
-            print(f"{self.name} proposed a trade: {trade_proposal}")
+            print(f"{self.name} proposed a trade")
             if trade_proposal != 'n':
                 print("Attempting to parse trade proposal as JSON...")
                 try:
@@ -259,18 +265,12 @@ class Player:
                         try:
                             trade_proposal = json.loads(json_str)
                             trade_proposal['trade_proposer'] = self.name
-                            print("Extracted dictionary:", trade_proposal)
+                            print("Extracted trade:", trade_proposal)
                         except json.JSONDecodeError as e:
                             print("Invalid JSON:", e)
                             trade_proposal = None
-                #     trade_proposal['trade_proposer'] = self.name
-                # except json.JSONDecodeError:
-                #     print("⚠️ Could not parse trade proposal as JSON.")
-                #     trade_proposal = None
-                #     trade_proposal = json.loads(trade_proposal)
-                #     trade_proposal['trade_proposer'] = self.name
                 except json.JSONDecodeError:
-                    print("⚠️ Could not parse trade proposal as JSON.")
+                    print("Could not parse trade proposal as JSON.")
                     trade_proposal = None
             else:
                 trade_proposal = None
@@ -309,15 +309,18 @@ class Player:
                 messages=[{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}, {"role": "user", "content": user_message}],
                 max_completion_tokens=1000)
             accept_trade = response.choices[0].message.content.strip().lower()
-            print(f"Trade proposal message: {user_message}")
             print(f"{self.name} responded to the trade proposal: {accept_trade}")
             if 'yes' in accept_trade[-5:]:
+                print(f"{self.name} accepted the trade proposal.")
                 return True
             elif 'no' in accept_trade[-5:]:
+                print(f"{self.name} rejected the trade proposal.")
                 return False
             elif 'y' in accept_trade[-3:]:
+                print(f"{self.name} accepted the trade proposal.")
                 return True
             else:
+                print(f"{self.name} did not respond clearly to the trade proposal. Assuming they do not accept.")
                 return False
 
     def has_finished(self):
