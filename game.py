@@ -248,7 +248,7 @@ class Game:
             # Wait for Enter to proceed
             # input("Press Enter to proceed to the next turn...")
             print(f"End of turn {self.turn}. Waiting for next turn...")
-            sleep(10)
+            sleep(0.1)
         
         print("Game over!")
         self.draw_basic_grid()
