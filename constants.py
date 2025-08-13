@@ -8,6 +8,8 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY")
 
 # Agents
+# https://openai.com/api/pricing/
+# https://api.together.ai/models
 Agent = namedtuple("Agent", ["name", "value", "api"])
 NANO = Agent(name="4.1 nano", value="gpt-4.1-nano-2025-04-14", api='open_ai')
 MINI = Agent(name="4.1 mini", value="gpt-4.1-mini", api='open_ai')
