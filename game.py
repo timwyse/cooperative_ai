@@ -149,6 +149,8 @@ class Game:
                 for player in self.players:
                     if player.position == (j, i):
                         grid[i][j] = f"{grid[i][j]} (Player {player.color})"
+                    elif player.goal == (j, i):
+                        grid[i][j] = f"{grid[i][j]} (Goal {player.color})"
         print(tabulate(grid, tablefmt="fancy_grid"))
 
     def handle_turn(self, players):
