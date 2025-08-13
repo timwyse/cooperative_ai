@@ -1,7 +1,7 @@
 # %%
 import os
 from together import Together
-from constants import DEEPSEEK, QWEN_2_7B, LLAMA_3_3B
+from player import DEEPSEEK, QWEN_2_7B, LLAMA_3_3B
 
 client = Together(api_key=os.environ.get("TOGETHER_API_KEY"))
 

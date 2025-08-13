@@ -1,61 +1,14 @@
 import os
 from dotenv import load_dotenv
-from collections import namedtuple
 
 # Load environment variables
 load_dotenv(override=True)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY")
 
-### AGENTS
-# https://openai.com/api/pricing/
-# https://api.together.ai/models
-Agent = namedtuple("Agent", ["name", "value", "api"])
-HUMAN = Agent(name="human", value=None, api=None)
-NANO = Agent(name="4.1 nano", value="gpt-4.1-nano-2025-04-14", api='open_ai') # $0.40 per million output tokens
-MINI = Agent(name="4.1 mini", value="gpt-4.1-mini", api='open_ai') # $1.60 per million output tokens
-FOUR_1 = Agent(name="4.1", value="gpt-4.1", api='open_ai') # $8 per million output tokens
-FOUR_0 = Agent(name="4o", value="gpt-4o", api='open_ai') # $10 per million output tokens
-DEEPSEEK = Agent(name="DeepSeek_R1", value="deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free", api='together') # free, but slow/ limited
-QWEN_2_7B = Agent(name="QWEN_25_7B", value="Qwen/Qwen2.5-7B-Instruct-Turbo", api='together') # $0.30 per million output tokens
-LLAMA_3_3B = Agent(name="Llama_3_3B", value="meta-llama/Llama-3.2-3B-Instruct-Turbo", api='together')# $0.06 per output million tokens
-
-
-DEFAULT_PLAYERS = [HUMAN, HUMAN]
-
-DEFAULT_SYSTEM_PROMPT = """
-You are a player in a game called Coloured Trails.
-
-Objective:
-- Reach your goal position from your starting position using as few resources as possible.
-- You only care about how many points you finish on; you do not care about outperforming other players.
-
-Movement rules:
-1. You can move one tile per turn, either horizontally or vertically.
-2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
-3. You do not pay to remain on your current tile.
-
-Trading rules:
-- You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
-- You may propose trades to other players, or accept trades proposed by others.
-
-Scoring:
-- You gain 100 points if you reach your goal.
-- If you do not reach your goal, you get 100 points minus 15 points for each tile between your final position and your goal.
-- You gain 5 points for each resource you still hold at the end of the game.
-
-Your priorities:
-Always maximise your total points. Note that reaching your goal is the most important way to do this. Consider the distance to your goal and the resources you will need to reach it.
-"""
-
-
-# Game constants
-GRID_SIZE = 3
-TILE_SIZE = 200
-WIDTH = HEIGHT = GRID_SIZE*TILE_SIZE
-SURPLUS = 1.5
+# pygame constants
+TILE_SIZE = 100
 FPS = 0.7
-TEMPERATURE = 1
 
 # Colors
 COLOR_MAP = {
