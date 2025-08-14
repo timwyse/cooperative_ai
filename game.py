@@ -1,41 +1,66 @@
 import pygame
 import copy
+from typing import Optional
 from time import sleep
 from constants import COLOR_MAP, TILE_SIZE, FPS
+from config import GameConfig
 from utils import freeze
 from grid import Grid
 from player import Player, NANO, MINI, FOUR_1, FOUR_0, HUMAN, LLAMA_3_3B
 from collections import Counter, defaultdict
 from tabulate import tabulate
 
-DEFAULT_GRID_SIZE = 3
-DEFAULT_SURPLUS = 1.5
-DEFAULT_TEMPERATURE = 1
+
 DEFAULT_PLAYERS = [HUMAN, HUMAN]
+DEFAULT_TEMPERATURE = 1
+DEFAULT_SURPLUS = 1.5
+DEFAULT_GRID_SIZE = 3
+
+DEFAULT_CONFIG = GameConfig(
+    players=DEFAULT_PLAYERS,
+    temperature=DEFAULT_TEMPERATURE,
+    surplus=DEFAULT_SURPLUS,
+    grid_size=DEFAULT_GRID_SIZE,
+    resource_mode='single_type_each',
+    random_start_block_size=1,
+    random_goal_block_size=1,
+    colors=[c for c in COLOR_MAP if c != 'BK'][:len(DEFAULT_PLAYERS)]
+)
 
 class Game:
-    def __init__(self, players=DEFAULT_PLAYERS, temperature=DEFAULT_TEMPERATURE, surplus=DEFAULT_SURPLUS, grid_size=DEFAULT_GRID_SIZE):
-        self.n_players = len(players)
+    def __init__(self, config: Optional[GameConfig] = DEFAULT_CONFIG):
+                
+       
+        self.config = config
+        
         pygame.init()
-        self.width = self.height = grid_size * TILE_SIZE
+        self.width = self.height = self.config.grid_size * TILE_SIZE
         self.screen = pygame.display.set_mode((self.width, self.height))
         self.clock = pygame.time.Clock()
-        self.temperature = temperature
-        self.surplus = surplus
-        self.grid_size = grid_size
-
-        # Assign player colors
-        self.player_colors = [color for color in COLOR_MAP if color not in ('black')][:self.n_players]
-        self.players = [Player(self.player_colors[i], self.n_players, player, self.surplus, self.temperature, self.grid_size) for i, player in enumerate(players)]
-
-        # Create grid with player colors
-        self.grid = Grid(self.grid_size, self.player_colors)
-
+        self.grid_size = config.grid_size
+        self.colors = config.colors
+        print(f"Game initialized with grid size {self.grid_size} and colors {self.colors}.")
+    
+        self.players = [Player(i,  player, self.config) for i, player in enumerate(self.config.players)]
+        
+        self.grid = Grid(self.grid_size, self.colors, grid=self.config.grid)
         self.turn = 0
         self.running = True
         self.game_state = self.initialize_game_state()
         self.game_states = [copy.deepcopy(self.game_state)]
-
+        self.distribute_resources()
+                
+    def distribute_resources(self):
+        if self.config.resource_mode == 'single_type_each':
+            if len(self.players) != len(self.colors):
+                raise ValueError("Number of players must match number of colors for 'single_type_each' resource mode.")
+            for player, color in zip(self.players, self.colors):
+                player.resources[color] = round(self.surplus * 2 * (self.grid_size - 1))
+        # elif self.resource_mode == 'all_types':
+                
+        #         player.resources[self.color] = round(self.surplus * 2 * (self.grid_size - 1))
+    
+    
     def initialize_game_state(self):
         """Initialize the game state with player positions and resources."""
         state = {}
@@ -60,9 +85,9 @@ class Game:
             for j in range(len(grid[i])):
                 for player in self.players:
                     if player.position == (j, i):
-                        grid[i][j] = f"{grid[i][j]} (Player {player.color})"
+                        grid[i][j] = f"{grid[i][j]} ({player.name})"
                     elif player.goal == (j, i):
-                        grid[i][j] = f"{grid[i][j]} (Goal {player.color})"
+                        grid[i][j] = f"{grid[i][j]} (Goal {player.name})"
         print(tabulate(grid, tablefmt="fancy_grid"))
 
     def print_game_state(self):
@@ -74,7 +99,7 @@ class Game:
                   Resources: {state['resources']}""")
 
     def draw(self):
-        self.screen.fill(COLOR_MAP['black'])
+        self.screen.fill(COLOR_MAP['BK'])
         for y in range(len(self.grid.tiles)):
             for x in range(len(self.grid.tiles)):
                 tile_color = self.grid.get_color(x, y)
@@ -83,7 +108,7 @@ class Game:
                     (x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
                 )
                 pygame.draw.rect(
-                    self.screen, COLOR_MAP['black'],
+                    self.screen, COLOR_MAP['BK'],
                     (x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE), 1
                 )
 
@@ -91,7 +116,7 @@ class Game:
         start_positions = defaultdict(list)
         for player in self.players:
             sx, sy = player.start_pos
-            start_positions[(sx, sy)].append(player.color)
+            start_positions[(sx, sy)].append(player.name)
 
         for (sx, sy), colors in start_positions.items():
             pygame.draw.rect(
@@ -103,14 +128,14 @@ class Game:
             offset = TILE_SIZE // (len(colors))
             for i, color in enumerate(colors):
                 offset_y = i * offset
-                text = font.render(f"S_{color}", True, COLOR_MAP['black'])
+                text = font.render(f"S_{color}", True, COLOR_MAP['BK'])
                 self.screen.blit(text, (sx * TILE_SIZE + 5, sy * TILE_SIZE + 5 + offset_y))
 
         # Draw goal tiles with overlapping text handling
         goal_positions = defaultdict(list)
         for player in self.players:
             gx, gy = player.goal
-            goal_positions[(gx, gy)].append(player.color)
+            goal_positions[(gx, gy)].append(player.name)
 
         for (gx, gy), colors in goal_positions.items():
             pygame.draw.rect(
@@ -122,7 +147,7 @@ class Game:
             offset = TILE_SIZE // (len(colors))
             for i, color in enumerate(colors):
                 offset_y = i * offset
-                text = font.render(f"G_{color}", True, COLOR_MAP['black'])
+                text = font.render(f"G_{color}", True, COLOR_MAP['BK'])
                 self.screen.blit(text, (gx * TILE_SIZE + 5, gy * TILE_SIZE + 5 + offset_y))
 
         # Draw players and handle multiple players on the same tile
@@ -139,7 +164,7 @@ class Game:
                     (px * TILE_SIZE + TILE_SIZE // 2, py * TILE_SIZE + TILE_SIZE // 2), 20
                 )
                 pygame.draw.circle(
-                    self.screen, COLOR_MAP['black'],
+                    self.screen, COLOR_MAP['BK'],
                     (px * TILE_SIZE + TILE_SIZE // 2, py * TILE_SIZE + TILE_SIZE // 2), 21, 1
                 )
             else:
@@ -153,7 +178,7 @@ class Game:
                         (px * TILE_SIZE + TILE_SIZE // 2 + offset_x, py * TILE_SIZE + TILE_SIZE // 2 + offset_y), 10
                     )
                     pygame.draw.circle(
-                        self.screen, COLOR_MAP['black'],
+                        self.screen, COLOR_MAP['BK'],
                         (px * TILE_SIZE + TILE_SIZE // 2 + offset_x, py * TILE_SIZE + TILE_SIZE // 2 + offset_y), 11, 1
                     )
 
