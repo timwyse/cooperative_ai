@@ -12,22 +12,21 @@ FPS = 0.7
 
 # Colors
 COLOR_MAP = {
-    'red': (240, 0, 0),
-    'green': (0, 240, 0),
-    'blue': (0, 0, 240),
-    'yellow': (255, 255, 0),
-    'aqua': (0, 255, 255),
-    'magenta': (255, 0, 255),
-    'silver': (192, 192, 192),
-    'gray': (128, 128, 128),
-    'maroon': (128, 0, 0),
-    'olive': (128, 128, 0),
-    'purple': (128, 0, 128),
-    'teal': (0, 128, 128),
-    'navy': (0, 0, 128),
-    'black': (0, 0, 0),
-    'white': (255, 255, 255)
+    'R': (240, 0, 0), # red
+    'G': (0, 240, 0), # green
+    'B': (0, 0, 240), # blue
+    'Y': (255, 255, 0), # yellow
+    'CY': (0, 255, 255), # cyan
+    'MG': (255, 0, 255), # magenta
+    'PU': (128, 0, 128), # purple
+    'T': (0, 128, 128), # teal
+    'NV': (0, 0, 128), # navy
+    'BK': (0, 0, 0), # black
+    'W': (255, 255, 255), # white
+    'O': (255, 165, 0), # orange
+    'PK': (255, 192, 203) # pink
 }
 
+
 # Exclude 'black'
-AVAILABLE_COLORS = [color for color in COLOR_MAP if color not in ('black')]
+AVAILABLE_COLORS = [color for color in COLOR_MAP if color not in ('BK')]
