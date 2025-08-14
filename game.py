@@ -18,47 +18,45 @@ DEFAULT_GRID_SIZE = 3
 
 DEFAULT_CONFIG = GameConfig(
     players=DEFAULT_PLAYERS,
-    temperature=DEFAULT_TEMPERATURE,
     surplus=DEFAULT_SURPLUS,
     grid_size=DEFAULT_GRID_SIZE,
     resource_mode='single_type_each',
+    temperature=DEFAULT_TEMPERATURE,
     random_start_block_size=1,
     random_goal_block_size=1,
-    colors=[c for c in COLOR_MAP if c != 'BK'][:len(DEFAULT_PLAYERS)]
+    colors=[c for c in COLOR_MAP if c != 'BK'][:len(DEFAULT_PLAYERS)],
+    grid=None
 )
 
 class Game:
     def __init__(self, config: Optional[GameConfig] = DEFAULT_CONFIG):
                 
-       
         self.config = config
-        
-        pygame.init()
         self.width = self.height = self.config.grid_size * TILE_SIZE
-        self.screen = pygame.display.set_mode((self.width, self.height))
-        self.clock = pygame.time.Clock()
         self.grid_size = config.grid_size
         self.colors = config.colors
-        print(f"Game initialized with grid size {self.grid_size} and colors {self.colors}.")
-    
         self.players = [Player(i,  player, self.config) for i, player in enumerate(self.config.players)]
-        
         self.grid = Grid(self.grid_size, self.colors, grid=self.config.grid)
-        self.turn = 0
-        self.running = True
+        self.distribute_resources()
         self.game_state = self.initialize_game_state()
         self.game_states = [copy.deepcopy(self.game_state)]
-        self.distribute_resources()
+        
+        self.turn = 0
+        pygame.init()
+        self.screen = pygame.display.set_mode((self.width, self.height))
+        self.clock = pygame.time.Clock()
+        self.running = True
+        
+        
                 
     def distribute_resources(self):
         if self.config.resource_mode == 'single_type_each':
             if len(self.players) != len(self.colors):
                 raise ValueError("Number of players must match number of colors for 'single_type_each' resource mode.")
             for player, color in zip(self.players, self.colors):
-                player.resources[color] = round(self.surplus * 2 * (self.grid_size - 1))
-        # elif self.resource_mode == 'all_types':
-                
-        #         player.resources[self.color] = round(self.surplus * 2 * (self.grid_size - 1))
+                print(f"Distributing resources for {player.name} with color {color}.")
+                print(f"Player {player.name} will receive {round(self.config.surplus * 2 * (self.grid_size - 1))} resources of color {color}.")
+                player.resources[color] = round(self.config.surplus * 2 * (self.grid_size - 1))
     
     
     def initialize_game_state(self):
@@ -73,11 +71,13 @@ class Game:
             }
         return state
 
+
     def update_game_state(self):
         """Update the game state after each turn."""
         for player in self.players:
             self.game_state[player.name]["position"] = player.position
             self.game_state[player.name]["resources"] = dict(player.resources)
+
 
     def draw_basic_grid(self):
         grid = copy.deepcopy(self.grid.tile_colors)
@@ -90,6 +90,7 @@ class Game:
                         grid[i][j] = f"{grid[i][j]} (Goal {player.name})"
         print(tabulate(grid, tablefmt="fancy_grid"))
 
+
     def print_game_state(self):
         """Print the current game state to the console."""
         print(f"GAME STATE FOR TURN {self.turn}:")
@@ -97,6 +98,7 @@ class Game:
         for player_name, state in self.game_state.items():
             print(f"""{player_name} ({state['model']}):
                   Resources: {state['resources']}""")
+
 
     def draw(self):
         self.screen.fill(COLOR_MAP['BK'])
@@ -159,28 +161,14 @@ class Game:
             if len(players) == 1:
                 # Single player on the tile
                 player = players[0]
-                pygame.draw.circle(
-                    self.screen, COLOR_MAP[player.color],
-                    (px * TILE_SIZE + TILE_SIZE // 2, py * TILE_SIZE + TILE_SIZE // 2), 20
-                )
-                pygame.draw.circle(
-                    self.screen, COLOR_MAP['BK'],
-                    (px * TILE_SIZE + TILE_SIZE // 2, py * TILE_SIZE + TILE_SIZE // 2), 21, 1
-                )
+                draw_player_circle(self.screen, player, (px, py), radius=20)
             else:
                 # Multiple players on the same tile
                 offset = TILE_SIZE // (2 * len(players))  # Adjust offset based on the number of players
                 for i, player in enumerate(players):
                     offset_x = (i % 2) * offset - offset // 2
                     offset_y = (i // 2) * offset - offset // 2
-                    pygame.draw.circle(
-                        self.screen, COLOR_MAP[player.color],
-                        (px * TILE_SIZE + TILE_SIZE // 2 + offset_x, py * TILE_SIZE + TILE_SIZE // 2 + offset_y), 10
-                    )
-                    pygame.draw.circle(
-                        self.screen, COLOR_MAP['BK'],
-                        (px * TILE_SIZE + TILE_SIZE // 2 + offset_x, py * TILE_SIZE + TILE_SIZE // 2 + offset_y), 11, 1
-                    )
+                    draw_player_circle(self.screen, player, (px, py), radius=10, offset=(offset_x, offset_y))
 
         pygame.display.flip()
 
@@ -220,7 +208,6 @@ class Game:
         - Validate the trade proposal.
         - Execute the trade if the target player accepts.
         """
-
         # Validate trade proposal
         required_fields = ['player_to_trade_with', 'resource_to_offer_to_other_player', 'quantity_to_offer_to_other_player', 'resource_to_receive_from_other_player', 'quantity_to_receive_from_other_player']
         if not all(field in propose_trade for field in required_fields):
@@ -235,27 +222,34 @@ class Game:
             (p for p in self.players if normalize_name(p.name) == normalize_name(propose_trade['player_to_trade_with'])),
             None
         )
-        
+        resource_offered = propose_trade['resource_to_offer_to_other_player'].strip().upper()
+        quantity_offered = propose_trade['quantity_to_offer_to_other_player']
+        resource_to_receive = propose_trade['resource_to_receive_from_other_player'].strip().upper()
+        quantity_to_receive = propose_trade['quantity_to_receive_from_other_player']
         if not player_to_trade_with:
             print(f"The proposed player '{propose_trade['player_to_trade_with']}' does not exist.")
             return
-        elif propose_trade['resource_to_offer_to_other_player'] not in player.resources or player.resources[propose_trade['resource_to_offer_to_other_player']] < propose_trade['quantity_to_offer_to_other_player']:
-            print(f"{player.name} does not have enough {propose_trade['resource_to_offer_to_other_player']} to offer.")
+        
+        elif resource_offered not in player.resources or player.resources[resource_offered] < quantity_offered:
+            print(f"{player.name} does not have enough {resource_offered} to offer.")
             return
-        elif propose_trade['resource_to_receive_from_other_player'] not in player_to_trade_with.resources or player_to_trade_with.resources[propose_trade['resource_to_receive_from_other_player']] < propose_trade['quantity_to_receive_from_other_player']:
-            print(f"{player_to_trade_with.name} does not have enough {propose_trade['resource_to_receive_from_other_player']} for the trade.")
+        elif resource_to_receive not in player_to_trade_with.resources or player_to_trade_with.resources[resource_to_receive] < quantity_to_receive:
+            print(f"{player_to_trade_with.name} does not have enough {resource_to_receive} for the trade.")
             return
 
         # Ask the target player if they accept the trade
         if player_to_trade_with.accept_trade(self.grid, self, propose_trade):
             # Execute the trade
-            print(f"{player_to_trade_with.name} accepted the trade with {player.name}.")
-            player.resources[propose_trade['resource_to_offer_to_other_player']] -= propose_trade['quantity_to_offer_to_other_player']
-            player.resources[propose_trade['resource_to_receive_from_other_player']] += propose_trade['quantity_to_receive_from_other_player']
-            player_to_trade_with.resources[propose_trade['resource_to_receive_from_other_player']] -= propose_trade['quantity_to_receive_from_other_player']
-            player_to_trade_with.resources[propose_trade['resource_to_offer_to_other_player']] += propose_trade['quantity_to_offer_to_other_player']
-        else:
-            print(f"{player_to_trade_with.name} rejected the trade.")    
+            player.resources[resource_offered] -= quantity_offered
+            player.resources[resource_to_receive] += quantity_to_receive
+            player_to_trade_with.resources[resource_to_receive] -= quantity_to_receive
+            player_to_trade_with.resources[resource_offered] += quantity_offered
+
+            print("\n *** Updated resources for trade players: ***")
+            for trade_player in [player, player_to_trade_with]:
+                print(f"""{trade_player.name}:
+                        Resources: {trade_player.resources} \n""")
+
 
     def run(self, full_draw=True):
         while self.running and not all(p.has_finished() for p in self.players):
@@ -288,12 +282,14 @@ class Game:
         print(f"Final scores: {scores}")
         pygame.quit()
 
+
     def get_scores(self):
         """Calculate and return the scores for each player."""
         scores = {}
         for player in self.players:
             scores[player.name] = max(0, 100 - (10 * player.distance_to_goal())) + (5 * sum(player.resources.values()))
         return scores
+
 
     def check_for_repeated_states(self, n_repeats=3):
         """Check if the game has entered a repeated state."""
@@ -302,10 +298,33 @@ class Game:
         state_counter = Counter(hashable_states)
         count = state_counter[freeze(self.game_state)]
         if count == n_repeats:
-            print(f"{self.print_game_state} has occurs more than 3 times, finishing the game.")
+            print(f"The position has repeated {n_repeats} times, finishing the game.")
             return True
         elif count == n_repeats - 1:
-            print(f"Current game state has occurred {count} times, game will stop if this occurs again.")
+            print(f"Current position has repeated {count} times, game will stop if this occurs again.")
             return False
         else:
             return False
+        
+
+def draw_player_circle(screen, player, position, radius, offset=(0, 0)):
+    """
+    Draw a translucent circle with the player's name at the given position.
+    """
+    px, py = position
+    offset_x, offset_y = offset
+
+    # Create a translucent surface for the circle
+    circle_surface = pygame.Surface((TILE_SIZE, TILE_SIZE), pygame.SRCALPHA)
+    circle_color = (0, 0, 0, 64)  # Black with 50% transparency (RGBA)
+    pygame.draw.circle(
+        circle_surface, circle_color,
+        (TILE_SIZE // 2, TILE_SIZE // 2), radius
+    )
+    screen.blit(circle_surface, (px * TILE_SIZE + offset_x, py * TILE_SIZE + offset_y))
+
+    # Render the player's name inside the circle
+    font = pygame.font.Font(None, 24)  # Adjust font size as needed
+    text = font.render(str(player.id), True, COLOR_MAP['BK'])  # Render the player's name in black
+    text_rect = text.get_rect(center=(px * TILE_SIZE + TILE_SIZE // 2 + offset_x, py * TILE_SIZE + TILE_SIZE // 2 + offset_y))
+    screen.blit(text, text_rect)
