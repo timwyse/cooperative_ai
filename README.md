@@ -45,7 +45,7 @@ Note that at this point:
 
  - ```tims_branch``` has exactly the same code as main on the remote.
 
- - Any old changes or commits in ```tims_branch``` that weren’t in main are now gone. Specifically ```reset --hard``` will overwrite local changes, so users should commit or stash their work before running it. 
+ - Any old changes or commits in ```tims_branch``` that weren’t in main are now gone. Specifically ```reset --hard``` will overwrite local changes, so users should commit or stash any work they want to keep before running it. 
  
  <br>
 
@@ -56,11 +56,11 @@ Note that at this point:
 ```python
 DEFAULT_PLAYERS = [HUMAN, HUMAN]
 ```
-Currently NANO, MINI, FOUR_1, FOUR_0 are also supported. You can see how they are configured in ```constants.py```
+Currently OpenAI models and models using the together.ai are supported. Current added models exist in ```player.py```. To add new models, include them in ```player.py```.
 
 2. Run
 ```bash
    python main.py
    ```
 
-The game will display a grid using ```Pygame```, and human players can use the command line to take turns trading and moving resources.
+The game will display a grid using ```Pygame```, as well as a simple terminal interface. Human players can use the command line to take turns trading and moving resources.
