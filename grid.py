@@ -7,10 +7,12 @@ class Tile:
     def __init__(self, color):
         self.color = color
 
+
 class Grid:
     def __init__(self, size, colors, grid=None):
         self.size = size
         if grid is None:
+            print(f"Generating a random grid of size {size} with colors {colors}.")
             self.tiles = self.generate_tiles(size, colors)
             
         else:
@@ -24,22 +26,25 @@ class Grid:
             self.tiles = [[Tile(color) for color in row] for row in grid]
         self.tile_colors = [[tile.color for tile in row] for row in self.tiles]
 
+
     def generate_tiles(self, size, colors):
         num_tiles = size * size
         num_colors = len(colors)
         tiles_per_color = num_tiles // num_colors
         remaining_tiles = num_tiles % num_colors
 
-        colors = []
+        tiles = []
         for color in colors:
-            colors.extend([color] * tiles_per_color)
-        colors.extend(colors[:remaining_tiles])
-        random.shuffle(colors)
+            tiles.extend([color] * tiles_per_color)
+        tiles.extend(colors[:remaining_tiles])
+        random.shuffle(tiles)
 
-        return [[Tile(colors.pop()) for _ in range(size)] for _ in range(size)]
+        return [[Tile(tiles.pop()) for _ in range(size)] for _ in range(size)]
+
 
     def get_color(self, x, y):
         return self.tiles[y][x].color
+
 
     def get_adjacent(self, pos):
         x, y = pos
@@ -50,6 +55,7 @@ class Grid:
                 adj.append((nx, ny))
         return adj
     
+
 if __name__ == "__main__":
     grid = Grid(2, ['R', 'CY', 'B'], grid=[['R', 'CY'], ['B', 'B']])
     print("Grid size:", grid.size)
