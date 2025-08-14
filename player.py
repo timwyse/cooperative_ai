@@ -4,7 +4,9 @@ from openai import OpenAI
 from together import Together
 import json
 import re
+import random
 from constants import OPENAI_API_KEY, TOGETHER_API_KEY, AVAILABLE_COLORS
+from config import GameConfig
 from grid import Grid
 
 
@@ -48,25 +50,29 @@ Always maximise your total points. Note that reaching your goal is the most impo
 
 
 class Player:
-    def __init__(self, color, n_players, agent, surplus, temperature, grid_size):
-        self.n_total_players = n_players
-        self.name = f"Player {color}"
-        self.color = color
-        self.start_pos = (0, 0)
+    def __init__(self, id, agent, config:GameConfig):
+
+        self.config = config
+        self.n_total_players = len(config.players)
+        self.name = f"Player {id}"
+        self.start_pos = (random.randint(0, config.random_start_block_size - 1), random.randint(0, config.random_start_block_size - 1))
         self.position = self.start_pos
-        self.grid_size = grid_size
-        self.goal = (grid_size - 1, grid_size - 1)
+        self.grid_size = config.grid_size
+        self.goal = (random.randint(config.grid_size - config.random_goal_block_size, config.grid_size - 1), random.randint(config.grid_size - config.random_goal_block_size, config.grid_size - 1)) 
         self.resources = defaultdict(int)
         self.model = agent.value
         self.model_name = agent.name
         self.model_api = agent.api
-        self.surplus = surplus
-        self.temperature = temperature
-        self.init_resources()
+        self.surplus = config.surplus
+        self.temperature = config.temperature
+        self.resource_mode = config.resource_mode
+        self.colors = config.colors
+        self.resources = {color: 0 for color in self.colors}
 
 
-    def init_resources(self):
-        self.resources[self.color] = round(self.surplus * 2 * (self.grid_size - 1))
+    # def init_resources(self):
+    #     if self.resource_mode == 'single_type_each':
+    #         self.resources[self.color] = round(self.surplus * 2 * (self.grid_size - 1))
 
     def distance_to_goal(self):
         distance = abs(self.position[0] - self.goal[0]) + abs(self.position[1] - self.goal[1])
@@ -231,7 +237,7 @@ class Player:
                     if value:
                         if value == self.name.lower():
                             print("You cannot trade with yourself. Please enter a different player name")
-                        elif value in [p.name.lower() for p in game.players]:
+                        elif value in [p.id.lower() for p in game.players]:
                             return value
                         else:
                             print("Please enter a valid player name in the format 'Player <color>'. If you do not want to trade, type 'n'.")

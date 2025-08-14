@@ -6,4 +6,4 @@ players = [
 ]
 
 if __name__ == "__main__":
-    Game(players=players, grid_size=5).run()
+    Game().run()
