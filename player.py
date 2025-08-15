@@ -339,7 +339,7 @@ class Player:
                         try:
                             trade_proposal = json.loads(json_str)
                             trade_proposal['trade_proposer'] = self.name
-                            print("Extracted trade:", trade_proposal)
+                            # print("Extracted trade:", trade_proposal)
                         except json.JSONDecodeError as e:
                             print("Invalid JSON:", e)
                             trade_proposal = None

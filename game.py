@@ -222,10 +222,14 @@ class Game:
             (p for p in self.players if normalize_name(p.name) == normalize_name(propose_trade['player_to_trade_with'])),
             None
         )
-        resource_offered = propose_trade['resource_to_offer_to_other_player'].strip().upper()
-        quantity_offered = propose_trade['quantity_to_offer_to_other_player']
-        resource_to_receive = propose_trade['resource_to_receive_from_other_player'].strip().upper()
-        quantity_to_receive = propose_trade['quantity_to_receive_from_other_player']
+        try:
+            resource_offered = propose_trade['resource_to_offer_to_other_player'].strip().upper()
+            quantity_offered = propose_trade['quantity_to_offer_to_other_player']
+            resource_to_receive = propose_trade['resource_to_receive_from_other_player'].strip().upper()
+            quantity_to_receive = propose_trade['quantity_to_receive_from_other_player']
+        except AttributeError as e:
+            print(f"Invalid trade proposal: {e}")
+            return
         if not player_to_trade_with:
             print(f"The proposed player '{propose_trade['player_to_trade_with']}' does not exist.")
             return

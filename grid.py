@@ -21,7 +21,7 @@ class Grid:
             if any(color not in COLOR_MAP for color in colors):
                 raise ValueError(f"The colors list inputted uses invalid colors. Please ensure all colors are taken from {available_colors}.")
             if any(color not in colors for row in grid for color in row):
-                raise ValueError(f"Grid contains colors not in colors list.")
+                raise ValueError(f"Grid contains colors not in colors list. Only colors from {colors} are allowed.")
             
             self.tiles = [[Tile(color) for color in row] for row in grid]
         self.tile_colors = [[tile.color for tile in row] for row in self.tiles]

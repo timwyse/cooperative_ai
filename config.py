@@ -4,7 +4,7 @@ from typing import List, Optional, TYPE_CHECKING
 from constants import COLOR_MAP
 
 if TYPE_CHECKING:
-    from player import Agent  # only for type hints, won't run at runtime
+    from player import Agent  
 
 @dataclass
 class GameConfig:
