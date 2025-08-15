@@ -3,30 +3,14 @@ import copy
 from typing import Optional
 from time import sleep
 from constants import COLOR_MAP, TILE_SIZE, FPS
-from config import GameConfig
+from config import GameConfig, DEFAULT_CONFIG
 from utils import freeze
 from grid import Grid
-from player import Player, NANO, MINI, FOUR_1, FOUR_0, HUMAN, LLAMA_3_3B
+from player import Player
 from collections import Counter, defaultdict
 from tabulate import tabulate
 
 
-DEFAULT_PLAYERS = [HUMAN, HUMAN]
-DEFAULT_TEMPERATURE = 1
-DEFAULT_SURPLUS = 1.5
-DEFAULT_GRID_SIZE = 3
-
-DEFAULT_CONFIG = GameConfig(
-    players=DEFAULT_PLAYERS,
-    surplus=DEFAULT_SURPLUS,
-    grid_size=DEFAULT_GRID_SIZE,
-    resource_mode='single_type_each',
-    temperature=DEFAULT_TEMPERATURE,
-    random_start_block_size=1,
-    random_goal_block_size=1,
-    colors=[c for c in COLOR_MAP if c != 'BK'][:len(DEFAULT_PLAYERS)],
-    grid=None
-)
 
 class Game:
     def __init__(self, config: Optional[GameConfig] = DEFAULT_CONFIG):
@@ -52,7 +36,9 @@ class Game:
     def distribute_resources(self):
         if self.config.resource_mode == 'single_type_each':
             if len(self.players) != len(self.colors):
-                raise ValueError("Number of players must match number of colors for 'single_type_each' resource mode.")
+                raise ValueError(f"""Number of players must match number of colors for 'single_type_each' resource mode.
+                                 You have currently specified {len(self.players)} players but {len(self.colors)} colors.
+                                 """)
             for player, color in zip(self.players, self.colors):
                 print(f"Distributing resources for {player.name} with color {color}.")
                 print(f"Player {player.name} will receive {round(self.config.surplus * 2 * (self.grid_size - 1))} resources of color {color}.")

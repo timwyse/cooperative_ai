@@ -1,19 +1,18 @@
-from game import Game, DEFAULT_PLAYERS, DEFAULT_TEMPERATURE, DEFAULT_SURPLUS, DEFAULT_GRID_SIZE
-from config import GameConfig
-from constants import COLOR_MAP
+from dataclasses import replace
+from game import Game
+from config import DEFAULT_CONFIG, GameConfig
 from player import NANO, MINI, FOUR_1, FOUR_0, HUMAN, LLAMA_3_3B
 
 
-CONFIG = GameConfig(
+
+# refer to config.py to see which arguments are available for the game and what their defaults are
+# can replace any of the default values in DEFAULT_CONFIG with your own values
+CONFIG = replace(
+    DEFAULT_CONFIG,
     players=[HUMAN, LLAMA_3_3B, FOUR_1],
-    surplus=DEFAULT_SURPLUS,
-    grid_size=2,
-    resource_mode='single_type_each',
-    # temperature=DEFAULT_TEMPERATURE,
-    # random_start_block_size=1,
-    # random_goal_block_size=1,
+    grid_size=3,
     colors=['R', 'G', 'B'],
-    grid=[['R', 'R'], ['B', 'R']]
+    # grid=[['R', 'R'], ['G', 'R']]
 )
 
 if __name__ == "__main__":
