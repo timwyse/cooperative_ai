@@ -195,7 +195,7 @@ class Player:
                     
                     Output your next move in the format (x, y) where x and y are the coordinates of the tile you want to move to. If you do not want to move, say exactly: "n". Don't include any other information. Your next move should be one tile away from your current position, and you must have enough resources to pay for the tile you are moving to.
                     """
-            print(user_message)
+            # print(user_message)
             if self.model_api == 'open_ai':
                 client = OpenAI(api_key=OPENAI_API_KEY)
             elif self.model_api == 'together':
@@ -320,7 +320,7 @@ class Player:
             Keep your response below 1000 characters.
             """
 
-            print(user_message)
+            # print(user_message)
             if self.model_api == 'open_ai':
                 client = OpenAI(api_key=OPENAI_API_KEY)
             elif self.model_api == 'together':
