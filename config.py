@@ -13,7 +13,7 @@ class GameConfig:
     players: Optional[List[str]] = None
     surplus: float = 1.5 # this is a multiplier of the minimum number of steps required to complete the game.
     grid_size: int = 3
-    resource_mode: str = 'single_type_each' # currently only 'single_type_each' is supported, where each player has a single type of resource
+    resource_mode: str = 'single_type_each' # Supported: 1. 'single_type_each' is supported, where each player has a single type of resource. 2: 'random', where resources are distributed randomly among players. each player receives num_resources = surplus * 2 * (grid_size - 1)) resources.
     temperature: float = 1.0
     random_start_block_size: int = 1 # this is the size of the top left corner within which the players start
     random_goal_block_size: int = 1 # this is the size of the bottom right corner within which the players' goals are located
