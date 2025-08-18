@@ -195,7 +195,7 @@ class Player:
                     
                     Output your next move in the format (x, y) where x and y are the coordinates of the tile you want to move to. If you do not want to move, say exactly: "n". Don't include any other information. Your next move should be one tile away from your current position, and you must have enough resources to pay for the tile you are moving to.
                     """
-
+            # print(user_message)
             if self.model_api == 'open_ai':
                 client = OpenAI(api_key=OPENAI_API_KEY)
             elif self.model_api == 'together':
@@ -208,7 +208,7 @@ class Player:
             move = response.choices[0].message.content.strip().lower()
             print(f"{self.name} proposed a move: {move}")
             
-            if move == 'n':
+            if move.strip().lower() == 'n':
                 return None
             try:
                 x, y = map(int, move.strip("()").split(","))
@@ -229,95 +229,98 @@ class Player:
 
 
     def propose_trade(self, grid, game):
+        
         if self.model_name == 'human':
             print(f"{self.name}, it's your turn to propose a trade.")
-            # print(f"Your best route is: {self.best_route(grid)}")
             make_trade = input("Do you want to make a trade? y/n ").strip().lower()
             if make_trade != 'y':
                 return None
 
             def get_valid_player(prompt):
-                available_players = [p.id for p in game.players if p.id != self.id ]
+                available_players = [p.id for p in game.players if p.id != self.id]
                 print(f"Available players: {available_players}")
-                
                 while True:
                     value = input(prompt).strip().lower()
-                    if value:
-                        # print(f"Received input: {value}")
-                        if value == self.id:
-                            print("You cannot trade with yourself. Please enter a different player")
-                        
-                        elif value in [p.id for p in game.players] or value == 'n':
-                            return value
-                        else:
-                            print(f"Please enter a valid player. The options are {available_players}. If you do not want to trade, type 'n'.")
-
-            def get_valid_resource(prompt):
-                while True:
-                    value = input(prompt).strip()
-                    if value in self.colors or value == 'n':
-                        return value
-                    else:
-                        print(f"Please enter a valid resource color. The options are {self.colors} If you do not want to trade, type 'n'.")
-
-            def get_int(prompt):
-                while True:
-                    value = input(prompt).strip()
-                    if value == 'n':
+                    if value.strip().lower() == 'n':
                         return value
                     try:
-                        return int(value)
+                        if value in available_players:
+                            return value
+                        else:
+                            print(f"Please enter a valid player. The options are {available_players}.")
                     except ValueError:
-                        print("Please enter a valid integer. If you do not want to trade, type 'n'.")
+                        print(f"Invalid input. Please enter a valid player ID from {available_players}.")
+
+            def get_resource_list(prompt):
+                resources = []
+                i = 1
+                while True:
+                    message = f"{i}st resource:" if i == 1 else "next resource:" 
+                    print(message)
+                    resource = input(prompt).strip()
+                    if resource == '.':
+                        break
+                    if resource in self.colors:
+                        quantity = input(f"Enter quantity for {resource}: ").strip()
+                        try:
+                            quantity = int(quantity)
+                            if quantity > 0:
+                                resources.append((resource, quantity))
+                                i += 1
+                            else:
+                                print("Quantity must be greater than 0.")
+                        except ValueError:
+                            print("Invalid quantity. Please enter a valid integer.")
+                    else:
+                        print(f"Invalid resource. Available resources: {self.colors}.")
+                    
+                return resources
 
             player_to_trade_with = get_valid_player("Trade with Player: ")
-            if player_to_trade_with == 'n':
+            if player_to_trade_with.strip().lower() == 'n':
                 return None
-            resource_to_offer_to_other_player = get_valid_resource("Resource to offer (color): ")
-            if resource_to_offer_to_other_player == 'n':
+
+            print("Enter the resources you want to offer (type '.' if you have finished):")
+            resources_to_offer = get_resource_list("Resource to offer (color): ")
+            if not resources_to_offer:
+                print("You must offer at least one resource.")
                 return None
-            quantity_to_offer_to_other_player = get_int("Quantity to offer (int): ")
-            if resource_to_offer_to_other_player not in self.resources or self.resources[resource_to_offer_to_other_player] < quantity_to_offer_to_other_player:
-                print(f"You do not have enough {resource_to_offer_to_other_player} to offer!")
-                return None
-            resource_to_receive_from_other_player = get_valid_resource("Resource to receive (color): ")
-            if resource_to_receive_from_other_player == 'n':
-                return None
-            quantity_to_receive_from_other_player = get_int("Quantity to receive (int): ")
-            if quantity_to_receive_from_other_player == 'n':
+
+            print("Enter the resources you want to receive (type '.' if you have finished):")
+            resources_to_receive = get_resource_list("Resource to receive (color): ")
+            if not resources_to_receive:
+                print("You must request at least one resource.")
                 return None
 
             trade_proposal = {
                 "trade_proposer": self.name,
                 "player_to_trade_with": player_to_trade_with,
-                "resource_to_offer_to_other_player": resource_to_offer_to_other_player,
-                "quantity_to_offer_to_other_player": quantity_to_offer_to_other_player,
-                "resource_to_receive_from_other_player": resource_to_receive_from_other_player,
-                "quantity_to_receive_from_other_player": quantity_to_receive_from_other_player
+                "resources_to_offer": resources_to_offer,
+                "resources_to_receive": resources_to_receive
             }
 
-            return trade_proposal
+            return self.clean_trade_proposal(trade_proposal)
 
         else:
             user_message = self.generate_player_context_message(game, grid) + """
-                
-                Your task:
-                1. Consider any trades you could make along the way to reach your goal.
-                2. Propose at most **one trade** with another player that would help you reach your goal. Note that trades are more likely to be accepted if they are mutually beneficial.
-                
-                After considering your options, respond with a valid JSON object that matches this schema:
-                {{
-                "player_to_trade_with": "string (name of player or 'n' if no trade)",
-                "resource_to_offer_to_other_player": "string (color name)",
-                "quantity_to_offer_to_other_player": integer,
-                "resource_to_receive_from_other_player": "string (color name)",
-                "quantity_to_receive_from_other_player": integer
-                }}
+            
+            Your task:
+            1. Consider any trades you could make along the way to reach your goal.
+            2. Propose at most **one trade** with another player that would help you reach your goal. Note that trades are more likely to be accepted if they are mutually beneficial.
+            
+            After considering your options, respond with a valid JSON object that matches this schema:
+            {{
+            "player_to_trade_with": "string (name of player or 'n' if no trade)",
+            "resources_to_offer": [["string (color name)", integer], ...],
+            "resources_to_receive": [["string (color name)", integer], ...]
+            }}
 
-                - If you don't want or need to trade to reach your goal, say exactly: "n".
+            - If you don't want or need to trade to reach your goal, say exactly: "n".
 
-                Keep your response below 1000 characters.
-                """
+            Keep your response below 1000 characters.
+            """
+
+            # print(user_message)
             if self.model_api == 'open_ai':
                 client = OpenAI(api_key=OPENAI_API_KEY)
             elif self.model_api == 'together':
@@ -339,7 +342,8 @@ class Player:
                         try:
                             trade_proposal = json.loads(json_str)
                             trade_proposal['trade_proposer'] = self.name
-                            # print("Extracted trade:", trade_proposal)
+                            trade_proposal = self.clean_trade_proposal(trade_proposal)
+                            print("Extracted trade:", trade_proposal)
                         except json.JSONDecodeError as e:
                             print("Invalid JSON:", e)
                             trade_proposal = None
@@ -349,40 +353,35 @@ class Player:
             else:
                 trade_proposal = None
             return trade_proposal
-
-
-    def accept_trade(self, grid, game, trade):
         
+    def accept_trade(self, grid, game, trade):
         trade_proposer = trade['trade_proposer']
         player_to_trade_with = trade['player_to_trade_with']
-        resource_to_offer_to_other_player = trade['resource_to_offer_to_other_player']
-        quantity_to_offer_to_other_player = trade['quantity_to_offer_to_other_player']
-        resource_to_receive_from_other_player = trade['resource_to_receive_from_other_player']
-        quantity_to_receive_from_other_player = trade['quantity_to_receive_from_other_player']
+        resources_to_offer = trade['resources_to_offer']
+        resources_to_receive = trade['resources_to_receive']
 
         accept_message = f"{self.name} accepted the trade proposal. \n"
         reject_message = f"{self.name} rejected the trade proposal. \n"
 
         if self.model_name == 'human':
             print(f"""{self.name}, You have been approached for the following trade:
-                  {trade_proposer} is offering you {quantity_to_offer_to_other_player} of color {resource_to_offer_to_other_player} in exchange for you giving them {quantity_to_receive_from_other_player} of color {resource_to_receive_from_other_player}.""")
+                {trade_proposer} is offering you {resources_to_offer} in exchange for {resources_to_receive}.""")
             
             while True:
                 accept_trade = input("Do you accept this trade? y/n").strip().lower()
-                if accept_trade not in ('y', 'n'):
+                if accept_trade.strip().lower() not in ('y', 'n'):
                     print("Please enter 'y' or 'n'.")
                     continue
-                if accept_trade == 'y':
+                if accept_trade.strip().lower() == 'y':
                     print(accept_message)
                     return True
-                elif accept_trade == 'n':
+                elif accept_trade.strip().lower() == 'n':
                     print(reject_message)
                     return False
         else:
-            
             user_message = self.generate_player_context_message(game, grid) + f"""
             
-            Consider the following trade proposal: {trade_proposer} is offering you {quantity_to_offer_to_other_player} of color {resource_to_offer_to_other_player} in exchange for you giving them {quantity_to_receive_from_other_player} of color {resource_to_receive_from_other_player}.
+            Consider the following trade proposal: {trade_proposer} is offering you {resources_to_offer} in exchange for {resources_to_receive}.
             Trades often help you to reach your goal. Does this trade help you reach your goal? Briefly consider the resources you will need to reach your goal, and finish your answer with a "yes" or "no". The last word of your response should be either "yes" or "no".
             Keep your response below 1000 characters.
             """
@@ -404,13 +403,24 @@ class Player:
             elif 'no' in accept_trade[-5:]:
                 print(reject_message)
                 return False
-            elif 'y' in accept_trade[-3:]:
-                print(accept_message)
-                return True
             else:
                 print(f"{self.name} did not respond clearly to the trade proposal. Assuming they do not accept.")
                 return False
 
-
     def has_finished(self):
         return self.position == self.goal
+    
+    def clean_trade_proposal(self, trade_proposal):
+        """
+        Recursively process a trade proposal dictionary to make all string values lowercase and stripped.
+        """
+        if isinstance(trade_proposal, dict):
+            return {key: self.clean_trade_proposal(value) for key, value in trade_proposal.items()}
+        elif isinstance(trade_proposal, list):
+            return [self.clean_trade_proposal(item) for item in trade_proposal]
+        elif isinstance(trade_proposal, tuple):
+            return tuple(self.clean_trade_proposal(item) for item in trade_proposal)
+        elif isinstance(trade_proposal, str):
+            return trade_proposal.strip().upper()
+        else:
+            return trade_proposal

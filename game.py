@@ -195,7 +195,7 @@ class Game:
         - Execute the trade if the target player accepts.
         """
         # Validate trade proposal
-        required_fields = ['player_to_trade_with', 'resource_to_offer_to_other_player', 'quantity_to_offer_to_other_player', 'resource_to_receive_from_other_player', 'quantity_to_receive_from_other_player']
+        required_fields = ['player_to_trade_with', 'resources_to_offer', 'resources_to_receive']
         if not all(field in propose_trade for field in required_fields):
             print("Invalid trade proposal: Missing required fields.")
             return
@@ -208,38 +208,41 @@ class Game:
             (p for p in self.players if normalize_name(p.name) == normalize_name(propose_trade['player_to_trade_with'])),
             None
         )
-        try:
-            resource_offered = propose_trade['resource_to_offer_to_other_player'].strip().upper()
-            quantity_offered = propose_trade['quantity_to_offer_to_other_player']
-            resource_to_receive = propose_trade['resource_to_receive_from_other_player'].strip().upper()
-            quantity_to_receive = propose_trade['quantity_to_receive_from_other_player']
-        except AttributeError as e:
-            print(f"Invalid trade proposal: {e}")
-            return
+
         if not player_to_trade_with:
             print(f"The proposed player '{propose_trade['player_to_trade_with']}' does not exist.")
             return
-        
-        elif resource_offered not in player.resources or player.resources[resource_offered] < quantity_offered:
-            print(f"{player.name} does not have enough {resource_offered} to offer.")
-            return
-        elif resource_to_receive not in player_to_trade_with.resources or player_to_trade_with.resources[resource_to_receive] < quantity_to_receive:
-            print(f"{player_to_trade_with.name} does not have enough {resource_to_receive} for the trade.")
-            return
+
+        resources_to_offer = propose_trade['resources_to_offer']  # List of tuples [(color, quantity), ...]
+        resources_to_receive = propose_trade['resources_to_receive']  # List of tuples [(color, quantity), ...]
+
+        # Validate that the proposing player has enough resources to offer
+        for resource, quantity in resources_to_offer:
+            if resource not in player.resources or player.resources[resource] < quantity:
+                print(f"{player.name} does not have enough {resource} to offer.")
+                return
+
+        # Validate that the target player has enough resources to fulfill the trade
+        for resource, quantity in resources_to_receive:
+            if resource not in player_to_trade_with.resources or player_to_trade_with.resources[resource] < quantity:
+                print(f"{player_to_trade_with.name} does not have enough {resource} to fulfill the trade.")
+                return
 
         # Ask the target player if they accept the trade
         if player_to_trade_with.accept_trade(self.grid, self, propose_trade):
             # Execute the trade
-            player.resources[resource_offered] -= quantity_offered
-            player.resources[resource_to_receive] += quantity_to_receive
-            player_to_trade_with.resources[resource_to_receive] -= quantity_to_receive
-            player_to_trade_with.resources[resource_offered] += quantity_offered
+            for resource, quantity in resources_to_offer:
+                player.resources[resource] -= quantity
+                player_to_trade_with.resources[resource] += quantity
+
+            for resource, quantity in resources_to_receive:
+                player.resources[resource] += quantity
+                player_to_trade_with.resources[resource] -= quantity
 
             print("\n *** Updated resources for trade players: ***")
             for trade_player in [player, player_to_trade_with]:
                 print(f"""{trade_player.name}:
-                        Resources: {trade_player.resources} \n""")
-
+                            Resources: {trade_player.resources} \n""")
 
     def run(self, full_draw=True):
         while self.running and not all(p.has_finished() for p in self.players):
