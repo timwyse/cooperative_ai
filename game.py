@@ -8,6 +8,7 @@ from utils import freeze
 from grid import Grid
 from player import Player
 from collections import Counter, defaultdict
+import random
 from tabulate import tabulate
 
 
@@ -34,15 +35,38 @@ class Game:
         
                 
     def distribute_resources(self):
+        valid_resource_modes = ['single_type_each', 'random']
+        if self.config.resource_mode not in valid_resource_modes:
+            raise ValueError(f"Invalid resource mode: {self.config.resource_mode}. Valid modes are: {valid_resource_modes}")
+        print(f"Distributing resources in '{self.config.resource_mode}' mode.")
+        num_resources = round(self.config.surplus * 2 * (self.grid_size - 1))
+        
         if self.config.resource_mode == 'single_type_each':
+            
             if len(self.players) != len(self.colors):
                 raise ValueError(f"""Number of players must match number of colors for 'single_type_each' resource mode.
                                  You have currently specified {len(self.players)} players but {len(self.colors)} colors.
                                  """)
+            print(f"Each player will receive {num_resources} resources of their assigned color.")
             for player, color in zip(self.players, self.colors):
-                print(f"Distributing resources for {player.name} with color {color}.")
-                print(f"Player {player.name} will receive {round(self.config.surplus * 2 * (self.grid_size - 1))} resources of color {color}.")
-                player.resources[color] = round(self.config.surplus * 2 * (self.grid_size - 1))
+                player.resources[color] = num_resources
+
+        elif self.config.resource_mode == 'random':
+            if len(self.players) != len(self.colors):
+                raise ValueError(f"""Number of players must match number of colors for 'random' resource mode.
+                                 You have currently specified {len(self.players)} players but {len(self.colors)} colors.
+                                 """)
+            print(f"Distributing {num_resources} resources randomly among players.")
+            resource_pool = [color for _ in range(num_resources) for color in self.colors]
+            random.shuffle(resource_pool)
+
+            for player in self.players:
+                player.resources = defaultdict(int)  # Initialize resources for the player
+                for _ in range(num_resources):
+                    if resource_pool:
+                        resource = resource_pool.pop()
+                        player.resources[resource] += 1
+                player.resources = dict(sorted(player.resources.items()))
     
     
     def initialize_game_state(self):

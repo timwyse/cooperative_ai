@@ -12,6 +12,7 @@ CONFIG = replace(
     players=[HUMAN, LLAMA_3_3B, FOUR_1],
     grid_size=3,
     colors=['R', 'G', 'B'],
+    # resource_mode='random'
     # grid=[['R', 'R'], ['G', 'R']]
 )
 
