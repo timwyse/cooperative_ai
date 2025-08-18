@@ -6,7 +6,7 @@ from player import NANO, MINI, FOUR_1, FOUR_0, HUMAN, LLAMA_3_3B
 
 
 # refer to config.py to see which arguments are available for the game and what their defaults are
-# can replace any of the default values in DEFAUyLT_CONFIG with your own values
+# can replace any of the default values in DEFAULT_CONFIG with your own values
 CONFIG = replace(
     DEFAULT_CONFIG,
     players=[HUMAN, LLAMA_3_3B, FOUR_1],
