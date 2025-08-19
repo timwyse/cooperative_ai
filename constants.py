@@ -29,4 +29,4 @@ COLOR_MAP = {
 
 
 # Exclude 'black'
-AVAILABLE_COLORS = [color for color in COLOR_MAP if color not in ('BK')]
+AVAILABLE_COLORS = [color for color in COLOR_MAP if color != 'BK']

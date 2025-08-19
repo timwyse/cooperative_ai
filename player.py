@@ -74,10 +74,6 @@ class Player:
         self.resources = {color: 0 for color in self.colors}
 
 
-    # def init_resources(self):
-    #     if self.resource_mode == 'single_type_each':
-    #         self.resources[self.color] = round(self.surplus * 2 * (self.grid_size - 1))
-
     def distance_to_goal(self):
         distance = abs(self.position[0] - self.goal[0]) + abs(self.position[1] - self.goal[1])
         return distance
