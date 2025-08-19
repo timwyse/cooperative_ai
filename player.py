@@ -8,9 +8,10 @@ import random
 from constants import OPENAI_API_KEY, TOGETHER_API_KEY, AVAILABLE_COLORS
 from config import GameConfig
 from grid import Grid
+from tabulate import tabulate
 
 
-### AGENTS
+### AGENTS - add more below as needed
 # https://openai.com/api/pricing/
 # https://api.together.ai/models
 Agent = namedtuple("Agent", ["name", "value", "api"])
@@ -22,6 +23,9 @@ FOUR_0 = Agent(name="4o", value="gpt-4o", api='open_ai') # $10 per million outpu
 DEEPSEEK = Agent(name="DeepSeek_R1", value="deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free", api='together') # free, but slow/ limited
 QWEN_2_7B = Agent(name="QWEN_25_7B", value="Qwen/Qwen2.5-7B-Instruct-Turbo", api='together') # $0.30 per million output tokens
 LLAMA_3_3B = Agent(name="Llama_3_3B", value="meta-llama/Llama-3.2-3B-Instruct-Turbo", api='together')# $0.06 per output million tokens
+
+
+
 
 DEFAULT_SYSTEM_PROMPT = """
 You are a player in a game called Coloured Trails.
@@ -144,12 +148,14 @@ class Player:
         """
         Generates a reusable message about the board state, player's resources, position, and goal.
         """
-        print(f"Your best route is: {self.best_route(grid)}")
+        # print(f"Your best route is: {self.best_route(grid)}")
         return f"""
-        Here is the board: {grid.tile_colors}
-        The board state and everybody's resources: {game.game_state}. Specifically, as {self.name}, your resources are: {dict(self.resources)}, your current position is {self.position}, and your goal is {self.goal}. 
+Here is the board:
+{tabulate(grid.tile_colors, tablefmt="fancy_grid")}
+        
+The board state and everybody's resources: {game.game_state}. Specifically, as {self.name}, your resources are: {dict(self.resources)}, your current position is {self.position}, and your goal is {self.goal}. 
 
-        Your best route given your resources is: {self.best_route(grid)}, although other routes may be possible. Note that this is in (x, y) coordinate format, not List access is [y][x] format!
+Your best route, in (x, y) coordinate format, given your resources is: {self.best_route(grid)}, although other routes may be possible.
         """
     
 
@@ -193,8 +199,8 @@ class Player:
         else:
             user_message = self.generate_player_context_message(game, grid) + """
                     
-                    Output your next move in the format (x, y) where x and y are the coordinates of the tile you want to move to. If you do not want to move, say exactly: "n". Don't include any other information. Your next move should be one tile away from your current position, and you must have enough resources to pay for the tile you are moving to.
-                    """
+Output your next move in the format (x, y) where x and y are the coordinates of the tile you want to move to. If you do not want to move, say exactly: "n". Don't include any other information. Your next move should be one tile away from your current position, and you must have enough resources to pay for the tile you are moving to.
+"""
             # print(user_message)
             if self.model_api == 'open_ai':
                 client = OpenAI(api_key=OPENAI_API_KEY)
@@ -304,21 +310,21 @@ class Player:
         else:
             user_message = self.generate_player_context_message(game, grid) + """
             
-            Your task:
-            1. Consider any trades you could make along the way to reach your goal.
-            2. Propose at most **one trade** with another player that would help you reach your goal. Note that trades are more likely to be accepted if they are mutually beneficial.
-            
-            After considering your options, respond with a valid JSON object that matches this schema:
-            {{
-            "player_to_trade_with": "string (name of player or 'n' if no trade)",
-            "resources_to_offer": [["string (color name)", integer], ...],
-            "resources_to_receive": [["string (color name)", integer], ...]
-            }}
+Your task:
+1. Consider any trades you could make along the way to reach your goal.
+2. Propose at most **one trade** with another player that would help you reach your goal. Note that trades are more likely to be accepted if they are mutually beneficial.
 
-            - If you don't want or need to trade to reach your goal, say exactly: "n".
+After considering your options, respond with a valid JSON object that matches this schema:
+{{
+"player_to_trade_with": "string (name of player or 'n' if no trade)",
+"resources_to_offer": [["string (color name)", integer], ...],
+"resources_to_receive": [["string (color name)", integer], ...]
+}}
 
-            Keep your response below 1000 characters.
-            """
+- If you don't want or need to trade to reach your goal, say exactly: "n".
+
+Keep your response below 1000 characters.
+"""
 
             # print(user_message)
             if self.model_api == 'open_ai':
@@ -381,10 +387,10 @@ class Player:
         else:
             user_message = self.generate_player_context_message(game, grid) + f"""
             
-            Consider the following trade proposal: {trade_proposer} is offering you {resources_to_offer} in exchange for {resources_to_receive}.
-            Trades often help you to reach your goal. Does this trade help you reach your goal? Briefly consider the resources you will need to reach your goal, and finish your answer with a "yes" or "no". The last word of your response should be either "yes" or "no".
-            Keep your response below 1000 characters.
-            """
+Consider the following trade proposal: {trade_proposer} is offering you {resources_to_offer} in exchange for {resources_to_receive}.
+Trades often help you to reach your goal. Does this trade help you reach your goal? Briefly consider the resources you will need to reach your goal, and finish your answer with a "yes" if you accept the trade or "no" if not. The last word of your response should be either "yes" or "no".
+Keep your response below 1000 characters.
+"""
             if self.model_api == 'open_ai':
                 client = OpenAI(api_key=OPENAI_API_KEY)
             elif self.model_api == 'together':

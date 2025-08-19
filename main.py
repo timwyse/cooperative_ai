@@ -9,9 +9,9 @@ from player import NANO, MINI, FOUR_1, FOUR_0, HUMAN, LLAMA_3_3B
 # can replace any of the default values in DEFAULT_CONFIG with your own values
 CONFIG = replace(
     DEFAULT_CONFIG,
-    players=[HUMAN, LLAMA_3_3B, FOUR_1],
-    grid_size=3,
-    colors=['R', 'G', 'B'],
+    players=[HUMAN, LLAMA_3_3B],
+    grid_size=5,
+    # colors=['R', 'G', 'B', 'Y'],
     # resource_mode='random'
     # grid=[['R', 'R'], ['G', 'R']]
 )
