@@ -2,7 +2,7 @@ import pygame
 import copy
 from typing import Optional
 from time import sleep
-from constants import COLOR_MAP, TILE_SIZE, FPS
+from constants import AVAILABLE_COLORS, COLOR_MAP, TILE_SIZE, FPS
 from config import GameConfig, DEFAULT_CONFIG
 from utils import freeze
 from grid import Grid
@@ -35,11 +35,15 @@ class Game:
         
                 
     def distribute_resources(self):
-        valid_resource_modes = ['single_type_each', 'random']
+        '''
+        Distribute resources to players based on the resource mode specified in the config.
+        '''
+        valid_resource_modes = ['single_type_each', 'random', 'manual']
         if self.config.resource_mode not in valid_resource_modes:
             raise ValueError(f"Invalid resource mode: {self.config.resource_mode}. Valid modes are: {valid_resource_modes}")
+        
         print(f"Distributing resources in '{self.config.resource_mode}' mode.")
-        num_resources = round(self.config.surplus * 2 * (self.grid_size - 1))
+        default_total_num_resources = round(self.config.surplus * 2 * (self.grid_size - 1))
         
         if self.config.resource_mode == 'single_type_each':
             
@@ -47,27 +51,43 @@ class Game:
                 raise ValueError(f"""Number of players must match number of colors for 'single_type_each' resource mode.
                                  You have currently specified {len(self.players)} players but {len(self.colors)} colors.
                                  """)
-            print(f"Each player will receive {num_resources} resources of their assigned color.")
+            print(f"Each player will receive {default_total_num_resources} resources of their assigned color.")
             for player, color in zip(self.players, self.colors):
-                player.resources[color] = num_resources
+                player.resources[color] = default_total_num_resources
 
         elif self.config.resource_mode == 'random':
             if len(self.players) != len(self.colors):
                 raise ValueError(f"""Number of players must match number of colors for 'random' resource mode.
                                  You have currently specified {len(self.players)} players but {len(self.colors)} colors.
                                  """)
-            print(f"Distributing {num_resources} resources randomly among players.")
-            resource_pool = [color for _ in range(num_resources) for color in self.colors]
+            print(f"Distributing {default_total_num_resources} resources randomly among players.")
+            resource_pool = [color for _ in range(default_total_num_resources) for color in self.colors]
             random.shuffle(resource_pool)
 
             for player in self.players:
                 player.resources = defaultdict(int)  # Initialize resources for the player
-                for _ in range(num_resources):
+                for _ in range(default_total_num_resources):
                     if resource_pool:
                         resource = resource_pool.pop()
                         player.resources[resource] += 1
                 player.resources = dict(sorted(player.resources.items()))
-    
+        
+        elif self.config.resource_mode == 'manual':
+            if self.config.manual_resources is None:
+                raise ValueError("Manual resource mode requires a list of resource disctionaries in 'manual_resources'.")
+            resources = list(set(color for players_resources in self.config.manual_resources for color in players_resources.keys()))
+            if not all(color in AVAILABLE_COLORS for color in resources):
+                raise ValueError(f"Invalid colors in manual resources. Available colors are: {AVAILABLE_COLORS}")
+            print(f"Distributing manual resources: {self.config.manual_resources}. Note that the surplus parameter is ignored in this mode.")
+            if len(self.config.manual_resources) != len(self.players):
+                raise ValueError(f"Number of dicts of resources must match number of players. There are {len(self.players)} players but {len(self.config.manual_resources)} dicts of resources.")
+            for player, resources in zip(self.players, self.config.manual_resources):
+                player.resources = defaultdict(int)
+                for color, quantity in resources.items():
+                    if color not in AVAILABLE_COLORS:
+                        raise ValueError(f"Invalid color '{color}' in manual resources. Available colors are: {AVAILABLE_COLORS}")
+                    player.resources[color] += quantity
+                player.resources = dict(sorted(player.resources.items()))    
     
     def initialize_game_state(self):
         """Initialize the game state with player positions and resources."""
