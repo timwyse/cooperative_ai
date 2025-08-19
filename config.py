@@ -1,6 +1,7 @@
 from __future__ import annotations  
 from dataclasses import dataclass, field
 from typing import List, Optional, TYPE_CHECKING
+
 from constants import AVAILABLE_COLORS
 
 
@@ -18,10 +19,8 @@ class GameConfig:
     surplus: float = 1.5 # Multiplier of the minimum steps required to complete the game. Used to determine how many resources each player starts with.
     resource_mode: str = 'single_type_each'
     # Options:
-    #   - 'single_type_each': each player has only one resource type, each player gets
-    #       num_resources = surplus * 2 * (grid_size - 1)
-    #   - 'random': random distribution, each player gets
-    #       num_resources = surplus * 2 * (grid_size - 1)
+    #   - 'single_type_each': each player has only one resource type, each player gets num_resources = surplus * 2 * (grid_size - 1)
+    #   - 'random': random distribution, each player gets num_resources = surplus * 2 * (grid_size - 1)
     #   - 'manual': use manual_resources field
     manual_resources: Optional[List[dict]] = None # Manually set the starting resources of the players. Order is the same as the players variable. resource_mode must be 'manual'.
     # eg. [{'R':2, 'B':2}, {'R':2, 'B':2}]

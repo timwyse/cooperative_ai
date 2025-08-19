@@ -1,37 +1,46 @@
-import pygame
-import copy
-from typing import Optional
-from time import sleep
-from constants import AVAILABLE_COLORS, COLOR_MAP, TILE_SIZE, FPS
-from config import GameConfig, DEFAULT_CONFIG
-from utils import freeze
-from grid import Grid
-from player import Player
 from collections import Counter, defaultdict
+import copy
 import random
+from time import sleep
+from typing import Optional
+
+import pygame
 from tabulate import tabulate
 
+from config import GameConfig, DEFAULT_CONFIG
+from constants import AVAILABLE_COLORS, COLOR_MAP, TILE_SIZE, FPS
+from grid import Grid
+from logger import GameLogger, NullLogger
+from player import Player
+from utils import freeze
 
 
 class Game:
-    def __init__(self, config: Optional[GameConfig] = DEFAULT_CONFIG):
-                
+    def __init__(self, config: Optional[GameConfig] = DEFAULT_CONFIG, logger=None):
+
         self.config = config
+        self.logger = logger if logger is not None else NullLogger()
         self.width = self.height = self.config.grid_size * TILE_SIZE
         self.grid_size = config.grid_size
         self.colors = config.colors
-        self.players = [Player(i,  player, self.config) for i, player in enumerate(self.config.players)]
+        self.players = [Player(i,  player, self.logger, self.config) for i, player in enumerate(self.config.players)]
+        self.n_players = len(self.players)
         self.grid = Grid(self.grid_size, self.colors, grid=self.config.grid)
         self.distribute_resources()
         self.game_state = self.initialize_game_state()
         self.game_states = [copy.deepcopy(self.game_state)]
         self.turn = 0
+        self.max_possible_score = self.max_possible_score()
         pygame.init()
         self.screen = pygame.display.set_mode((self.width, self.height))
         self.clock = pygame.time.Clock()
         self.running = True
-        
-                
+        self.logger.log("game_config", {"config": self.config})
+        self.logger.log("initial_game_state", {"initial_game_state": copy.deepcopy(self.game_state)})
+        self.logger.log("grid", {"grid": self.grid.tile_colors})
+
+    
+    # 1. Initialization and Setup
     def distribute_resources(self):
         '''
         Distribute resources to players based on the resource mode specified in the config.
@@ -45,18 +54,18 @@ class Game:
         
         if self.config.resource_mode == 'single_type_each':
             
-            if len(self.players) != len(self.colors):
+            if self.n_players != len(self.colors):
                 raise ValueError(f"""Number of players must match number of colors for 'single_type_each' resource mode.
-                                 You have currently specified {len(self.players)} players but {len(self.colors)} colors.
+                                 You have currently specified {self.n_players} players but {len(self.colors)} colors.
                                  """)
             print(f"Each player will receive {default_total_num_resources} resources of their assigned color.")
             for player, color in zip(self.players, self.colors):
                 player.resources[color] = default_total_num_resources
 
         elif self.config.resource_mode == 'random':
-            if len(self.players) != len(self.colors):
+            if self.n_players != len(self.colors):
                 raise ValueError(f"""Number of players must match number of colors for 'random' resource mode.
-                                 You have currently specified {len(self.players)} players but {len(self.colors)} colors.
+                                 You have currently specified {self.n_players} players but {len(self.colors)} colors.
                                  """)
             print(f"Distributing {default_total_num_resources} resources randomly among players.")
             resource_pool = [color for _ in range(default_total_num_resources) for color in self.colors]
@@ -77,8 +86,8 @@ class Game:
             if not all(color in AVAILABLE_COLORS for color in resources):
                 raise ValueError(f"Invalid colors in manual resources. Available colors are: {AVAILABLE_COLORS}")
             print(f"Distributing manual resources: {self.config.manual_resources}. Note that the surplus parameter is ignored in this mode.")
-            if len(self.config.manual_resources) != len(self.players):
-                raise ValueError(f"Number of dicts of resources must match number of players. There are {len(self.players)} players but {len(self.config.manual_resources)} dicts of resources.")
+            if len(self.config.manual_resources) != self.n_players:
+                raise ValueError(f"Number of dicts of resources must match number of players. There are {self.n_players} players but {len(self.config.manual_resources)} dicts of resources.")
             for player, resources in zip(self.players, self.config.manual_resources):
                 player.resources = defaultdict(int)
                 for color, quantity in resources.items():
@@ -99,6 +108,163 @@ class Game:
                 "resources": dict(player.resources)
             }
         return state
+    
+    def max_possible_score(self):
+        """
+        Calculate the maximum possible score for the game.
+        # Each player can score a maximum of 100 points (for reaching their destionation), plus 5 points for each resource remaining
+        Assumes the players start at top-left and have to reach bottom-right.
+        TODO should be based on actual player positions and goals, as well as the scoring logic.
+        """
+        total_resources = 0
+        for player in self.players:
+            total_resources += sum(player.resources.values())
+        min_steps_total = (2 * (self.grid_size - 1)) * self.n_players  
+        max_resources_remaining = total_resources - min_steps_total
+        max_possible_score = 100 * self.n_players + (5 * max_resources_remaining)
+        
+        return max_possible_score
+
+    
+    # 2. Core Game Loop
+    def run(self, full_draw=True):
+        while self.running and not all(p.has_finished() for p in self.players):
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.running = False
+            if full_draw:
+                self.draw()
+            self.print_game_state()
+            self.handle_turn(self.players)
+            
+            self.update_game_state()
+            if self.turn > 0:
+                self.game_states.append(copy.deepcopy(self.game_state))
+
+            if self.check_for_repeated_states():
+                break
+            
+            self.turn += 1
+            self.clock.tick(FPS)
+
+            # Wait for Enter to proceed
+            # input("Press Enter to proceed to the next turn...")
+            print(f"End of turn {self.turn}. Waiting for next turn...")
+            sleep(0.1)
+        
+        print("Game over!")
+        self.print_game_state()
+        scores = self.get_scores()
+        total_scores = self.get_total_scores(scores)
+        total_accuracy = self.get_total_accuracy(scores)
+        gini_coefficient = self.calculate_gini_coefficient(scores)
+        self.logger.log("final_scores", {"scores": scores})
+        self.logger.log("metrics", {
+            "total_scores": total_scores,
+            "total_accuracy": total_accuracy,
+            "gini_coefficient": gini_coefficient,
+            "max_possible_score": self.max_possible_score
+            })
+        print(f"Final scores: {scores}")
+        pygame.quit()
+
+
+    def handle_turn(self, players):
+        """
+        Handle each player's turn:
+        - If the player has already finished, skip their turn.
+        - If the player has not finished, let them propose a trade and/or make a move.
+        - Validate trades and moves before executing them.
+        """
+        for player in players:
+            if player.has_finished():
+                print(f"{player.name} has already finished the game.")
+                continue
+
+            print(f"\n{player.name}'s turn:")
+
+            # Handle trade proposal
+            propose_trade = player.propose_trade(self.grid, self)
+            if propose_trade and propose_trade is not None:
+                self.handle_trade(player, propose_trade)
+
+
+            # Handle movement
+            move = player.come_up_with_move(self, self.grid)
+            if move is None:
+                print(f"{player.name} did not move.")
+            else:
+                if player.can_move_to(move, self.grid):
+                    self.logger.log("move", {
+                        "player": player.name,
+                        "move_from": player.position,
+                        "move_to": move,})
+                    player.move(move, self.grid)
+                    print(f"{player.name} moved to {move}.")
+                    
+
+    def handle_trade(self, player, propose_trade):
+        """
+        Handle a trade proposal from a player.
+        - Validate the trade proposal.
+        - Execute the trade if the target player accepts.
+        """
+        # Validate trade proposal
+        required_fields = ['player_to_trade_with', 'resources_to_offer', 'resources_to_receive']
+        if not all(field in propose_trade for field in required_fields):
+            print("Invalid trade proposal: Missing required fields.")
+            return
+
+        # Find the player to trade with
+        def normalize_name(name: str) -> str:
+            return name.lower().replace("player", "").strip()
+
+        player_to_trade_with = next(
+            (p for p in self.players if normalize_name(p.name) == normalize_name(propose_trade['player_to_trade_with'])),
+            None
+        )
+
+        if not player_to_trade_with:
+            print(f"The proposed player '{propose_trade['player_to_trade_with']}' does not exist.")
+            return
+
+        resources_to_offer = propose_trade['resources_to_offer']  # List of tuples [(color, quantity), ...]
+        resources_to_receive = propose_trade['resources_to_receive']  # List of tuples [(color, quantity), ...]
+
+        # Validate that the proposing player has enough resources to offer
+        for resource, quantity in resources_to_offer:
+            if resource not in player.resources or player.resources[resource] < quantity:
+                print(f"{player.name} does not have enough {resource} to offer.")
+                return
+
+        # Validate that the target player has enough resources to fulfill the trade
+        for resource, quantity in resources_to_receive:
+            if resource not in player_to_trade_with.resources or player_to_trade_with.resources[resource] < quantity:
+                print(f"{player_to_trade_with.name} does not have enough {resource} to fulfill the trade.")
+                return
+
+        trade_log = copy.deepcopy(propose_trade)
+        # Ask the target player if they accept the trade
+        if player_to_trade_with.accept_trade(self.grid, self, propose_trade):
+            # Execute the trade
+            for resource, quantity in resources_to_offer:
+                player.resources[resource] -= quantity
+                player_to_trade_with.resources[resource] += quantity
+
+            for resource, quantity in resources_to_receive:
+                player.resources[resource] += quantity
+                player_to_trade_with.resources[resource] -= quantity
+
+            print("\n *** Updated resources for trade players: ***")
+            for trade_player in [player, player_to_trade_with]:
+                print(f"""{trade_player.name}:
+                            Resources: {trade_player.resources} \n""")
+            
+            trade_log['result'] = 'accepted'
+            self.logger.log("trade", trade_log)
+        else:
+            trade_log['result'] = 'declined'
+            self.logger.log("trade", trade_log)
 
 
     def update_game_state(self):
@@ -108,26 +274,60 @@ class Game:
             self.game_state[player.name]["resources"] = dict(player.resources)
 
 
-    def draw_basic_grid(self):
-        grid = copy.deepcopy(self.grid.tile_colors)
-        for i in range(len(grid)):
-            for j in range(len(grid[i])):
-                for player in self.players:
-                    if player.position == (j, i):
-                        grid[i][j] = f"{grid[i][j]} ({player.name})"
-                    elif player.goal == (j, i):
-                        grid[i][j] = f"{grid[i][j]} (Goal {player.name})"
-        print(tabulate(grid, tablefmt="fancy_grid"))
+    # 3. Game State and Metrics
+    def get_scores(self):
+        """Calculate and return the scores for each player."""
+        scores = {}
+        for player in self.players:
+            scores[player.name] = max(0, 100 - (10 * player.distance_to_goal())) + (5 * sum(player.resources.values()))
+        return scores
+    
+
+    def get_total_scores(self, scores):
+        return sum(scores.values())
 
 
-    def print_game_state(self):
-        """Print the current game state to the console."""
-        print(f"GAME STATE FOR TURN {self.turn}:")
-        self.draw_basic_grid()
-        for player_name, state in self.game_state.items():
-            print(f"""{player_name} ({state['model']}):
-                  Resources: {state['resources']}""")
+    def get_total_accuracy(self, scores):
+        """Defined as the total score divided by the maximum possible score."""
+        return sum(scores.values())/ self.max_possible_score
 
+
+    def calculate_gini_coefficient(self, scores):
+        """
+        Calculate the Gini coefficient for the final scores.
+        """
+        scores = list(scores.values())
+        scores.sort()  
+        n = len(scores)
+
+        cumulative_sum = sum((i + 1) * score for i, score in enumerate(scores))
+        total_sum = sum(scores)
+
+        if total_sum == 0:
+            return 0  
+
+        gini = (2 * cumulative_sum) / (n * total_sum) - (n + 1) / n
+        return gini
+
+
+    def check_for_repeated_states(self, n_repeats=3):
+        """Check if the game has entered a repeated state."""
+        
+        hashable_states = [freeze(state) for state in self.game_states]
+        state_counter = Counter(hashable_states)
+        count = state_counter[freeze(self.game_state)]
+        if count == n_repeats:
+            print(f"The position has repeated {n_repeats} times, finishing the game.")
+            self.logger.log("repeated_states_break", {"n_repeats": n_repeats})
+            return True
+        elif count == n_repeats - 1:
+            print(f"Current position has repeated {count} times, game will stop if this occurs again.")
+            return False
+        else:
+            return False
+    
+
+    # 4. Rendering and Debugging
 
     def draw(self):
         self.screen.fill(COLOR_MAP['BK'])
@@ -202,146 +402,25 @@ class Game:
         pygame.display.flip()
 
 
-    def handle_turn(self, players):
-        """
-        Handle each player's turn:
-        - If the player has already finished, skip their turn.
-        - If the player has not finished, let them propose a trade and/or make a move.
-        - Validate trades and moves before executing them.
-        """
-        for player in players:
-            if player.has_finished():
-                print(f"{player.name} has already finished the game.")
-                continue
-
-            print(f"\n{player.name}'s turn:")
-
-            # Handle trade proposal
-            propose_trade = player.propose_trade(self.grid, self)
-            if propose_trade and propose_trade is not None:
-                self.handle_trade(player, propose_trade)
-
-            # Handle movement
-            move = player.come_up_with_move(self, self.grid)
-            if move is None:
-                print(f"{player.name} did not move.")
-            else:
-                if player.can_move_to(move, self.grid):
-                    player.move(move, self.grid)
-                    print(f"{player.name} moved to {move}.")
-                
-
-    def handle_trade(self, player, propose_trade):
-        """
-        Handle a trade proposal from a player.
-        - Validate the trade proposal.
-        - Execute the trade if the target player accepts.
-        """
-        # Validate trade proposal
-        required_fields = ['player_to_trade_with', 'resources_to_offer', 'resources_to_receive']
-        if not all(field in propose_trade for field in required_fields):
-            print("Invalid trade proposal: Missing required fields.")
-            return
-
-        # Find the player to trade with
-        def normalize_name(name: str) -> str:
-            return name.lower().replace("player", "").strip()
-
-        player_to_trade_with = next(
-            (p for p in self.players if normalize_name(p.name) == normalize_name(propose_trade['player_to_trade_with'])),
-            None
-        )
-
-        if not player_to_trade_with:
-            print(f"The proposed player '{propose_trade['player_to_trade_with']}' does not exist.")
-            return
-
-        resources_to_offer = propose_trade['resources_to_offer']  # List of tuples [(color, quantity), ...]
-        resources_to_receive = propose_trade['resources_to_receive']  # List of tuples [(color, quantity), ...]
-
-        # Validate that the proposing player has enough resources to offer
-        for resource, quantity in resources_to_offer:
-            if resource not in player.resources or player.resources[resource] < quantity:
-                print(f"{player.name} does not have enough {resource} to offer.")
-                return
-
-        # Validate that the target player has enough resources to fulfill the trade
-        for resource, quantity in resources_to_receive:
-            if resource not in player_to_trade_with.resources or player_to_trade_with.resources[resource] < quantity:
-                print(f"{player_to_trade_with.name} does not have enough {resource} to fulfill the trade.")
-                return
-
-        # Ask the target player if they accept the trade
-        if player_to_trade_with.accept_trade(self.grid, self, propose_trade):
-            # Execute the trade
-            for resource, quantity in resources_to_offer:
-                player.resources[resource] -= quantity
-                player_to_trade_with.resources[resource] += quantity
-
-            for resource, quantity in resources_to_receive:
-                player.resources[resource] += quantity
-                player_to_trade_with.resources[resource] -= quantity
-
-            print("\n *** Updated resources for trade players: ***")
-            for trade_player in [player, player_to_trade_with]:
-                print(f"""{trade_player.name}:
-                            Resources: {trade_player.resources} \n""")
+    def draw_basic_grid(self):
+        grid = copy.deepcopy(self.grid.tile_colors)
+        for i in range(len(grid)):
+            for j in range(len(grid[i])):
+                for player in self.players:
+                    if player.position == (j, i):
+                        grid[i][j] = f"{grid[i][j]} ({player.name})"
+                    elif player.goal == (j, i):
+                        grid[i][j] = f"{grid[i][j]} (Goal {player.name})"
+        print(tabulate(grid, tablefmt="fancy_grid"))
 
 
-    def run(self, full_draw=True):
-        while self.running and not all(p.has_finished() for p in self.players):
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self.running = False
-            if full_draw:
-                self.draw()
-            self.print_game_state()
-            self.handle_turn(self.players)
-            
-            self.update_game_state()
-            if self.turn > 0:
-                self.game_states.append(copy.deepcopy(self.game_state))
-
-            if self.check_for_repeated_states():
-                break
-            
-            self.turn += 1
-            self.clock.tick(FPS)
-
-            # Wait for Enter to proceed
-            # input("Press Enter to proceed to the next turn...")
-            print(f"End of turn {self.turn}. Waiting for next turn...")
-            sleep(0.1)
-        
-        print("Game over!")
-        self.print_game_state()
-        scores = self.get_scores()
-        print(f"Final scores: {scores}")
-        pygame.quit()
-
-
-    def get_scores(self):
-        """Calculate and return the scores for each player."""
-        scores = {}
-        for player in self.players:
-            scores[player.name] = max(0, 100 - (10 * player.distance_to_goal())) + (5 * sum(player.resources.values()))
-        return scores
-
-
-    def check_for_repeated_states(self, n_repeats=3):
-        """Check if the game has entered a repeated state."""
-        
-        hashable_states = [freeze(state) for state in self.game_states]
-        state_counter = Counter(hashable_states)
-        count = state_counter[freeze(self.game_state)]
-        if count == n_repeats:
-            print(f"The position has repeated {n_repeats} times, finishing the game.")
-            return True
-        elif count == n_repeats - 1:
-            print(f"Current position has repeated {count} times, game will stop if this occurs again.")
-            return False
-        else:
-            return False
+    def print_game_state(self):
+        """Print the current game state to the console."""
+        print(f"GAME STATE FOR TURN {self.turn}:")
+        self.draw_basic_grid()
+        for player_name, state in self.game_state.items():
+            print(f"""{player_name} ({state['model']}):
+                  Resources: {state['resources']}""")
         
 
 def draw_player_circle(screen, player, position, radius, offset=(0, 0)):
