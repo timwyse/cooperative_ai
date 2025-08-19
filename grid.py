@@ -1,4 +1,5 @@
 import random
+
 from constants import AVAILABLE_COLORS
 
 class Tile:

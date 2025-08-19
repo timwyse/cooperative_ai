@@ -1,6 +1,8 @@
 from dataclasses import replace
-from game import Game
+
 from config import DEFAULT_CONFIG, GameConfig
+from game import Game
+from logger import GameLogger
 from player import NANO, MINI, FOUR_1, FOUR_0, HUMAN, LLAMA_3_3B
 
 
@@ -8,13 +10,17 @@ from player import NANO, MINI, FOUR_1, FOUR_0, HUMAN, LLAMA_3_3B
 # can replace any of the default values in DEFAULT_CONFIG with your own values
 CONFIG = replace(
     DEFAULT_CONFIG,
-    # players=[HUMAN, FOUR_1],
+    players=[LLAMA_3_3B, MINI],
     grid_size=3,
-    # colors=['R', 'B', 'G'],
-    # resource_mode='manual',
+    colors=['R', 'B', 'G'],
+    resource_mode='manual',
     # grid=[['R', 'R'], ['G', 'R']],
-    # manual_resources = [{'R':4, 'B':2, 'G':1}, {'R':2, 'B':2}]
+    manual_resources = [{'R':4, 'B':1, 'G':1}, {'R':2, 'B':2, 'G': 2}]
 )
 
+# set LOGGER = GameLogger() to enable logging to a file, or None to disable logging
+LOGGER = GameLogger()
+
 if __name__ == "__main__":
-    Game(config=CONFIG).run()
+    
+    Game(config=CONFIG, logger=LOGGER).run()
