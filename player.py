@@ -1,14 +1,17 @@
 from collections import defaultdict, deque, namedtuple
 import copy
-from openai import OpenAI
-from together import Together
 import json
-import re
 import random
-from constants import OPENAI_API_KEY, TOGETHER_API_KEY, AVAILABLE_COLORS
-from config import GameConfig
-from grid import Grid
+import re
+
+from openai import OpenAI
 from tabulate import tabulate
+from together import Together
+
+from config import GameConfig
+from constants import OPENAI_API_KEY, TOGETHER_API_KEY, AVAILABLE_COLORS
+from grid import Grid
+
 
 
 ### AGENTS - add more below as needed
@@ -54,9 +57,10 @@ Always maximise your total points. Note that reaching your goal is the most impo
 
 
 class Player:
-    def __init__(self, id, agent, config:GameConfig):
+    def __init__(self, id, agent, logger, config:GameConfig):
 
         self.config = config
+        self.logger = logger
         self.n_total_players = len(config.players)
         self.id = str(id)
         self.name = f"Player {id}"
@@ -198,6 +202,9 @@ Your best route, in (x, y) coordinate format, given your resources is: {self.bes
 Output your next move in the format (x, y) where x and y are the coordinates of the tile you want to move to. If you do not want to move, say exactly: "n". Don't include any other information. Your next move should be one tile away from your current position, and you must have enough resources to pay for the tile you are moving to.
 """
             # print(user_message)
+            
+            self.logger.log("move_prompt", {"player": self.name, "message": user_message})
+
             if self.model_api == 'open_ai':
                 client = OpenAI(api_key=OPENAI_API_KEY)
             elif self.model_api == 'together':
@@ -208,6 +215,7 @@ Output your next move in the format (x, y) where x and y are the coordinates of 
                 messages=[{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}, {"role": "user", "content": user_message}],
                 max_completion_tokens=1000)
             move = response.choices[0].message.content.strip().lower()
+            self.logger.log("move_proposal", {"player": self.name, "message": move})
             print(f"{self.name} proposed a move: {move}")
             
             if move.strip().lower() == 'n':
@@ -323,6 +331,7 @@ Keep your response below 1000 characters.
 """
 
             # print(user_message)
+            self.logger.log("trade_prompt", {"player": self.name, "message": user_message})
             if self.model_api == 'open_ai':
                 client = OpenAI(api_key=OPENAI_API_KEY)
             elif self.model_api == 'together':
@@ -334,6 +343,7 @@ Keep your response below 1000 characters.
                 messages=[{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}, {"role": "user", "content": user_message}],
                 max_completion_tokens=2000)
             trade_proposal = response.choices[0].message.content.strip().lower()
+            self.logger.log("trade_proposal", {"player": self.name, "message": trade_proposal})
             print(f"{self.name} proposed a trade")
             if trade_proposal != 'n':
                 print("Attempting to parse trade proposal as JSON...")
@@ -387,6 +397,7 @@ Consider the following trade proposal: {trade_proposer} is offering you {resourc
 Trades often help you to reach your goal. Does this trade help you reach your goal? Briefly consider the resources you will need to reach your goal, and finish your answer with a "yes" if you accept the trade or "no" if not. The last word of your response should be either "yes" or "no".
 Keep your response below 1000 characters.
 """
+            self.logger.log("accept_trade_prompt", {"player": self.name, "message": user_message})
             if self.model_api == 'open_ai':
                 client = OpenAI(api_key=OPENAI_API_KEY)
             elif self.model_api == 'together':
@@ -398,6 +409,7 @@ Keep your response below 1000 characters.
                 messages=[{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}, {"role": "user", "content": user_message}],
                 max_completion_tokens=1000)
             accept_trade = response.choices[0].message.content.strip().lower()
+            self.logger.log("accept_trade_response", {"player": self.name, "message": accept_trade})
             print(f"{self.name} responded to the trade proposal: {accept_trade}")
             if 'yes' in accept_trade[-5:]:
                 print(accept_message)
