@@ -25,13 +25,11 @@ class Game:
         self.distribute_resources()
         self.game_state = self.initialize_game_state()
         self.game_states = [copy.deepcopy(self.game_state)]
-        
         self.turn = 0
         pygame.init()
         self.screen = pygame.display.set_mode((self.width, self.height))
         self.clock = pygame.time.Clock()
         self.running = True
-        
         
                 
     def distribute_resources(self):
@@ -89,6 +87,7 @@ class Game:
                     player.resources[color] += quantity
                 player.resources = dict(sorted(player.resources.items()))    
     
+
     def initialize_game_state(self):
         """Initialize the game state with player positions and resources."""
         state = {}
@@ -287,6 +286,7 @@ class Game:
             for trade_player in [player, player_to_trade_with]:
                 print(f"""{trade_player.name}:
                             Resources: {trade_player.resources} \n""")
+
 
     def run(self, full_draw=True):
         while self.running and not all(p.has_finished() for p in self.players):

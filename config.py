@@ -23,14 +23,13 @@ class GameConfig:
     #   - 'random': random distribution, each player gets
     #       num_resources = surplus * 2 * (grid_size - 1)
     #   - 'manual': use manual_resources field
-    # self.resources = {color: 0 for color in self.colors}
     manual_resources: Optional[List[dict]] = None # Manually set the starting resources of the players. Order is the same as the players variable. resource_mode must be 'manual'.
     # eg. [{'R':2, 'B':2}, {'R':2, 'B':2}]
 
     # GRID SETTINGS
     grid_size: int = 3  # grid is square, size grid_size x grid_size
     colors: List[str] = field(default_factory=list)  # list of colors from constants.AVAILABLE_COLORS
-    grid: Optional[List[List[str]]] = None  # explicit grid (list of lists of colors); if None, a random one is generated
+    grid: Optional[List[List[str]]] = None  # explicit grid (list of lists of colors); if None, a random one is generated with equal distribution of colors from colors
     random_start_block_size: int = 1  # top-left block within which start positions are generated
     random_goal_block_size: int = 1   # bottom-right block within which goals are generated
 

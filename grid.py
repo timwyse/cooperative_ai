@@ -53,10 +53,3 @@ class Grid:
                 adj.append((nx, ny))
         return adj
     
-
-if __name__ == "__main__":
-    grid = Grid(2, ['R', 'CY', 'B'], grid=[['R', 'CY'], ['B', 'B']])
-    print("Grid size:", grid.size)
-    print("Tile colors:", grid.tile_colors)
-    print("Tile at (0, 0):", grid.get_color(0, 0))
-    print("Adjacent tiles to (0, 0):", grid.get_adjacent((0, 0)))
