@@ -27,6 +27,5 @@ COLOR_MAP = {
     'PK': (255, 192, 203) # pink
 }
 
-
 # Exclude 'black'
 AVAILABLE_COLORS = [color for color in COLOR_MAP if color != 'BK']
