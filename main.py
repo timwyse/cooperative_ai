@@ -10,12 +10,12 @@ from player import NANO, MINI, FOUR_1, FOUR_0, HUMAN, LLAMA_3_3B
 # can replace any of the default values in DEFAULT_CONFIG with your own values
 CONFIG = replace(
     DEFAULT_CONFIG,
-    players=[LLAMA_3_3B, MINI],
+    players=[MINI, MINI],
     grid_size=3,
-    colors=['R', 'B', 'G'],
-    resource_mode='manual',
+    # colors=['R', 'B'],
+    # resource_mode='manual',
     # grid=[['R', 'R'], ['G', 'R']],
-    manual_resources = [{'R':4, 'B':1, 'G':1}, {'R':2, 'B':2, 'G': 2}]
+    # manual_resources = [{'R':4, 'B':1, 'G':1}, {'R':2, 'B':2, 'G': 2}]
 )
 
 # set LOGGER = GameLogger() to enable logging to a file, or None to disable logging

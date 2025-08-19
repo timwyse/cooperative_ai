@@ -28,8 +28,6 @@ QWEN_2_7B = Agent(name="QWEN_25_7B", value="Qwen/Qwen2.5-7B-Instruct-Turbo", api
 LLAMA_3_3B = Agent(name="Llama_3_3B", value="meta-llama/Llama-3.2-3B-Instruct-Turbo", api='together')# $0.06 per output million tokens
 
 
-
-
 DEFAULT_SYSTEM_PROMPT = """
 You are a player in a game called Coloured Trails.
 
@@ -61,23 +59,26 @@ class Player:
 
         self.config = config
         self.logger = logger
-        self.n_total_players = len(config.players)
+        
         self.id = str(id)
         self.name = f"Player {id}"
-        self.start_pos = (random.randint(0, config.random_start_block_size - 1), random.randint(0, config.random_start_block_size - 1))
-        self.position = self.start_pos
-        self.grid_size = config.grid_size
-        self.goal = (random.randint(config.grid_size - config.random_goal_block_size, config.grid_size - 1), random.randint(config.grid_size - config.random_goal_block_size, config.grid_size - 1)) 
         self.model = agent.value
         self.model_name = agent.name
         self.model_api = agent.api
-        self.surplus = config.surplus
         self.temperature = config.temperature
+
+        self.start_pos = (random.randint(0, config.random_start_block_size - 1), random.randint(0, config.random_start_block_size - 1))
+        self.goal = (random.randint(config.grid_size - config.random_goal_block_size, config.grid_size - 1), random.randint(config.grid_size - config.random_goal_block_size, config.grid_size - 1)) 
+        self.position = self.start_pos
+        
+        self.n_total_players = len(config.players)
+        self.surplus = config.surplus
+        self.grid_size = config.grid_size
         self.resource_mode = config.resource_mode
         self.colors = config.colors
         self.resources = {color: 0 for color in self.colors}
 
-
+    ## Core Gameplay
     def distance_to_goal(self):
         distance = abs(self.position[0] - self.goal[0]) + abs(self.position[1] - self.goal[1])
         return distance
@@ -94,6 +95,11 @@ class Player:
         self.resources[tile_color] -= 1
         self.position = new_pos
 
+    def has_finished(self):
+        return self.position == self.goal
+
+
+    ## Pathfinding and Strategy
 
     def best_route(self, grid):
         '''
@@ -158,6 +164,7 @@ The board state and everybody's resources: {game.game_state}. Specifically, as {
 Your best route, in (x, y) coordinate format, given your resources is: {self.best_route(grid)}, although other routes may be possible.
         """
     
+    ## Decision-Making
 
     def come_up_with_move(self, game, grid):
         if self.model_name == 'human':
@@ -421,9 +428,8 @@ Keep your response below 1000 characters.
                 print(f"{self.name} did not respond clearly to the trade proposal. Assuming they do not accept.")
                 return False
 
-    def has_finished(self):
-        return self.position == self.goal
     
+    ## Utility Functions
     def clean_trade_proposal(self, trade_proposal):
         """
         Recursively process a trade proposal dictionary to make all string values lowercase and stripped.

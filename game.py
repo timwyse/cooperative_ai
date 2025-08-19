@@ -16,25 +16,39 @@ from utils import freeze
 
 
 class Game:
+   
     def __init__(self, config: Optional[GameConfig] = DEFAULT_CONFIG, logger=None):
-
+        # Configuration and Logging
         self.config = config
         self.logger = logger if logger is not None else NullLogger()
-        self.width = self.height = self.config.grid_size * TILE_SIZE
-        self.grid_size = config.grid_size
-        self.colors = config.colors
-        self.players = [Player(i,  player, self.logger, self.config) for i, player in enumerate(self.config.players)]
-        self.n_players = len(self.players)
+
+        # Grid Setup
+        self.grid_size = self.config.grid_size
+        self.colors = self.config.colors
+        
         self.grid = Grid(self.grid_size, self.colors, grid=self.config.grid)
+
+        # Player Initialization
+        self.players = [Player(i, player, self.logger, self.config) for i, player in enumerate(self.config.players)]
+        self.n_players = len(self.players)
+
+        # Resource Distribution
         self.distribute_resources()
+
+        # Game State Initialization
         self.game_state = self.initialize_game_state()
         self.game_states = [copy.deepcopy(self.game_state)]
         self.turn = 0
         self.max_possible_score = self.max_possible_score()
+
+        # Pygame Initialization
         pygame.init()
+        self.width = self.height = self.grid_size * TILE_SIZE
         self.screen = pygame.display.set_mode((self.width, self.height))
         self.clock = pygame.time.Clock()
         self.running = True
+
+        # Logging Initial State
         self.logger.log("game_config", {"config": self.config})
         self.logger.log("initial_game_state", {"initial_game_state": copy.deepcopy(self.game_state)})
         self.logger.log("grid", {"grid": self.grid.tile_colors})
