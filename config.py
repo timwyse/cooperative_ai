@@ -1,33 +1,51 @@
 from __future__ import annotations  
 from dataclasses import dataclass, field
 from typing import List, Optional, TYPE_CHECKING
-from constants import COLOR_MAP
+from constants import AVAILABLE_COLORS
 
 
 @dataclass
 class GameConfig:
     """
     Stores configuration settings shared between the Game and Player classes
-    and sets the set the default parameters for the game. 
+    and defines default parameters for the game.
     """
-    players: Optional[List[str]] = None # these are Agent namedtuples which can be found in and added to player.py
-    surplus: float = 1.5 # this is a multiplier of the minimum number of steps required to complete the game.
-    grid_size: int = 3
-    resource_mode: str = 'single_type_each' # Supported: 1. 'single_type_each' is supported, where each player has a single type of resource. 2: 'random', where resources are distributed randomly among players. each player receives num_resources = surplus * 2 * (grid_size - 1)) resources.
+
+    # PLAYER CONFIGURATION
+    players: Optional[List[str]] = None  # list of Agent namedtuples (see player.py)
+
+    # RESOURCE SETTINGS
+    surplus: float = 1.5 # Multiplier of the minimum steps required to complete the game. Used to determine how many resources each player starts with.
+    resource_mode: str = 'single_type_each'
+    # Options:
+    #   - 'single_type_each': each player has only one resource type, each player gets
+    #       num_resources = surplus * 2 * (grid_size - 1)
+    #   - 'random': random distribution, each player gets
+    #       num_resources = surplus * 2 * (grid_size - 1)
+    #   - 'manual': use manual_resources field
+    # self.resources = {color: 0 for color in self.colors}
+    manual_resources: Optional[List[dict]] = None # Manually set the starting resources of the players. Order is the same as the players variable. resource_mode must be 'manual'.
+    # eg. [{'R':2, 'B':2}, {'R':2, 'B':2}]
+
+    # GRID SETTINGS
+    grid_size: int = 3  # grid is square, size grid_size x grid_size
+    colors: List[str] = field(default_factory=list)  # list of colors from constants.AVAILABLE_COLORS
+    grid: Optional[List[List[str]]] = None  # explicit grid (list of lists of colors); if None, a random one is generated
+    random_start_block_size: int = 1  # top-left block within which start positions are generated
+    random_goal_block_size: int = 1   # bottom-right block within which goals are generated
+
+    # LLM PARAMETERS
     temperature: float = 1.0
-    random_start_block_size: int = 1 # this is the size of the top left corner within which the players start
-    random_goal_block_size: int = 1 # this is the size of the bottom right corner within which the players' goals are located
-    colors: List[str] = field(default_factory=list)
-    grid: Optional[List[List[str]]] = None
 
     def __post_init__(self):
         if self.players is None:
-            from player import HUMAN  
+            from player import HUMAN
             self.players = [HUMAN, HUMAN]
         if not self.colors:
-            self.colors = [
-                c for c in COLOR_MAP if c != 'BK'
-            ][:len(self.players)]
+            self.colors = AVAILABLE_COLORS[:len(self.players)]
+        if self.resource_mode != 'manual' and self.manual_resources:
+            print("Warning: manual_resources is set but resource_mode is not 'manual'. Ignoring manual_resources.")
         
+
 # Base configuration used by Game unless overridden in main.py
 DEFAULT_CONFIG = GameConfig()
