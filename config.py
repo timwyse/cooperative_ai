@@ -10,7 +10,7 @@ class GameConfig:
     Stores configuration settings shared between the Game and Player classes
     and sets the set the default parameters for the game. 
     """
-    players: Optional[List[str]] = None
+    players: Optional[List[str]] = None # these are Agent namedtuples which can be found in and added to player.py
     surplus: float = 1.5 # this is a multiplier of the minimum number of steps required to complete the game.
     grid_size: int = 3
     resource_mode: str = 'single_type_each' # Supported: 1. 'single_type_each' is supported, where each player has a single type of resource. 2: 'random', where resources are distributed randomly among players. each player receives num_resources = surplus * 2 * (grid_size - 1)) resources.
