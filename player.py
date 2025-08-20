@@ -317,11 +317,11 @@ Output your next move in the format (x, y) where x and y are the coordinates of 
                         quantity = input(f"Enter quantity for {resource}: ").strip()
                         try:
                             quantity = int(quantity)
-                            if quantity > 0:
+                            if quantity >= 0:
                                 resources.append((resource, quantity))
                                 i += 1
                             else:
-                                print("Quantity must be greater than 0.")
+                                print("Quantity must be positive.")
                         except ValueError:
                             print("Invalid quantity. Please enter a valid integer.")
                     else:
