@@ -246,16 +246,20 @@ class Game:
         resources_to_receive = propose_trade['resources_to_receive']  # List of tuples [(color, quantity), ...]
 
         # Validate that the proposing player has enough resources to offer
-        for resource, quantity in resources_to_offer:
-            if resource not in player.resources or player.resources[resource] < quantity:
-                print(f"{player.name} does not have enough {resource} to offer.")
-                return
+        try:
+            for resource, quantity in resources_to_offer:
+                if resource not in player.resources or player.resources[resource] < quantity:
+                    print(f"{player.name} does not have enough {resource} to offer.")
+                    return
 
-        # Validate that the target player has enough resources to fulfill the trade
-        for resource, quantity in resources_to_receive:
-            if resource not in player_to_trade_with.resources or player_to_trade_with.resources[resource] < quantity:
-                print(f"{player_to_trade_with.name} does not have enough {resource} to fulfill the trade.")
-                return
+            # Validate that the target player has enough resources to fulfill the trade
+            for resource, quantity in resources_to_receive:
+                if resource not in player_to_trade_with.resources or player_to_trade_with.resources[resource] < quantity:
+                    print(f"{player_to_trade_with.name} does not have enough {resource} to fulfill the trade.")
+                    return
+        except ValueError as e:
+            print(f"Invalid trade proposal: {e}")
+            return
 
         trade_log = copy.deepcopy(propose_trade)
         # Ask the target player if they accept the trade
