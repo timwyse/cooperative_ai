@@ -223,11 +223,58 @@ class Game:
         - Validate the trade proposal.
         - Execute the trade if the target player accepts.
         """
-        # Validate trade proposal
+        try:
+            # Validate the trade proposal
+            validation_result = self.validate_trade(player, propose_trade)
+            if not validation_result["is_valid"]:
+                print(f"Trade validation failed: {validation_result['message']}")
+                return
+
+            player_to_trade_with = validation_result["player_to_trade_with"]
+            resources_to_offer = propose_trade['resources_to_offer']
+            resources_to_receive = propose_trade['resources_to_receive']
+
+            trade_log = copy.deepcopy(propose_trade)
+
+            # Ask the target player if they accept the trade
+            if player_to_trade_with.accept_trade(self.grid, self, propose_trade):
+                # Execute the trade
+                for resource, quantity in resources_to_offer:
+                    player.resources[resource] -= quantity
+                    player_to_trade_with.resources[resource] += quantity
+
+                for resource, quantity in resources_to_receive:
+                    player.resources[resource] += quantity
+                    player_to_trade_with.resources[resource] -= quantity
+
+                print("\n *** Updated resources for trade players: ***")
+                for trade_player in [player, player_to_trade_with]:
+                    print(f"""{trade_player.name}:
+                                Resources: {trade_player.resources} \n""")
+                
+                trade_log['result'] = 'accepted'
+                self.logger.log("trade", trade_log)
+            else:
+                trade_log['result'] = 'declined'
+                self.logger.log("trade", trade_log)
+
+        except Exception as e:
+            print(f"An error occurred while handling the trade: {e}")
+            self.logger.log("trade_error", {"error": str(e), "propose_trade": propose_trade})
+
+    def validate_trade(self, player, propose_trade):
+        """
+        Validate a trade proposal.
+        Returns a dictionary with the validation result, including:
+        - is_valid: True/False
+        - message: Error message if invalid
+        - player_to_trade_with: The target player if valid
+        """
+        validation_result = {"is_valid": False, "message": "", "proposed trade": propose_trade}
         required_fields = ['player_to_trade_with', 'resources_to_offer', 'resources_to_receive']
         if not all(field in propose_trade for field in required_fields):
-            print("Invalid trade proposal: Missing required fields.")
-            return
+            validation_result['message'] = "Missing required fields in trade proposal."
+            return validation_result
 
         # Find the player to trade with
         def normalize_name(name: str) -> str:
@@ -239,50 +286,35 @@ class Game:
         )
 
         if not player_to_trade_with:
-            print(f"The proposed player '{propose_trade['player_to_trade_with']}' does not exist.")
-            return
+            validation_result['message'] = f"The proposed player '{propose_trade['player_to_trade_with']}' does not exist."
+            return validation_result
 
         resources_to_offer = propose_trade['resources_to_offer']  # List of tuples [(color, quantity), ...]
         resources_to_receive = propose_trade['resources_to_receive']  # List of tuples [(color, quantity), ...]
 
         # Validate that the proposing player has enough resources to offer
-        try:
-            for resource, quantity in resources_to_offer:
-                if resource not in player.resources or player.resources[resource] < quantity:
-                    print(f"{player.name} does not have enough {resource} to offer.")
-                    return
+        for resource, quantity in resources_to_offer:
+            if quantity < 0:
+                validation_result["message"] = f"Invalid quantity to offer {quantity} for resource {resource}."
+                return validation_result
+            if resource not in player.resources or player.resources[resource] < quantity:
+                validation_result["message"] = f"{player.name} does not have enough {resource} to offer."
+                return validation_result
 
-            # Validate that the target player has enough resources to fulfill the trade
-            for resource, quantity in resources_to_receive:
-                if resource not in player_to_trade_with.resources or player_to_trade_with.resources[resource] < quantity:
-                    print(f"{player_to_trade_with.name} does not have enough {resource} to fulfill the trade.")
-                    return
-        except ValueError as e:
-            print(f"Invalid trade proposal: {e}")
-            return
+        # Validate that the target player has enough resources to fulfill the trade
+        for resource, quantity in resources_to_receive:
+            if quantity < 0:
+                validation_result["message"] = f"Invalid quantity to receive {quantity} for resource {resource}."
+                return validation_result
+            if resource not in player_to_trade_with.resources or player_to_trade_with.resources[resource] < quantity:
+                validation_result["message"] = f"{player_to_trade_with.name} does not have enough {resource} to fulfill the trade."
+                return validation_result
 
-        trade_log = copy.deepcopy(propose_trade)
-        # Ask the target player if they accept the trade
-        if player_to_trade_with.accept_trade(self.grid, self, propose_trade):
-            # Execute the trade
-            for resource, quantity in resources_to_offer:
-                player.resources[resource] -= quantity
-                player_to_trade_with.resources[resource] += quantity
-
-            for resource, quantity in resources_to_receive:
-                player.resources[resource] += quantity
-                player_to_trade_with.resources[resource] -= quantity
-
-            print("\n *** Updated resources for trade players: ***")
-            for trade_player in [player, player_to_trade_with]:
-                print(f"""{trade_player.name}:
-                            Resources: {trade_player.resources} \n""")
-            
-            trade_log['result'] = 'accepted'
-            self.logger.log("trade", trade_log)
-        else:
-            trade_log['result'] = 'declined'
-            self.logger.log("trade", trade_log)
+        validation_result["message"] = "Trade proposal is valid."
+        validation_result["is_valid"] = True
+        validation_result["proposed_trade"] = propose_trade
+        validation_result["player_to_trade_with"] = player_to_trade_with
+        return validation_result
 
 
     def update_game_state(self):
