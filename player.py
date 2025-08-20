@@ -1,4 +1,4 @@
-from collections import defaultdict, deque, namedtuple
+from collections import defaultdict, deque, namedtuple, Counter
 import copy
 import json
 import random
@@ -101,68 +101,104 @@ class Player:
 
     ## Pathfinding and Strategy
 
-    def best_route(self, grid):
-        '''
-        Runs a BFS to find the best route to the player's goal, given their current resources.
-        Returns a list of positions (x, y) that represent the best path.
-        '''
+    def best_routes(self, grid, top_n=3):
+        """
+        Runs a BFS to find the top n paths to the player's goal, given their current resources.
+        Path ranking is based on:
+        1. Resource shortfall (ascending): the number of resources the player
+           would still need to trade for or acquire to complete the path.
+        2. Path length (ascending): among paths with the same shortfall,
+           shorter paths are preferred.
 
-        # BFS queue: (row, col, steps, collected_count, path)
-        q = deque()
-        q.append((self.position[0], self.position[1], 0, 0, [self.position]))
+        Example:
+        Suppose there are 5 paths:
+        a. 5 steps, player has all 5 required resources
+        b. 5 steps, player has 4/5 required resources
+        c. 6 steps, player has all 6 required resources
+        d. 5 steps, player has 3/5 required resources
+        e. 6 steps, player has 5/6 required resources
 
-        best_path = None
-        best_steps = float("inf")
-        best_resources = -1
+        Sorted order: a, c, b, e, d. With top_n=3 → returns [a, c, b]
+        """
+        def _neighbors(pos, rows, cols):
+            r, c = pos
+            nbrs = []
+            if r > 0: nbrs.append((r-1, c))
+            if r < rows-1: nbrs.append((r+1, c))
+            if c > 0: nbrs.append((r, c-1))
+            if c < cols-1: nbrs.append((r, c+1))
+            return nbrs
 
-        visited = {}
+        def _path_colors(path, grid):
+            """Colors paid along a path; you pay when you move ONTO a tile, i.e. path[1:]."""
+            return [grid.get_color(r, c) for (r, c) in path[1:]]
 
-        while q:
-            resources = self.resources.copy()
-            r, c, steps, collected, path = q.popleft()
+        def _enumerate_paths(grid, start, goal):
+            """Enumerate paths from start to goal.
+            generates all simple paths (no revisits) via DFS.
+            """
+            rows = cols = grid.size
+            paths = []
 
-            # Count resource if it's the player's own
-            if grid.get_color(r, c) in resources and resources[grid.get_color(r, c)] > 0:
-                resources[grid.get_color(r, c)] -= 1
-                collected += 1
+            def dfs(curr, visited, path):
+                if curr == goal:
+                    paths.append(path[:])
+                    return
+                for nb in _neighbors(curr, rows, cols):
+                    if nb not in visited:
+                        visited.add(nb)
+                        path.append(nb)
+                        dfs(nb, visited, path)
+                        path.pop()
+                        visited.remove(nb)
 
-            # If we reached target
-            if (r, c) == self.goal:
-                if steps < best_steps or (steps == best_steps and collected > best_resources):
-                    best_steps = steps
-                    best_resources = collected
-                    best_path = path
-                continue
+            dfs(start, {start}, [start])
+            return paths
 
-            # Avoid unnecessary revisits
-            if (r, c) in visited:
-                prev_steps, prev_collected = visited[(r, c)]
-                if steps > prev_steps or (steps == prev_steps and collected <= prev_collected):
-                    continue
-            visited[(r, c)] = (steps, collected)
+        def top_n_paths( grid, start, goal, resources, n):
+            """Return up to n best paths sorted by:
+            1) resource shortfall ascending
+            2) path length descending
+            Each result item includes: path, length, shortfall, required_counts, resources.
+            """
+            all_paths = _enumerate_paths(grid, start, goal)
+            scored = []
+            for p in all_paths:
+                colors = _path_colors(p, grid)
+                needed = Counter(colors)
+                have = Counter(resources)
+                shortfall = {res: max(0, needed[res] - have.get(res, 0)) for res in needed}
+                shortfall = {res: amt for res, amt in shortfall.items() if amt > 0}
+                
+                scored.append({
+                    "path": p,
+                    "path_length_in_steps": len(p) - 1,
+                    "resources_required_for_path": dict(needed),
+                    "resources_missing_due_to_insufficient_inventory": shortfall,
+                })
+            scored.sort(key=lambda x: (sum(x["resources_missing_due_to_insufficient_inventory"].values()), x["path_length_in_steps"]))
+            return scored[:n]
 
-            # Explore neighbors
-            for dr, dc in [(-1,0), (1,0), (0,-1), (0,1)]:
-                nr, nc = r + dr, c + dc
-                if 0 <= nr < self.grid_size and 0 <= nc < self.grid_size:
-                    q.append((nr, nc, steps + 1, collected, path + [(nr, nc)]))
+        best = top_n_paths(grid, self.position, self.goal, self.resources, n=top_n)  
+        
+        return best
 
-        return best_path
-    
 
     def generate_player_context_message(self, game, grid):
         """
         Generates a reusable message about the board state, player's resources, position, and goal.
         """
-        # print(f"Your best route is: {self.best_route(grid)}")
         return f"""
 Here is the board:
 {tabulate(grid.tile_colors, tablefmt="fancy_grid")}
         
 The board state and everybody's resources: {game.game_state}. Specifically, as {self.name}, your resources are: {dict(self.resources)}, your current position is {self.position}, and your goal is {self.goal}. 
 
-Your best route, in (x, y) coordinate format, given your resources is: {self.best_route(grid)}, although other routes may be possible.
-        """
+Here are some candidate paths (JSON format), showing the path, its length, the resources needed, and which you are missing:  
+{self.best_routes(grid)}  
+
+You may also consider alternative routes if you find a better strategy.
+"""
     
     ## Decision-Making
 
@@ -404,6 +440,7 @@ Consider the following trade proposal: {trade_proposer} is offering you {resourc
 Trades often help you to reach your goal. Does this trade help you reach your goal? Briefly consider the resources you will need to reach your goal, and finish your answer with a "yes" if you accept the trade or "no" if not. The last word of your response should be either "yes" or "no".
 Keep your response below 1000 characters.
 """
+            # print(user_message)
             self.logger.log("accept_trade_prompt", {"player": self.name, "message": user_message})
             if self.model_api == 'open_ai':
                 client = OpenAI(api_key=OPENAI_API_KEY)
