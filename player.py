@@ -119,6 +119,7 @@ class Player:
         e. 6 steps, player has 5/6 required resources
 
         Sorted order: a, c, b, e, d. With top_n=3 → returns [a, c, b]
+        Note that the LM Agent isn't told this ranking explicitly, just that these are some good paths.
         """
         def _neighbors(pos, rows, cols):
             r, c = pos
@@ -206,43 +207,43 @@ You may also consider alternative routes if you find a better strategy.
         if self.model_name == 'human':
             print(f"{self.name}, it's your turn to make a move.")
             while True:
-                move = input("Input the coordinates of where you'd like to move to in (x, y) format or use WASD. Otherwise type 'n': ").strip().lower()
+                move = input("Enter your move: type row and column as 'row,col' (e.g., 2,1 to move to row 2 column 1. Note that rows and columns are 0-indexed), or use W/A/S/D for directions, or type 'n' to skip: ").strip().lower()
                 if move == 'n':
                     return None
                 elif move in ['w', 'a', 's', 'd']:
                     if move == 'w':
-                        x, y = self.position[0], self.position[1] - 1
+                        r, c = self.position[0] - 1, self.position[1]
                     elif move == 'a':
-                        x, y = self.position[0] - 1, self.position[1]
+                        r, c = self.position[0], self.position[1] - 1
                     elif move == 's':
-                        x, y = self.position[0], self.position[1] + 1
+                        r, c = self.position[0] + 1, self.position[1]
                     elif move == 'd':
-                        x, y = self.position[0] + 1, self.position[1]
+                        r, c = self.position[0], self.position[1] + 1
                 else:
                     try:
-                        x, y = map(int, move.strip("()").split(","))
+                        r, c = map(int, move.split(","))
                     except ValueError:
-                        print("Invalid input: Please enter the coordinates in (x, y) format or use WASD. Try again.")
+                        print("Invalid input: Please enter the row and column in r,c format or use WASD. Try again.")
                         continue
                 try:
-                    new_pos = (x, y)
-                    if not (0 <= x < self.grid_size and 0 <= y < self.grid_size):
+                    new_pos = (r, c)
+                    if not (0 <= r < self.grid_size and 0 <= c < self.grid_size):
                         print("Invalid move: The position is out of bounds. Try again.")
                         continue
                     if new_pos not in grid.get_adjacent(self.position):
                         print("Invalid move: You can only move to an adjacent tile. Try again.")
                         continue
-                    tile_color = grid.get_color(x, y)
+                    tile_color = grid.get_color(r, c)
                     if self.resources[tile_color] <= 0:
                         print(f"Invalid move: You don't have enough resources for a {tile_color} tile. Try again.")
                         continue
                     return new_pos
                 except (ValueError, IndexError):
-                    print("Invalid input: Please enter the coordinates in (x, y) format. Try again.")
+                    print("Invalid input: Please enter the new tile in r,c format. Try again.")
         else:
             user_message = self.generate_player_context_message(game, grid) + """
                     
-Output your next move in the format (x, y) where x and y are the coordinates of the tile you want to move to. If you do not want to move, say exactly: "n". Don't include any other information. Your next move should be one tile away from your current position, and you must have enough resources to pay for the tile you are moving to.
+Output your next move in the format r,c where r is the row and c is the column of the tile you want to move to. Note that row and column numbers start at 0. If you do not want to move, say exactly: "n". Don't include any other information. Your next move should be one tile away from your current position, and you must have enough resources to pay for the tile you are moving to.
 """
             # print(user_message)
             
@@ -261,18 +262,19 @@ Output your next move in the format (x, y) where x and y are the coordinates of 
             self.logger.log("move_proposal", {"player": self.name, "message": move})
             print(f"{self.name} proposed a move: {move}")
             
-            if move.strip().lower() == 'n':
+            cleaned_move = move.strip().replace("(", "").replace(")", "").replace("[", "").replace("]", "")
+            if cleaned_move == 'n':
                 return None
             try:
-                x, y = map(int, move.strip("()").split(","))
-                new_pos = (x, y)
-                if not (0 <= x < self.grid_size and 0 <= y < self.grid_size):
+                r, c = map(int, cleaned_move.split(","))
+                new_pos = (r, c)
+                if not (0 <= r < self.grid_size and 0 <= c < self.grid_size):
                     print("Invalid move: The position is out of bounds.")
                     return None
                 if new_pos not in grid.get_adjacent(self.position):
                     print("Invalid move: You can only move to an adjacent tile.")
                     return None
-                tile_color = grid.get_color(x, y)
+                tile_color = grid.get_color(r, c)
                 if self.resources[tile_color] <= 0:
                     print(f"Invalid move: You don't have enough resources for a {tile_color} tile.")
                     return None
