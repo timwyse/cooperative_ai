@@ -381,28 +381,30 @@ class Game:
 
     def draw(self):
         self.screen.fill(COLOR_MAP['BK'])
-        for y in range(len(self.grid.tiles)):
-            for x in range(len(self.grid.tiles)):
-                tile_color = self.grid.get_color(x, y)
+        
+        # Iterate over rows (r) and columns (c) to draw tiles
+        for r in range(len(self.grid.tiles)):
+            for c in range(len(self.grid.tiles[r])):
+                tile_color = self.grid.get_color(r, c)  # Use row-column lookup
                 pygame.draw.rect(
                     self.screen, COLOR_MAP[tile_color],
-                    (x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+                    (c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE)  # Note: c corresponds to x, r corresponds to y
                 )
                 pygame.draw.rect(
                     self.screen, COLOR_MAP['BK'],
-                    (x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE), 1
+                    (c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE), 1
                 )
 
         # Draw start tiles with overlapping text handling
         start_positions = defaultdict(list)
         for player in self.players:
-            sx, sy = player.start_pos
-            start_positions[(sx, sy)].append(player.name)
+            sr, sc = player.start_pos  # Start position as (row, column)
+            start_positions[(sr, sc)].append(player.name)
 
-        for (sx, sy), colors in start_positions.items():
+        for (sr, sc), colors in start_positions.items():
             pygame.draw.rect(
-                self.screen, COLOR_MAP[self.grid.get_color(sx, sy)],
-                (sx * TILE_SIZE, sy * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+                self.screen, COLOR_MAP[self.grid.get_color(sr, sc)],
+                (sc * TILE_SIZE, sr * TILE_SIZE, TILE_SIZE, TILE_SIZE)
             )
             font_size = 24 if len(colors) == 1 else 16
             font = pygame.font.Font(None, font_size)
@@ -410,18 +412,18 @@ class Game:
             for i, color in enumerate(colors):
                 offset_y = i * offset
                 text = font.render(f"S_{color}", True, COLOR_MAP['BK'])
-                self.screen.blit(text, (sx * TILE_SIZE + 5, sy * TILE_SIZE + 5 + offset_y))
+                self.screen.blit(text, (sc * TILE_SIZE + 5, sr * TILE_SIZE + 5 + offset_y))
 
         # Draw goal tiles with overlapping text handling
         goal_positions = defaultdict(list)
         for player in self.players:
-            gx, gy = player.goal
-            goal_positions[(gx, gy)].append(player.name)
+            gr, gc = player.goal  # Goal position as (row, column)
+            goal_positions[(gr, gc)].append(player.name)
 
-        for (gx, gy), colors in goal_positions.items():
+        for (gr, gc), colors in goal_positions.items():
             pygame.draw.rect(
-                self.screen, COLOR_MAP[self.grid.get_color(gx, gy)],
-                (gx * TILE_SIZE, gy * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+                self.screen, COLOR_MAP[self.grid.get_color(gr, gc)],
+                (gc * TILE_SIZE, gr * TILE_SIZE, TILE_SIZE, TILE_SIZE)
             )
             font_size = 24 if len(colors) == 1 else 16
             font = pygame.font.Font(None, font_size)
@@ -429,38 +431,38 @@ class Game:
             for i, color in enumerate(colors):
                 offset_y = i * offset
                 text = font.render(f"G_{color}", True, COLOR_MAP['BK'])
-                self.screen.blit(text, (gx * TILE_SIZE + 5, gy * TILE_SIZE + 5 + offset_y))
+                self.screen.blit(text, (gc * TILE_SIZE + 5, gr * TILE_SIZE + 5 + offset_y))
 
         # Draw players and handle multiple players on the same tile
         player_positions = defaultdict(list)
         for player in self.players:
             player_positions[player.position].append(player)
 
-        for (px, py), players in player_positions.items():
+        for (pr, pc), players in player_positions.items():
             if len(players) == 1:
                 # Single player on the tile
                 player = players[0]
-                draw_player_circle(self.screen, player, (px, py), radius=20)
+                draw_player_circle(self.screen, player, (pc, pr), radius=20)
             else:
                 # Multiple players on the same tile
                 offset = TILE_SIZE // (2 * len(players))  # Adjust offset based on the number of players
                 for i, player in enumerate(players):
                     offset_x = (i % 2) * offset - offset // 2
                     offset_y = (i // 2) * offset - offset // 2
-                    draw_player_circle(self.screen, player, (px, py), radius=10, offset=(offset_x, offset_y))
+                    draw_player_circle(self.screen, player, (pc, pr), radius=10, offset=(offset_x, offset_y))
 
         pygame.display.flip()
 
 
     def draw_basic_grid(self):
         grid = copy.deepcopy(self.grid.tile_colors)
-        for i in range(len(grid)):
-            for j in range(len(grid[i])):
+        for r in range(len(grid)):
+            for c in range(len(grid[r])):
                 for player in self.players:
-                    if player.position == (j, i):
-                        grid[i][j] = f"{grid[i][j]} ({player.name})"
-                    elif player.goal == (j, i):
-                        grid[i][j] = f"{grid[i][j]} (Goal {player.name})"
+                    if player.position == (r, c):
+                        grid[r][c] = f"{grid[r][c]} ({player.name})"
+                    elif player.goal == (r, c):
+                        grid[r][c] = f"{grid[r][c]} (Goal {player.name})"
         print(tabulate(grid, tablefmt="fancy_grid"))
 
 

@@ -42,16 +42,16 @@ class Grid:
         return [[Tile(tiles.pop()) for _ in range(size)] for _ in range(size)]
 
 
-    def get_color(self, x, y):
-        return self.tiles[y][x].color
+    def get_color(self, r, c):
+        return self.tiles[r][c].color
 
 
     def get_adjacent(self, pos):
-        x, y = pos
+        r, c = pos
         adj = []
-        for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-            nx, ny = x + dx, y + dy
-            if 0 <= nx < self.size and 0 <= ny < self.size:
-                adj.append((nx, ny))
+        for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+            nr, nc = r + dr, c + dc
+            if 0 <= nr < self.size and 0 <= nc < self.size:
+                adj.append((nr, nc))
         return adj
     
