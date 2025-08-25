@@ -190,7 +190,7 @@ class Player:
         """
         return f"""
 Here is the board:
-{tabulate(grid.tile_colors, tablefmt="fancy_grid")}
+{grid.lm_readable}
         
 The board state and everybody's resources: {game.game_state}. Specifically, as {self.name}, your resources are: {dict(self.resources)}, your current position is {self.position}, and your goal is {self.goal}. 
 
