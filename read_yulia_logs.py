@@ -10,7 +10,7 @@ def format_messages(messages):
         formatted.append(f"\n{msg['role'].upper()}:")
         content = msg['content']
         # Truncate very long messages
-        if len(content) > 500:
+        if len(content) > 5000:
             content = content[:500] + "...[truncated]"
         formatted.append(content)
         formatted.append("-" * 50)
