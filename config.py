@@ -34,6 +34,8 @@ class GameConfig:
 
     # LLM PARAMETERS
     temperature: float = 1.0
+    with_context: bool = True  # turn history between players (goes with system role prompt)
+    with_message_history: bool = True  # conversation history for each player (goes with assistant role prompt)
 
     def __post_init__(self):
         if self.players is None:

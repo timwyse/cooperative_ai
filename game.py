@@ -21,6 +21,10 @@ class Game:
         # Configuration and Logging
         self.config = config
         self.logger = logger if logger is not None else NullLogger()
+        # Create a separate logger for yulia's logs
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.yulia_logger = GameLogger(filepath=f"yulia_logs_{timestamp}.jsonl")
 
         # Grid Setup
         self.grid_size = self.config.grid_size
@@ -39,6 +43,8 @@ class Game:
         self.game_state = self.initialize_game_state()
         self.game_states = [copy.deepcopy(self.game_state)]
         self.turn = 0
+        self.with_context = config.with_context
+        self.turn_summaries = [] if self.with_context else None  # List to store summaries of each turn's events
         self.max_possible_score = self.max_possible_score()
 
         # Pygame Initialization
@@ -179,9 +185,73 @@ class Game:
             "gini_coefficient": gini_coefficient,
             "max_possible_score": self.max_possible_score
             })
+            
+        # Log final game state, YULIA draft log TODO: standardise
+        final_log = {
+            "game_config": {
+                "total_turns": self.turn,
+                "context_enabled": self.with_context,
+                "grid_size": self.grid_size,
+                "colors": self.colors
+            },
+            "final_turn_summary": self.turn_summaries[-1] if self.turn_summaries else None,
+            "player_histories": {}
+        }
+        
+        # Add each player's final message history
+        for player in self.players:
+            if player.model_name != 'human':
+                final_log["player_histories"][player.name] = {
+                    "model": player.model_name,
+                    "with_message_history": player.with_message_history,
+                    "messages": player.messages if player.with_message_history else "Message history disabled"
+                }
+        
+        self.yulia_logger.log("final_game_state", final_log)
         print(f"Final scores: {scores}")
         pygame.quit()
 
+
+    def generate_turn_summary(self, current_player, trade_result=None, move_result=None):
+        turn_summary = {
+            "trades": [],
+            "moves": [],
+            "player_states": {}
+        }
+        
+        # trade summary if there was a trade
+        if trade_result:
+            if isinstance(trade_result, dict) and trade_result.get("is_valid", False):
+                trade = trade_result["proposed_trade"]
+                trade_summary = {
+                    "proposer": current_player.name,
+                    "target": trade_result["player_to_trade_with"].name,
+                    "offered": trade["resources_to_offer"],
+                    "requested": trade["resources_to_receive"],
+                    "success": trade.get("result") == "accepted"
+                }
+                turn_summary["trades"].append(trade_summary)
+        
+        move_summary = {
+            "player": current_player.name,
+            "from_pos": current_player.position,
+            "to_pos": move_result if isinstance(move_result, tuple) else None,
+            "success": isinstance(move_result, tuple),
+            "reason": "successful" if isinstance(move_result, tuple) else move_result
+        }
+        turn_summary["moves"].append(move_summary)
+        
+        # current state for all players
+        for player in self.players:
+            turn_summary["player_states"][player.name] = {
+                "position": player.position,
+                "goal": player.goal,
+                "distance_to_goal": player.distance_to_goal(),
+                "resources": dict(player.resources),
+                "has_finished": player.has_finished()
+            }
+        
+        return turn_summary
 
     def handle_turn(self, players):
         """
@@ -196,17 +266,22 @@ class Game:
                 continue
 
             print(f"\n{player.name}'s turn:")
+            
+            trade_result = None
+            move_result = None
 
             # Handle trade proposal
             propose_trade = player.propose_trade(self.grid, self)
             if propose_trade and propose_trade is not None:
-                self.handle_trade(player, propose_trade)
-
+                trade_result = self.validate_trade(player, propose_trade)
+                if trade_result["is_valid"]:
+                    self.handle_trade(player, propose_trade)
 
             # Handle movement
             move = player.come_up_with_move(self, self.grid)
             if move is None:
                 print(f"{player.name} did not move.")
+                move_result = "no_move"
             else:
                 if player.can_move_to(move, self.grid):
                     self.logger.log("move", {
@@ -214,7 +289,27 @@ class Game:
                         "move_from": player.position,
                         "move_to": move,})
                     player.move(move, self.grid)
+                    move_result = move
                     print(f"{player.name} moved to {move}.")
+                else:
+                    move_result = "invalid_move"
+            
+            # Handle turn summaries if context is enabled
+            if self.with_context:
+                # Generate and store turn summary for this player's actions
+                turn_summary = self.generate_turn_summary(player, trade_result, move_result)
+                
+                # If this is the last player in the turn, store the complete turn summary
+                if player == players[-1]:
+                    self.turn_summaries.append(turn_summary)
+                    # Update all players with the complete turn summary
+                    for p in self.players:
+                        if p.model_name != 'human':
+                            formatted_summary = p.format_turn_summary(turn_summary, self.turn)
+                            p.messages.append({
+                                "role": "system",
+                                "content": formatted_summary
+                            })
                     
 
     def handle_trade(self, player, propose_trade):
