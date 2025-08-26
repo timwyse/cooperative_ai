@@ -66,6 +66,18 @@ class Player:
         self.model_name = agent.name
         self.model_api = agent.api
         self.temperature = config.temperature
+        
+        # Init API client
+        if self.model_api == 'open_ai':
+            self.client = OpenAI(api_key=OPENAI_API_KEY)
+        elif self.model_api == 'together':
+            self.client = Together(api_key=TOGETHER_API_KEY)
+        else:
+            self.client = None
+            
+        # Init message history settings
+        self.with_message_history = config.with_message_history
+        self.messages = [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}] if self.with_message_history else []
 
         self.start_pos = (random.randint(0, config.random_start_block_size - 1), random.randint(0, config.random_start_block_size - 1))
         self.goal = (random.randint(config.grid_size - config.random_goal_block_size, config.grid_size - 1), random.randint(config.grid_size - config.random_goal_block_size, config.grid_size - 1)) 
@@ -185,15 +197,67 @@ class Player:
         return best
 
 
+    def format_turn_summary(self, turn_summary, turn_number):
+        summary = [f"\nTurn {turn_number} Summary:"]
+        
+        # Summarize trades
+        if turn_summary["trades"]:
+            summary.append("\nTrades:")
+            for trade in turn_summary["trades"]:
+                result = "succeeded" if trade["success"] else "failed"
+                summary.append(f"- {trade['proposer']} proposed trade with {trade['target']}")
+                summary.append(f"  Offered: {trade['offered']}")
+                summary.append(f"  Requested: {trade['requested']}")
+                summary.append(f"  Result: {result}")
+        
+        # Summarize moves
+        if turn_summary["moves"]:
+            summary.append("\nMoves:")
+            for move in turn_summary["moves"]:
+                if move["success"]:
+                    summary.append(f"- {move['player']} moved from {move['from_pos']} to {move['to_pos']}")
+                else:
+                    summary.append(f"- {move['player']}: {move['reason']}")
+        
+        # Summarize player states
+        summary.append("\nPlayer States:")
+        for player_name, state in turn_summary["player_states"].items():
+            summary.append(f"\n{player_name}:")
+            summary.append(f"- Position: {state['position']}")
+            summary.append(f"- Distance to goal: {state['distance_to_goal']}")
+            summary.append(f"- Resources: {state['resources']}")
+            if state['has_finished']:
+                summary.append("- Has reached their goal!")
+        
+        return "\n".join(summary)
+
     def generate_player_context_message(self, game, grid):
         """
         Generates a reusable message about the board state, player's resources, position, and goal.
+        Also includes recent turn history for context.
         """
+        # Get recent turn history (last 3 turns) if context is enabled
+        recent_history = ""
+        if game.with_context and game.turn_summaries:
+            history_entries = []
+            recent_turns = game.turn_summaries[-3:]  # Get last 3 turns TODO: decide if this is configurable
+            for turn_idx, turn in enumerate(recent_turns):
+                turn_num = game.turn - (len(recent_turns) - turn_idx)
+                history_entries.append(self.format_turn_summary(turn, turn_num))
+            
+            recent_history = "\nRecent turn history:\n" + "\n---\n".join(history_entries)
+
         return f"""
 Here is the board:
 {grid.lm_readable}
         
-The board state and everybody's resources: {game.game_state}. Specifically, as {self.name}, your resources are: {dict(self.resources)}, your current position is {self.position}, and your goal is {self.goal}. 
+Current game state:
+{recent_history}
+
+The board state and everybody's resources: {game.game_state}. 
+- Your resources are: {dict(self.resources)}
+- Your current position is {self.position}
+- Your goal is {self.goal}
 
 Here are some candidate paths (JSON format), showing the path, its length, the resources needed, and which you are missing:  
 {self.best_routes(grid)}  
@@ -249,16 +313,22 @@ Output your next move in the format r,c where r is the row and c is the column o
             
             self.logger.log("move_prompt", {"player": self.name, "message": user_message})
 
-            if self.model_api == 'open_ai':
-                client = OpenAI(api_key=OPENAI_API_KEY)
-            elif self.model_api == 'together':
-                client = Together(api_key=TOGETHER_API_KEY)
-            response = client.chat.completions.create(
+            # Prepare messages for this request
+            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}]
+            current_messages.append({"role": "user", "content": user_message})
+            
+            response = self.client.chat.completions.create(
                 model=self.model,
                 temperature=self.temperature,
-                messages=[{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}, {"role": "user", "content": user_message}],
+                messages=current_messages,
                 max_completion_tokens=1000)
             move = response.choices[0].message.content.strip().lower()
+            
+            if self.with_message_history:
+                self.messages.extend([
+                    {"role": "user", "content": user_message},
+                    {"role": "assistant", "content": move}
+                ])
             self.logger.log("move_proposal", {"player": self.name, "message": move})
             print(f"{self.name} proposed a move: {move}")
             
@@ -377,17 +447,24 @@ Keep your response below 1000 characters.
 
             # print(user_message)
             self.logger.log("trade_prompt", {"player": self.name, "message": user_message})
-            if self.model_api == 'open_ai':
-                client = OpenAI(api_key=OPENAI_API_KEY)
-            elif self.model_api == 'together':
-                client = Together(api_key=TOGETHER_API_KEY)
-
-            response = client.chat.completions.create(
+            # Prepare messages for this request
+            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}]
+            current_messages.append({"role": "user", "content": user_message})
+            
+            # Make the API call
+            response = self.client.chat.completions.create(
                 model=self.model,
                 temperature=self.temperature,
-                messages=[{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}, {"role": "user", "content": user_message}],
+                messages=current_messages,
                 max_completion_tokens=2000)
             trade_proposal = response.choices[0].message.content.strip().lower()
+            
+            # Save to history if enabled
+            if self.with_message_history:
+                self.messages.extend([
+                    {"role": "user", "content": user_message},
+                    {"role": "assistant", "content": trade_proposal}
+                ])
             self.logger.log("trade_proposal", {"player": self.name, "message": trade_proposal})
             print(f"{self.name} proposed a trade")
             if trade_proposal != 'n':
@@ -444,17 +521,24 @@ Keep your response below 1000 characters.
 """
             # print(user_message)
             self.logger.log("accept_trade_prompt", {"player": self.name, "message": user_message})
-            if self.model_api == 'open_ai':
-                client = OpenAI(api_key=OPENAI_API_KEY)
-            elif self.model_api == 'together':
-                client = Together(api_key=TOGETHER_API_KEY)
-
-            response = client.chat.completions.create(
+            # Prepare messages for this request
+            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}]
+            current_messages.append({"role": "user", "content": user_message})
+            
+            # Make the API call
+            response = self.client.chat.completions.create(
                 model=self.model,
                 temperature=self.temperature,
-                messages=[{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}, {"role": "user", "content": user_message}],
+                messages=current_messages,
                 max_completion_tokens=1000)
             accept_trade = response.choices[0].message.content.strip().lower()
+            
+            # Save to history if enabled
+            if self.with_message_history:
+                self.messages.extend([
+                    {"role": "user", "content": user_message},
+                    {"role": "assistant", "content": accept_trade}
+                ])
             self.logger.log("accept_trade_response", {"player": self.name, "message": accept_trade})
             print(f"{self.name} responded to the trade proposal: {accept_trade}")
             if 'yes' in accept_trade[-5:]:
