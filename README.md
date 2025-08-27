@@ -53,7 +53,7 @@ Note that at this point:
 3. If you have code that you want to persist through main branch updates but that aren't contributing to the core functionality of Colored Trails, you can include your own folder in main, eg ```Tim/```, where you can keep all your code. 
 
 ## Running experiments:
-1. In main.py, edit the CONFIG variable with the parameter values you want to use. You can refer to ```config.py``` to see which parameters are currently available for adjusting, as well as what are their default values. Available models are defined by the namedtuple '`Agent`' and exist in ```player.py```. To add new models, include them in ```player.py```.
+1. In main.py, edit the CONFIG variable with the parameter values you want to use. You can refer to ```config.py``` to see which parameters are currently available for adjusting, as well as what are their default values. Available models are defined by the namedtuple '`Agent`' and exist in ```agents.py```. To add new models, include them in ```agents.py```.
 
 2. Run
 ```bash
