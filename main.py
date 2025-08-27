@@ -3,7 +3,6 @@ from dataclasses import replace
 from config import DEFAULT_CONFIG, GameConfig, load_config
 from game import Game
 from logger import GameLogger
-# from player import NANO, MINI, FOUR_1, FOUR_0, HUMAN, LLAMA_3_3B, QWEN_2_7B, DEEPSEEK
 from agents import *
 
 
