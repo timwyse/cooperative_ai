@@ -25,7 +25,8 @@ COLOR_MAP = {
     'BK': (0, 0, 0), # black
     'W': (255, 255, 255), # white
     'O': (255, 165, 0), # orange
-    'PK': (255, 192, 203) # pink
+    'PK': (255, 192, 203), # pink
+    'LG': (211, 211, 211)  # light grey
 }
 
 # Exclude 'black'

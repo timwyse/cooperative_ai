@@ -10,16 +10,23 @@ from agents import *
 # can replace any of the default values in DEFAULT_CONFIG with your own values
 CONFIG = replace(
     DEFAULT_CONFIG,
-    players=[QWEN_2_7B, QWEN_2_7B],
-    grid_size=3,
-    colors=['R', 'B'],
-    # resource_mode='manual',
-    grid=[['R', 'B', 'R'], ['R', 'B', 'R'], ['R','B', 'B']],
-    # manual_resources = [{'R':4, 'B':1, 'G':1}, {'R':2, 'B':2, 'G': 2}]
+    # players=[QWEN_2_7B, QWEN_2_7B],
+    grid_size=7,
+    colors=['R', 'B', 'G'],
+    resource_mode='manual',
+    grid=[['G', 'G', 'B', 'B', 'B', 'B', 'B'],
+          ['G', 'R', 'R', 'R', 'R', 'R', 'B'],
+          ['B', 'R', 'R', 'R', 'R', 'R', 'B'],
+          ['B', 'R', 'R', 'R', 'B', 'B', 'R'],
+          ['B', 'R', 'R', 'B', 'B', 'B', 'B'], 
+          ['B', 'R', 'R', 'B', 'R', 'R', 'B'],
+          ['B', 'B', 'B', 'B', 'R', 'R', 'G']
+          ],
+    manual_resources = [{'R':20, 'G': 4}, {'B':20, 'G': 4}]
 )
 
 # Alternatively, load a config from a JSON or YAML file
-# CONFIG = load_config("configs/full_info_trade_needed.yaml")
+CONFIG = load_config("configs/fitn_3.yaml")
 
 
 
