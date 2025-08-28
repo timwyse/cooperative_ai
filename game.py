@@ -36,11 +36,12 @@ class Game:
         self.distribute_resources()
 
         # Game State Initialization
+        self.initialize_player_positions()
         self.game_state = self.initialize_game_state()
         self.game_states = [copy.deepcopy(self.game_state)]
         self.turn = 0
         self.max_possible_score = self.max_possible_score()
-
+        
         # Pygame Initialization
         pygame.init()
         self.width = self.height = self.grid_size * TILE_SIZE
@@ -110,7 +111,32 @@ class Game:
                     player.resources[color] += quantity
                 player.resources = dict(sorted(player.resources.items()))    
     
-
+    def initialize_player_positions(self):
+        if self.config.manual_start_positions:
+            if len(self.config.manual_start_positions) != self.n_players:
+                raise ValueError(f"Number of manual start positions must match number of players. There are {self.n_players} players but {len(self.config.manual_start_positions)} start positions.")
+            for player, pos in zip(self.players, self.config.manual_start_positions):
+                if not (0 <= pos[0] < self.grid_size and 0 <= pos[1] < self.grid_size):
+                    raise ValueError(f"Invalid start position {pos} for player {player.name}. Must be within grid size {self.grid_size}.")
+                player.start_pos = pos
+                player.position = player.start_pos
+        else:
+            for player in self.players:
+                player.start_pos = (random.randint(0, self.config.random_start_block_size - 1), random.randint(0, self.config.random_start_block_size - 1))
+                player.position = player.start_pos
+        
+        if self.config.manual_goal_positions:
+            if len(self.config.manual_goal_positions) != self.n_players:
+                raise ValueError(f"Number of manual goal positions must match number of players. There are {self.n_players} players but {len(self.config.manual_goal_positions)} goal positions.")
+            for player, pos in zip(self.players, self.config.manual_goal_positions):
+                if not (0 <= pos[0] < self.grid_size and 0 <= pos[1] < self.grid_size):
+                    raise ValueError(f"Invalid goal position {pos} for player {player.name}. Must be within grid size {self.grid_size}.")
+                player.goal = pos
+        else:
+            for player in self.players:
+                player.goal = (random.randint(self.grid_size - self.config.random_goal_block_size, self.grid_size - 1), random.randint(self.grid_size - self.config.random_goal_block_size, self.grid_size - 1))
+    
+    
     def initialize_game_state(self):
         """Initialize the game state with player positions and resources."""
         state = {}
