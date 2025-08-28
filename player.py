@@ -51,10 +51,6 @@ class Player:
         self.model_name = agent.name
         self.model_api = agent.api
         self.temperature = config.temperature
-
-        # self.start_pos = (random.randint(0, config.random_start_block_size - 1), random.randint(0, config.random_start_block_size - 1))
-        # self.goal = (random.randint(config.grid_size - config.random_goal_block_size, config.grid_size - 1), random.randint(config.grid_size - config.random_goal_block_size, config.grid_size - 1)) 
-        # self.position = self.start_pos
         
         self.n_total_players = len(config.players)
         self.surplus = config.surplus

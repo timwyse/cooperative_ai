@@ -21,8 +21,8 @@ CONFIG = replace(
           ['B', 'R', 'R', 'B', 'B'], 
           ],
     manual_resources = [{'R':20, 'G': 4}, {'B':20, 'G': 4}],
-    manual_start_positions = [(0,0), (0,4)],
-    manual_goal_positions = [(4,4), (4,0)],
+#     manual_start_positions = [(0,0), (0,4)],
+#     manual_goal_positions = [(4,4), (4,0)],
 )
 
 # Alternatively, load a config from a JSON or YAML file
