@@ -104,7 +104,7 @@ class Game:
             if len(self.config.manual_resources) != self.n_players:
                 raise ValueError(f"Number of dicts of resources must match number of players. There are {self.n_players} players but {len(self.config.manual_resources)} dicts of resources.")
             for player, resources in zip(self.players, self.config.manual_resources):
-                player.resources = defaultdict(int)
+                player.resources = {color: 0 for color in self.colors}
                 for color, quantity in resources.items():
                     if color not in AVAILABLE_COLORS:
                         raise ValueError(f"Invalid color '{color}' in manual resources. Available colors are: {AVAILABLE_COLORS}")
