@@ -35,6 +35,8 @@ class GameConfig:
     grid: Optional[List[List[str]]] = None  # explicit grid (list of lists of colors); if None, a random one is generated with equal distribution of colors from colors
     random_start_block_size: int = 1  # top-left block within which start positions are generated
     random_goal_block_size: int = 1   # bottom-right block within which goals are generated
+    manual_start_positions: Optional[List[tuple]] = None  # list of (row, col) tuples for each player's start position; if None, random positions are generated within random_start_block_size. Must be of length equal to number of players.
+    manual_goal_positions: Optional[List[tuple]] = None   # list of (row, col) tuples for each player's goal position; if None, random positions are generated within random_goal_block_size. Must be of length equal to number of players.
 
     # LLM PARAMETERS
     temperature: float = 1.0
