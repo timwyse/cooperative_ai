@@ -66,13 +66,13 @@ The game will display a grid using ```Pygame```, as well as a simple terminal in
 
 Below are some examples of starting boards that can be created. These boards are located in the `starting_board_images` folder.
 
-### Example 1: Mutual Cooperation Board
-![Mutual Cooperation Board](starting_board_images/mutual_cooperation_board.png)
 
-### Example 2: Prisoner's Dilemma Board
-![Prisoner's Dilemma Board](starting_board_images/prisoners_dilemma_board.png)
+![Mutual Cooperation Board](starting_board_images/alt_route_or_trade.png)
 
-### Example 3: Efficient Trade Board
-![Efficient Trade Board](starting_board_images/efficient_trade_board.png)
+
+![Prisoner's Dilemma Board](starting_board_images/cpr_or_trade.png)
+
+
+![Efficient Trade Board](starting_board_images/cpr_w_alt_route.png)
 
 You can create your own custom boards by modifying the `grid` parameter in the configuration .
