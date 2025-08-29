@@ -76,6 +76,14 @@ def load_config(filename: str) -> GameConfig:
             config_dict = yaml.safe_load(f)
         else:
             raise ValueError("Unsupported file format. Use .json or .yaml/.yml.")
-
+    # Convert manual_start_positions and manual_goal_positions to tuples
+    if "manual_start_positions" in config_dict:
+        config_dict["manual_start_positions"] = [
+            tuple(pos) for pos in config_dict["manual_start_positions"]
+        ]
+    if "manual_goal_positions" in config_dict:
+        config_dict["manual_goal_positions"] = [
+            tuple(pos) for pos in config_dict["manual_goal_positions"]
+        ]
     # Merge loaded config with DEFAULT_CONFIG
     return replace(DEFAULT_CONFIG, **config_dict)
