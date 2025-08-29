@@ -9,7 +9,7 @@ from agents import *
 # refer to config.py to see which arguments are available for the game and what their defaults are
 # can replace any of the default values in DEFAULT_CONFIG with your own values
 CONFIG = replace(
-    DEFAULT_CONFIG, # can use DEFAULT_CONFIG or load a specific configs here eg load_config("configs/simple_prisoners_dilemma.yaml"),
+    load_config("configs/prisoners_dilemma.yaml"), # can use DEFAULT_CONFIG or load a specific configs here eg load_config("configs/simple_prisoners_dilemma.yaml"),
 #     players=[LLAMA_3_3B, LLAMA_3_3B],
 #     grid_size=5,
 #     colors=['R', 'B', 'G', 'Y', 'PK'],
