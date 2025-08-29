@@ -53,7 +53,7 @@ Note that at this point:
 3. If you have code that you want to persist through main branch updates but that aren't contributing to the core functionality of Colored Trails, you can include your own folder in main, eg ```Tim/```, where you can keep all your code. 
 
 ## Running experiments:
-1. In main.py, edit the CONFIG variable with the parameter values you want to use. You can refer to ```config.py``` to see which parameters are currently available for adjusting, as well as what are their default values. Available models are defined by the namedtuple '`Agent`' and exist in ```agents.py```. To add new models, include them in ```agents.py```.
+1. In ```main.py```, edit the ```CONFIG``` variable with the parameter values you want to use. You can refer to ```config.py``` to see which parameters are currently available for adjusting, as well as what are their default values. Available models are defined by the namedtuple '`Agent`' and exist in ```agents.py```. To add new models, include them in ```agents.py```.
 
 2. Run
 ```bash
@@ -61,3 +61,18 @@ Note that at this point:
    ```
 
 The game will display a grid using ```Pygame```, as well as a simple terminal interface. Human players can use the command line to take turns trading and moving resources.
+
+## Sample Boards
+
+Below are some examples of starting boards that can be created. These boards are located in the `starting_board_images` folder.
+
+### Example 1: Mutual Cooperation Board
+![Mutual Cooperation Board](starting_board_images/mutual_cooperation_board.png)
+
+### Example 2: Prisoner's Dilemma Board
+![Prisoner's Dilemma Board](starting_board_images/prisoners_dilemma_board.png)
+
+### Example 3: Efficient Trade Board
+![Efficient Trade Board](starting_board_images/efficient_trade_board.png)
+
+You can create your own custom boards by modifying the `grid` parameter in the configuration .
