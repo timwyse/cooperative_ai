@@ -298,7 +298,7 @@ You may also consider alternative routes if you find a better strategy.
                         print("Invalid move: You can only move to an adjacent tile. Try again.")
                         continue
                     tile_color = grid.get_color(r, c)
-                    if self.resources[tile_color] <= 0:
+                    if tile_color not in self.resources.keys() or self.resources[tile_color] <= 0:
                         print(f"Invalid move: You don't have enough resources for a {tile_color} tile. Try again.")
                         continue
                     return new_pos
@@ -345,7 +345,7 @@ Output your next move in the format r,c where r is the row and c is the column o
                     print("Invalid move: You can only move to an adjacent tile.")
                     return None
                 tile_color = grid.get_color(r, c)
-                if self.resources[tile_color] <= 0:
+                if tile_color not in self.resources.keys() or self.resources[tile_color] <= 0:
                     print(f"Invalid move: You don't have enough resources for a {tile_color} tile.")
                     return None
                 return new_pos
