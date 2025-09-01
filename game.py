@@ -48,11 +48,13 @@ class Game:
         self.turn_summaries = [] if self.with_context else None  # List to store summaries of each turn's events
         self.max_possible_score = self.max_possible_score()
         
-        # Pygame Initialization
-        pygame.init()
-        self.width = self.height = self.grid_size * TILE_SIZE
-        self.screen = pygame.display.set_mode((self.width, self.height))
-        self.clock = pygame.time.Clock()
+        # Pygame Initialization (only if display_gui is True)
+        self.display_gui = config.display_gui
+        if self.display_gui:
+            pygame.init()
+            self.width = self.height = self.grid_size * TILE_SIZE
+            self.screen = pygame.display.set_mode((self.width, self.height))
+            self.clock = pygame.time.Clock()
         self.running = True
 
         # Logging Initial State
@@ -175,11 +177,16 @@ class Game:
     # 2. Core Game Loop
     def run(self, full_draw=True):
         while self.running and not all(p.has_finished() for p in self.players):
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self.running = False
-            if full_draw:
-                self.draw()
+            # Handle Pygame events only if GUI is enabled
+            if self.display_gui:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        self.running = False
+                if full_draw:
+                    self.draw()
+                self.clock.tick(FPS)
+            
+            # Always show console output
             self.print_game_state()
             self.handle_turn(self.players)
             
@@ -191,34 +198,33 @@ class Game:
                 break
             
             self.turn += 1
-            self.clock.tick(FPS)
 
-            # Wait for Enter to proceed
-            # input("Press Enter to proceed to the next turn...")
+            # Handle turn delay
             print(f"End of turn {self.turn}. Waiting for next turn...")
-            sleep(0.1)
-        
+            if self.config.wait_for_enter:
+                input("Press Enter to proceed to the next turn...")
+
         print("Game over!")
         self.print_game_state()
         scores = self.get_scores()
         total_scores = self.get_total_scores(scores)
         total_accuracy = self.get_total_accuracy(scores)
         gini_coefficient = self.calculate_gini_coefficient(scores)
-        self.logger.log("final_scores", {"scores": scores})
-        self.logger.log("metrics", {
-            "total_scores": total_scores,
-            "total_accuracy": total_accuracy,
-            "gini_coefficient": gini_coefficient,
-            "max_possible_score": self.max_possible_score
-            })
-            
-        # Log final game state, YULIA draft log TODO: standardise
+        
+        # Consolidate all final game information in one log
         final_log = {
             "game_config": {
                 "total_turns": self.turn,
                 "context_enabled": self.with_context,
                 "grid_size": self.grid_size,
                 "colors": self.colors
+            },
+            "scores": scores,
+            "metrics": {
+                "total_scores": total_scores,
+                "total_accuracy": total_accuracy,
+                "gini_coefficient": gini_coefficient,
+                "max_possible_score": self.max_possible_score
             },
             "final_turn_summary": self.turn_summaries[-1] if self.turn_summaries else None,
             "player_histories": {}
@@ -233,51 +239,15 @@ class Game:
                     "messages": player.messages if player.with_message_history else "Message history disabled"
                 }
         
+        # Log to both loggers to maintain compatibility
+        self.logger.log("final_game_state", final_log)
         self.yulia_logger.log("final_game_state", final_log)
+        
         print(f"Final scores: {scores}")
-        pygame.quit()
+        if self.display_gui:
+            pygame.quit()
 
 
-    def generate_turn_summary(self, current_player, trade_result=None, move_result=None):
-        turn_summary = {
-            "trades": [],
-            "moves": [],
-            "player_states": {}
-        }
-        
-        # trade summary if there was a trade
-        if trade_result:
-            if isinstance(trade_result, dict) and trade_result.get("is_valid", False):
-                trade = trade_result["proposed_trade"]
-                trade_summary = {
-                    "proposer": current_player.name,
-                    "target": trade_result["player_to_trade_with"].name,
-                    "offered": trade["resources_to_offer"],
-                    "requested": trade["resources_to_receive"],
-                    "success": trade.get("result") == "accepted"
-                }
-                turn_summary["trades"].append(trade_summary)
-        
-        move_summary = {
-            "player": current_player.name,
-            "from_pos": current_player.position,
-            "to_pos": move_result if isinstance(move_result, tuple) else None,
-            "success": isinstance(move_result, tuple),
-            "reason": "successful" if isinstance(move_result, tuple) else move_result
-        }
-        turn_summary["moves"].append(move_summary)
-        
-        # current state for all players
-        for player in self.players:
-            turn_summary["player_states"][player.name] = {
-                "position": player.position,
-                "goal": player.goal,
-                "distance_to_goal": player.distance_to_goal(),
-                "resources": dict(player.resources),
-                "has_finished": player.has_finished()
-            }
-        
-        return turn_summary
 
     def handle_turn(self, players):
         """
@@ -286,6 +256,19 @@ class Game:
         - If the player has not finished, let them propose a trade and/or make a move.
         - Validate trades and moves before executing them.
         """
+        print("\n" + "="*50)
+        print(f"TURN {self.turn} STARTS")
+        print("="*50)
+
+        # Print previous turn's summary once at the start
+        if self.turn > 0 and self.turn_summaries:
+            print("\nTURN", self.turn-1, "SUMMARY:")
+            print("-"*20)
+            formatted_summary = players[0].format_turn_summary(self.turn_summaries[-1], self.turn-1)
+            print(formatted_summary)
+            print("\nCURRENT TURN ACTIONS:")
+            print("-"*20)
+
         for player in players:
             if player.has_finished():
                 print(f"{player.name} has already finished the game.")
@@ -301,7 +284,19 @@ class Game:
             if propose_trade and propose_trade is not None:
                 trade_result = self.validate_trade(player, propose_trade)
                 if trade_result["is_valid"]:
+                    # Show what was proposed
+                    print(f"{player.name} proposes trade to {trade_result['player_to_trade_with'].name}:")
+                    print(f"- Offering: {propose_trade['resources_to_offer']}")
+                    print(f"- Requesting: {propose_trade['resources_to_receive']}")
+                    
+                    # Handle the trade
                     self.handle_trade(player, propose_trade)
+                    # Mark that this trade was executed
+                    trade_result["executed"] = True
+                else:
+                    print(f"{player.name}'s trade proposal was invalid: {trade_result['message']}")
+            else:
+                print(f"{player.name} chose not to trade")
 
             # Handle movement
             move = player.come_up_with_move(self, self.grid)
@@ -320,22 +315,68 @@ class Game:
                 else:
                     move_result = "invalid_move"
             
-            # Handle turn summaries if context is enabled
+            # Collect actions for turn summary
             if self.with_context:
-                # Generate and store turn summary for this player's actions
-                turn_summary = self.generate_turn_summary(player, trade_result, move_result)
+                if not hasattr(self, 'current_turn_summary'):
+                    # Initialize empty summary for this turn
+                    self.current_turn_summary = {
+                        "trades": [],
+                        "moves": [],
+                        "player_states": {}
+                    }
                 
-                # If this is the last player in the turn, store the complete turn summary
+                # Add this player's trade if any
+                if trade_result and isinstance(trade_result, dict) and trade_result.get("is_valid", False):
+                    trade = trade_result["proposed_trade"]
+                    trade_summary = {
+                        "proposer": player.name,
+                        "target": trade_result["player_to_trade_with"].name,
+                        "offered": trade["resources_to_offer"],
+                        "requested": trade["resources_to_receive"],
+                        "success": trade_result.get("executed", False),
+                        "rejected": not trade_result.get("executed", False)
+                    }
+                    self.current_turn_summary["trades"].append(trade_summary)
+                
+                # Add this player's move
+                move_summary = {
+                    "player": player.name,
+                    "from_pos": player.position,
+                    "to_pos": move_result if isinstance(move_result, tuple) else None,
+                    "success": isinstance(move_result, tuple),
+                    "reason": "successful" if isinstance(move_result, tuple) else move_result
+                }
+                self.current_turn_summary["moves"].append(move_summary)
+                
+                # Update all player states
+                for p in self.players:
+                    self.current_turn_summary["player_states"][p.name] = {
+                        "position": p.position,
+                        "goal": p.goal,
+                        "distance_to_goal": p.distance_to_goal(),
+                        "resources": dict(p.resources),
+                        "has_finished": p.has_finished()
+                    }
+                
+                # If this is the last player, finalize and distribute the turn summary
                 if player == players[-1]:
-                    self.turn_summaries.append(turn_summary)
-                    # Update all players with the complete turn summary
+                    print("\n=== ADDING TURN SUMMARY TO ALL PLAYERS' CONTEXT ===")
+                    formatted_summary = None
                     for p in self.players:
                         if p.model_name != 'human':
-                            formatted_summary = p.format_turn_summary(turn_summary, self.turn)
+                            if not formatted_summary:  # Only format once
+                                formatted_summary = p.format_turn_summary(self.current_turn_summary, self.turn)
+                                print(f"\nTurn Summary being added:\n{formatted_summary}")
+                            print(f"\nAdding to {p.name}'s context")
                             p.messages.append({
                                 "role": "system",
                                 "content": formatted_summary
                             })
+                    # Store the complete turn summary
+                    self.turn_summaries.append(self.current_turn_summary)
+                    # Clear for next turn
+                    delattr(self, 'current_turn_summary')
+                    print("=============================================\n")
                     
 
     def handle_trade(self, player, propose_trade):
@@ -368,14 +409,14 @@ class Game:
                     player.resources[resource] += quantity
                     player_to_trade_with.resources[resource] -= quantity
 
-                print("\n *** Updated resources for trade players: ***")
-                for trade_player in [player, player_to_trade_with]:
-                    print(f"""{trade_player.name}:
-                                Resources: {trade_player.resources} \n""")
+                print(f"\nTRADE ACCEPTED between {player.name} and {player_to_trade_with.name}")
+                print(f"- {player.name} now has: {dict(player.resources)}")
+                print(f"- {player_to_trade_with.name} now has: {dict(player_to_trade_with.resources)}")
                 
                 trade_log['result'] = 'accepted'
                 self.logger.log("trade", trade_log)
             else:
+                print(f"\nTRADE REJECTED by {player_to_trade_with.name}")
                 trade_log['result'] = 'declined'
                 self.logger.log("trade", trade_log)
 

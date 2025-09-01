@@ -33,7 +33,7 @@ You are a player in a game called Coloured Trails.
 
 Objective:
 - Reach your goal position from your starting position using as few resources as possible.
-- You only care about how many points you finish on; you do not care about outperforming other players.
+- You only care to reach the end tile, you dont care to outperform other player.
 
 Movement rules:
 1. You can move one tile per turn, either horizontally or vertically.
@@ -45,12 +45,11 @@ Trading rules:
 - You may propose trades to other players, or accept trades proposed by others.
 
 Scoring:
-- You gain 100 points if you reach your goal.
-- If you do not reach your goal, you get 100 points minus 15 points for each tile between your final position and your goal.
+- If you do not reach your goal, you have lost and you have 0 points.
 - You gain 5 points for each resource you still hold at the end of the game.
 
 Your priorities:
-Always maximise your total points. Note that reaching your goal is the most important way to do this. Consider the distance to your goal and the resources you will need to reach it.
+Aim to reach the finish point on the board. Always maximise your total points. Note that reaching your goal is the most important way to do this. Consider the distance to your goal and the resources you will need to reach it.
 """
 
 
@@ -198,36 +197,33 @@ class Player:
 
 
     def format_turn_summary(self, turn_summary, turn_number):
-        summary = [f"\nTurn {turn_number} Summary:"]
+        """Format turn summary focusing only on trades, moves, and positions"""
+        summary = [f"\n=== TURN {turn_number} ==="]
         
-        # Summarize trades
+        # Trades
         if turn_summary["trades"]:
-            summary.append("\nTrades:")
             for trade in turn_summary["trades"]:
-                result = "succeeded" if trade["success"] else "failed"
-                summary.append(f"- {trade['proposer']} proposed trade with {trade['target']}")
-                summary.append(f"  Offered: {trade['offered']}")
-                summary.append(f"  Requested: {trade['requested']}")
-                summary.append(f"  Result: {result}")
+                summary.append(f"{trade['proposer']} proposed trade to {trade['target']}:")
+                summary.append(f"- {trade['proposer']} offered: {trade['offered']}")
+                summary.append(f"- {trade['proposer']} requested: {trade['requested']}")
+                if trade.get("success", False):
+                    summary.append(f"{trade['target']} ACCEPTED the trade")
+                elif trade.get("rejected", False):
+                    summary.append(f"{trade['target']} REJECTED the trade")
         
-        # Summarize moves
-        if turn_summary["moves"]:
-            summary.append("\nMoves:")
-            for move in turn_summary["moves"]:
-                if move["success"]:
-                    summary.append(f"- {move['player']} moved from {move['from_pos']} to {move['to_pos']}")
-                else:
-                    summary.append(f"- {move['player']}: {move['reason']}")
+        # Moves
+        for move in turn_summary["moves"]:
+            if move["success"]:
+                summary.append(f"MOVE: {move['player']} moved from {move['from_pos']} to {move['to_pos']}")
+            else:
+                if move["reason"] == "no_move":
+                    summary.append(f"MOVE: {move['player']} chose not to move")
         
-        # Summarize player states
-        summary.append("\nPlayer States:")
+        # End positions
+        summary.append("\nPOSITIONS:")
         for player_name, state in turn_summary["player_states"].items():
-            summary.append(f"\n{player_name}:")
-            summary.append(f"- Position: {state['position']}")
-            summary.append(f"- Distance to goal: {state['distance_to_goal']}")
-            summary.append(f"- Resources: {state['resources']}")
-            if state['has_finished']:
-                summary.append("- Has reached their goal!")
+            status = "FINISHED!" if state['has_finished'] else f"at {state['position']}"
+            summary.append(f"- {player_name}: {status}, resources: {state['resources']}")
         
         return "\n".join(summary)
 
@@ -247,22 +243,28 @@ class Player:
             
             recent_history = "\nRecent turn history:\n" + "\n---\n".join(history_entries)
 
+        current_turn = game.turn
         return f"""
-Here is the board:
+=== GAME STATUS FOR {self.name} - TURN {current_turn} ===
+
+YOUR CURRENT STATUS:
+- You are at position {self.position}
+- Your goal is at {self.goal}
+- Your resources: {dict(self.resources)}
+- Distance to goal: {self.distance_to_goal()} steps
+
+BOARD LAYOUT:
 {grid.lm_readable}
-        
-Current game state:
-{recent_history}
 
-The board state and everybody's resources: {game.game_state}. 
-- Your resources are: {dict(self.resources)}
-- Your current position is {self.position}
-- Your goal is {self.goal}
+HISTORY OF EVENTS:
+{recent_history if recent_history else "This is the first turn."}
 
-Here are some candidate paths (JSON format), showing the path, its length, the resources needed, and which you are missing:  
-{self.best_routes(grid)}  
+POSSIBLE PATHS TO GOAL:
+The shortest path requires these resources: {self.best_routes(grid)[0]["resources_required_for_path"]}
+You are missing these resources: {self.best_routes(grid)[0]["resources_missing_due_to_insufficient_inventory"]}
 
-You may also consider alternative routes if you find a better strategy.
+OTHER PLAYERS' STATUS:
+{chr(10).join(f"- {name}: at {state['position']}, has {state['resources']}" for name, state in game.game_state.items() if name != self.name)}
 """
     
     ## Decision-Making
@@ -305,17 +307,34 @@ You may also consider alternative routes if you find a better strategy.
                 except (ValueError, IndexError):
                     print("Invalid input: Please enter the new tile in r,c format. Try again.")
         else:
-            user_message = self.generate_player_context_message(game, grid) + """
+            best_path = self.best_routes(grid)[0]
+            next_move = best_path["path"][1] if best_path["path"] else None
+            user_message = self.generate_player_context_message(game, grid) + f"""
                     
-Output your next move in the format r,c where r is the row and c is the column of the tile you want to move to. Note that row and column numbers start at 0. If you do not want to move, say exactly: "n". Don't include any other information. Your next move should be one tile away from your current position, and you must have enough resources to pay for the tile you are moving to.
-"""
-            # print(user_message)
-            
-            self.logger.log("move_prompt", {"player": self.name, "message": user_message})
+Choose your next move:
 
+1. Look at the best path from your current position {self.position} to your goal {self.goal}:
+   - Next move in best path: {next_move}
+   - Resources needed: {dict(self.resources)}
+
+2. Check if you can make this move:
+   - You can ONLY move one tile horizontally or vertically
+   - You MUST have the resource matching the tile's color
+   - The move MUST be adjacent to your current position
+
+3. If you can make the move toward your goal, output it in format "r,c" (e.g. "1,2")
+   If you cannot make a valid move, output exactly: "n"
+
+Remember:
+- NEVER try to move to a tile you don't have resources for
+- NEVER try to move more than one tile
+- If you can't follow the best path, try another valid move toward the goal
+"""
             # Prepare messages for this request
             current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}]
             current_messages.append({"role": "user", "content": user_message})
+            
+            self.logger.log("move_prompt", {"player": self.name, "message": user_message})
             
             response = self.client.chat.completions.create(
                 model=self.model,
@@ -424,32 +443,63 @@ Output your next move in the format r,c where r is the row and c is the column o
                 "resources_to_receive": resources_to_receive
             }
 
-            return self.clean_trade_proposal(trade_proposal)
+            return self.clean_trade_proposal(trade_proposal, grid)
 
         else:
             user_message = self.generate_player_context_message(game, grid) + """
             
-Your task:
-1. Consider any trades you could make along the way to reach your goal.
-2. Propose at most **one trade** with another player that would help you reach your goal. Note that trades are more likely to be accepted if they are mutually beneficial.
+IMPORTANT: First check if you need to trade at all:
 
-After considering your options, respond with a valid JSON object that matches this schema:
-{{
-"player_to_trade_with": "string (name of player or 'n' if no trade)",
-"resources_to_offer": [["string (color name)", integer], ...],
-"resources_to_receive": [["string (color name)", integer], ...]
-}}
+1. Look at your best paths above. For the shortest path:
+   - Required resources: """ + str(self.best_routes(grid)[0]["resources_required_for_path"]) + """
+   - Missing resources: """ + str(self.best_routes(grid)[0]["resources_missing_due_to_insufficient_inventory"]) + """
 
-- If you don't want or need to trade to reach your goal, say exactly: "n".
+2. If you have NO missing resources (empty dict {} above), respond with exactly: "n"
+   YOUR CURRENT RESOURCES: """ + str(dict(self.resources)) + """
+   If you have enough resources to reach your goal, say "n"
+
+3. Only if you are missing resources, consider a trade:
+   - Your current resources: {dict(self.resources)}
+   - You can ONLY request resources you're missing
+   - You can ONLY offer resources you have in excess
+   - NEVER trade with yourself ({self.name})
+   - NEVER offer 0 resources
+   - NEVER request resources you already have enough of
+   - Make the trade beneficial for both players
+
+Respond in ONE of these two formats:
+
+1. If you want to make a trade, use EXACTLY this JSON format (replace values in <>):
+{
+  "player_to_trade_with": "<other player's name>",
+  "resources_to_offer": [["<color>", <number>]],
+  "resources_to_receive": [["<color>", <number>]]
+}
+
+Example of valid trade:
+{
+  "player_to_trade_with": "Player 1",
+  "resources_to_offer": [["R", 3]],
+  "resources_to_receive": [["B", 2]]
+}
+
+2. If you don't want to trade, respond with exactly: n
+
+Remember:
+- Use EXACTLY the format shown above
+- Only ONE resource pair in each array
+- No spaces in color names
+- Numbers must be > 0
+- Don't trade with yourself ({self.name})
 
 Keep your response below 1000 characters.
 """
 
-            # print(user_message)
-            self.logger.log("trade_prompt", {"player": self.name, "message": user_message})
             # Prepare messages for this request
             current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}]
             current_messages.append({"role": "user", "content": user_message})
+            
+            self.logger.log("trade_prompt", {"player": self.name, "message": user_message})
             
             # Make the API call
             response = self.client.chat.completions.create(
@@ -466,26 +516,43 @@ Keep your response below 1000 characters.
                     {"role": "assistant", "content": trade_proposal}
                 ])
             self.logger.log("trade_proposal", {"player": self.name, "message": trade_proposal})
-            print(f"{self.name} proposed a trade")
-            if trade_proposal != 'n':
-                print("Attempting to parse trade proposal as JSON...")
-                try:
-                    match = re.search(r"\{.*\}", trade_proposal, re.DOTALL)
-                    if match:
-                        json_str = match.group(0)
-                        try:
-                            trade_proposal = json.loads(json_str)
-                            trade_proposal['trade_proposer'] = self.name
-                            trade_proposal = self.clean_trade_proposal(trade_proposal)
-                            print("Extracted trade:", trade_proposal)
-                        except json.JSONDecodeError as e:
-                            print("Invalid JSON:", e)
-                            trade_proposal = None
-                except json.JSONDecodeError:
-                    print("Could not parse trade proposal as JSON.")
-                    trade_proposal = None
-            else:
+            if trade_proposal == 'n':
+                return None
+            
+            print(f"\n{self.name} proposes trade:")
+            try:
+                match = re.search(r"\{.*\}", trade_proposal, re.DOTALL)
+                if match:
+                    json_str = match.group(0)
+                    try:
+                        trade_proposal = json.loads(json_str)
+                        
+                        # Fix common key errors
+                        if 'resources_to offer' in trade_proposal:
+                            trade_proposal['resources_to_offer'] = trade_proposal.pop('resources_to offer')
+                        if 'resources to offer' in trade_proposal:
+                            trade_proposal['resources_to_offer'] = trade_proposal.pop('resources to offer')
+                        if 'resources_to receive' in trade_proposal:
+                            trade_proposal['resources_to_receive'] = trade_proposal.pop('resources_to receive')
+                        if 'resources to receive' in trade_proposal:
+                            trade_proposal['resources_to_receive'] = trade_proposal.pop('resources to receive')
+                        
+                        trade_proposal['trade_proposer'] = self.name
+                        cleaned = self.clean_trade_proposal(trade_proposal, grid)
+                        if cleaned:
+                            trade_proposal = cleaned
+                            print(f"- To: {trade_proposal['player_to_trade_with']}")
+                            print(f"- Offering: {trade_proposal['resources_to_offer']}")
+                            print(f"- Requesting: {trade_proposal['resources_to_receive']}")
+                        else:
+                            print("- Invalid trade proposal")
+                    except json.JSONDecodeError as e:
+                        print("Invalid JSON:", e)
+                        trade_proposal = None
+            except Exception as e:
+                print(f"Error parsing trade proposal: {e}")
                 trade_proposal = None
+
             return trade_proposal
         
     def accept_trade(self, grid, game, trade):
@@ -513,14 +580,11 @@ Keep your response below 1000 characters.
                     print(reject_message)
                     return False
         else:
-            user_message = self.generate_player_context_message(game, grid) + f"""
+            # Simple trade acceptance prompt
+            user_message = f"""You have been offered a trade:
+{trade_proposer} wants to give you {resources_to_offer} in exchange for {resources_to_receive}.
+Do you accept this trade? Answer 'yes' or 'no'."""
             
-Consider the following trade proposal: {trade_proposer} is offering you {resources_to_offer} in exchange for {resources_to_receive}.
-Trades often help you to reach your goal. Does this trade help you reach your goal? Briefly consider the resources you will need to reach your goal, and finish your answer with a "yes" if you accept the trade or "no" if not. The last word of your response should be either "yes" or "no".
-Keep your response below 1000 characters.
-"""
-            # print(user_message)
-            self.logger.log("accept_trade_prompt", {"player": self.name, "message": user_message})
             # Prepare messages for this request
             current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}]
             current_messages.append({"role": "user", "content": user_message})
@@ -539,26 +603,45 @@ Keep your response below 1000 characters.
                     {"role": "user", "content": user_message},
                     {"role": "assistant", "content": accept_trade}
                 ])
+            
             self.logger.log("accept_trade_response", {"player": self.name, "message": accept_trade})
-            print(f"{self.name} responded to the trade proposal: {accept_trade}")
-            if 'yes' in accept_trade[-5:]:
-                print(accept_message)
+            
+            # Simple yes/no check
+            if "yes" in accept_trade:
                 return True
-            elif 'no' in accept_trade[-5:]:
-                print(reject_message)
-                return False
             else:
-                print(f"{self.name} did not respond clearly to the trade proposal. Assuming they do not accept.")
                 return False
 
     
     ## Utility Functions
-    def clean_trade_proposal(self, trade_proposal):
+    def clean_trade_proposal(self, trade_proposal, grid=None):
         """
-        Recursively process a trade proposal dictionary to make all string values lowercase and stripped.
+        Clean and validate a trade proposal:
+        1. Make all strings uppercase and stripped
+        2. Prevent trading with self
+        3. Check if trade is needed (have enough resources)
+        4. Return None for invalid trades
         """
+        # First clean the strings
         if isinstance(trade_proposal, dict):
-            return {key: self.clean_trade_proposal(value) for key, value in trade_proposal.items()}
+            cleaned = {key: self.clean_trade_proposal(value, grid) for key, value in trade_proposal.items()}
+            
+            # Validate the cleaned proposal
+            if cleaned.get('trade_proposer') and cleaned.get('player_to_trade_with'):
+                # Prevent trading with self
+                if cleaned['trade_proposer'].upper() == cleaned['player_to_trade_with'].upper():
+                    print(f"Invalid trade: {cleaned['trade_proposer']} cannot trade with themselves")
+                    return None
+                
+                # Check if we need to trade at all (only if grid is provided)
+                if grid:
+                    best_path = self.best_routes(grid)[0]
+                    missing_resources = best_path["resources_missing_due_to_insufficient_inventory"]
+                    if not missing_resources:  # Empty dict means we have all needed resources
+                        print(f"Invalid trade: {cleaned['trade_proposer']} already has all needed resources")
+                        return None
+            return cleaned
+            
         elif isinstance(trade_proposal, list):
             return [self.clean_trade_proposal(item) for item in trade_proposal]
         elif isinstance(trade_proposal, tuple):
