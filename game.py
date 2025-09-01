@@ -197,12 +197,12 @@ class Game:
             if self.check_for_repeated_states():
                 break
             
-            self.turn += 1
-
             # Handle turn delay
             print(f"End of turn {self.turn}. Waiting for next turn...")
             if self.config.wait_for_enter:
                 input("Press Enter to proceed to the next turn...")
+            
+            self.turn += 1
 
         print("Game over!")
         self.print_game_state()
@@ -337,6 +337,7 @@ class Game:
                         "rejected": not trade_result.get("executed", False)
                     }
                     self.current_turn_summary["trades"].append(trade_summary)
+                    print(f"DEBUG: Added trade to summary: {trade_summary}")
                 
                 # Add this player's move
                 move_summary = {
