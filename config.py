@@ -1,6 +1,10 @@
 from __future__ import annotations  
-from dataclasses import dataclass, field
+
+import json
+import yaml
+from dataclasses import dataclass, field, replace
 from typing import List, Optional, TYPE_CHECKING
+from pathlib import Path
 
 from constants import AVAILABLE_COLORS
 
@@ -13,7 +17,7 @@ class GameConfig:
     """
 
     # PLAYER CONFIGURATION
-    players: Optional[List[str]] = None  # list of Agent namedtuples (see player.py)
+    players: Optional[List[str]] = None  # list of Agent namedtuples (see agents.py)
 
     # RESOURCE SETTINGS
     surplus: float = 1.5 # Multiplier of the minimum steps required to complete the game. Used to determine how many resources each player starts with.
@@ -31,6 +35,8 @@ class GameConfig:
     grid: Optional[List[List[str]]] = None  # explicit grid (list of lists of colors); if None, a random one is generated with equal distribution of colors from colors
     random_start_block_size: int = 1  # top-left block within which start positions are generated
     random_goal_block_size: int = 1   # bottom-right block within which goals are generated
+    manual_start_positions: Optional[List[tuple]] = None  # list of (row, col) tuples for each player's start position; if None, random positions are generated within random_start_block_size. Must be of length equal to number of players.
+    manual_goal_positions: Optional[List[tuple]] = None   # list of (row, col) tuples for each player's goal position; if None, random positions are generated within random_goal_block_size. Must be of length equal to number of players.
 
     # LLM PARAMETERS
     temperature: float = 1.0
@@ -38,9 +44,14 @@ class GameConfig:
     with_message_history: bool = True  # conversation history for each player (goes with assistant role prompt)
 
     def __post_init__(self):
+        import agents as a 
         if self.players is None:
-            from player import HUMAN
-            self.players = [HUMAN, HUMAN]
+            self.players = [a.HUMAN, a.HUMAN]
+        else:
+            self.players = [
+            getattr(a, player) if isinstance(player, str) and hasattr(a, player) else player
+            for player in self.players
+        ]
         if not self.colors:
             self.colors = AVAILABLE_COLORS[:len(self.players)]
         if self.resource_mode != 'manual' and self.manual_resources:
@@ -49,3 +60,32 @@ class GameConfig:
 
 # Base configuration used by Game unless overridden in main.py
 DEFAULT_CONFIG = GameConfig()
+
+
+def load_config(filename: str) -> GameConfig:
+    """
+    Load a configuration from a JSON or YAML file and return a GameConfig instance.
+    Any fields not set in the loaded configuration will default to the values in DEFAULT_CONFIG.
+    """
+    filepath = Path(filename)
+    if not filepath.exists():
+        raise FileNotFoundError(f"Configuration file '{filename}' not found.")
+
+    with open(filepath, "r") as f:
+        if filepath.suffix == ".json":
+            config_dict = json.load(f)
+        elif filepath.suffix in [".yaml", ".yml"]:
+            config_dict = yaml.safe_load(f)
+        else:
+            raise ValueError("Unsupported file format. Use .json or .yaml/.yml.")
+    # Convert manual_start_positions and manual_goal_positions to tuples
+    if "manual_start_positions" in config_dict:
+        config_dict["manual_start_positions"] = [
+            tuple(pos) for pos in config_dict["manual_start_positions"]
+        ]
+    if "manual_goal_positions" in config_dict:
+        config_dict["manual_goal_positions"] = [
+            tuple(pos) for pos in config_dict["manual_goal_positions"]
+        ]
+    # Merge loaded config with DEFAULT_CONFIG
+    return replace(DEFAULT_CONFIG, **config_dict)
