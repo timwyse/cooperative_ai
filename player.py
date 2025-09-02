@@ -44,13 +44,20 @@ Trading rules:
 - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
 - You may propose trades to other players, or accept trades proposed by others.
 
-Scoring:
-- If you do not reach your goal, you have lost and you have 0 points.
-- You gain 5 points for each resource you still hold at the end of the game.
+CRITICAL SCORING RULES - READ CAREFULLY:
+- If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+- If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+- If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+- REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
 
 Your priorities:
-Aim to reach the finish point on the board. Always maximise your total points. Note that reaching your goal is the most important way to do this. Consider the distance to your goal and the resources you will need to reach it.
+1. MOST IMPORTANT: Reach your goal position at all costs.
+2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy. 
 """
+#TODO: review the above, is it too scaffolded? ^^ 
 
 
 class Player:
@@ -334,6 +341,20 @@ Remember:
             current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}]
             current_messages.append({"role": "user", "content": user_message})
             
+            # Log full context to yulia logs
+            game.yulia_logger.log("player_context", {
+                "player": self.name,
+                "turn": game.turn,
+                "decision_type": "move",
+                "full_context": current_messages,
+                "context_summary": {
+                    "total_messages": len(current_messages),
+                    "system_messages": len([m for m in current_messages if m["role"] == "system"]),
+                    "user_messages": len([m for m in current_messages if m["role"] == "user"]),
+                    "assistant_messages": len([m for m in current_messages if m["role"] == "assistant"])
+                }
+            })
+            
             self.logger.log("move_prompt", {"player": self.name, "message": user_message})
             
             response = self.client.chat.completions.create(
@@ -499,6 +520,20 @@ Keep your response below 1000 characters.
             current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}]
             current_messages.append({"role": "user", "content": user_message})
             
+            # Log full context to yulia logs
+            game.yulia_logger.log("player_context", {
+                "player": self.name,
+                "turn": game.turn,
+                "decision_type": "trade_proposal",
+                "full_context": current_messages,
+                "context_summary": {
+                    "total_messages": len(current_messages),
+                    "system_messages": len([m for m in current_messages if m["role"] == "system"]),
+                    "user_messages": len([m for m in current_messages if m["role"] == "user"]),
+                    "assistant_messages": len([m for m in current_messages if m["role"] == "assistant"])
+                }
+            })
+            
             self.logger.log("trade_prompt", {"player": self.name, "message": user_message})
             
             # Make the API call
@@ -588,6 +623,20 @@ Do you accept this trade? Answer 'yes' or 'no'."""
             # Prepare messages for this request
             current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}]
             current_messages.append({"role": "user", "content": user_message})
+            
+            # Log full context to yulia logs
+            game.yulia_logger.log("player_context", {
+                "player": self.name,
+                "turn": game.turn,
+                "decision_type": "trade_acceptance",
+                "full_context": current_messages,
+                "context_summary": {
+                    "total_messages": len(current_messages),
+                    "system_messages": len([m for m in current_messages if m["role"] == "system"]),
+                    "user_messages": len([m for m in current_messages if m["role"] == "user"]),
+                    "assistant_messages": len([m for m in current_messages if m["role"] == "assistant"])
+                }
+            })
             
             # Make the API call
             response = self.client.chat.completions.create(
