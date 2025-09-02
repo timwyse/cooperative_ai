@@ -318,21 +318,26 @@ Choose your next move:
 
 1. Look at the best path from your current position {self.position} to your goal {self.goal}:
    - Next move in best path: {next_move}
-   - Required resources: {str(self.best_routes(grid)[0]["resources_required_for_path"])}
-   - Missing resources: {str(self.best_routes(grid)[0]["resources_missing_due_to_insufficient_inventory"])}
+   - Your current resources: {dict(self.resources)}
+   - Required resources for entire path: {str(self.best_routes(grid)[0]["resources_required_for_path"])}
+   - Missing resources to complete the entire path: {str(self.best_routes(grid)[0]["resources_missing_due_to_insufficient_inventory"])}
+   
+Important: You can still make individual moves if you have the required resource for that specific tile.
 
-2. Check if you can make this move:
-   - You can ONLY move one tile horizontally or vertically
-   - You MUST have the resource matching the tile's color
-   - The move MUST be adjacent to your current position
+2. For your NEXT MOVE to {next_move}:
+   - Check what color tile {next_move} is on the board
+   - Check if you have at least 1 resource of that color
+   - If YES: you can make this move now
+   - If NO: try a different adjacent move toward your goal
 
-3. If you can make the move toward your goal, output it in format "r,c" (e.g. "1,2")
-   If you cannot make a valid move, output exactly: "n"
+3. Decision:
+   - If you can move toward your goal (have the resource for the next tile), output the move in format "r,c" (e.g. "1,2")
+   - If you cannot make ANY valid move toward your goal, output exactly: "n"
 
 Remember:
-- NEVER try to move to a tile you don't have resources for
-- NEVER try to move more than one tile
-- If you can't follow the best path, try another valid move toward the goal
+- You only need 1 resource of the tile's color to move to that tile
+- Missing resources for the entire path doesn't prevent you from making individual moves
+- Try to move toward your goal even if you can't complete the entire journey yet
 """
             # Prepare messages for this request
             current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}]
@@ -369,7 +374,7 @@ Remember:
             self.logger.log("move_proposal", {"player": self.name, "message": move})
             print(f"{self.name} proposed a move: {move}")
             
-            cleaned_move = move.strip().replace("(", "").replace(")", "").replace("[", "").replace("]", "")
+            cleaned_move = move.strip().replace("(", "").replace(")", "").replace("[", "").replace("]", "").replace('"', "").replace("'", "")
             if cleaned_move == 'n':
                 return None
             try:
@@ -469,15 +474,14 @@ Remember:
 IMPORTANT: First check if you need to trade at all:
 
 1. Look at your best paths above. For the shortest path:
-   - Required resources: """ + str(self.best_routes(grid)[0]["resources_required_for_path"]) + """
+   - Your current resources: """ + str(dict(self.resources)) + """
+   - Required total resources: """ + str(self.best_routes(grid)[0]["resources_required_for_path"]) + """
    - Missing resources: """ + str(self.best_routes(grid)[0]["resources_missing_due_to_insufficient_inventory"]) + """
 
 2. If you have NO missing resources (empty dict {} above), respond with exactly: "n"
-   YOUR CURRENT RESOURCES: """ + str(dict(self.resources)) + """
    If you have enough resources to reach your goal, say "n"
 
 3. Only if you are missing resources, consider a trade:
-   - Your current resources: """ + str(dict(self.resources))+ """
    - You can ONLY request resources you're missing
    - You can ONLY offer resources you have in excess
    - NEVER trade with yourself """ + str(self.name) + """
@@ -625,20 +629,6 @@ Do you accept this trade?"""
             current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}]
             current_messages.append({"role": "user", "content": user_message})
             
-            # Log full context to yulia logs
-            game.yulia_logger.log("player_context", {
-                "player": self.name,
-                "turn": game.turn,
-                "decision_type": "trade_acceptance",
-                "full_context": current_messages,
-                "context_summary": {
-                    "total_messages": len(current_messages),
-                    "system_messages": len([m for m in current_messages if m["role"] == "system"]),
-                    "user_messages": len([m for m in current_messages if m["role"] == "user"]),
-                    "assistant_messages": len([m for m in current_messages if m["role"] == "assistant"])
-                }
-            })
-            
             # Make the API call
             response = self.client.chat.completions.create(
                 model=self.model,
@@ -646,6 +636,33 @@ Do you accept this trade?"""
                 messages=current_messages,
                 max_completion_tokens=10)
             accept_trade = response.choices[0].message.content.strip().lower()
+            
+            # Determine the actual decision made
+            first_word = accept_trade.split()[0] if accept_trade.split() else ""
+            if first_word == "yes" or accept_trade == "yes":
+                decision_result = "trade_accepted"
+                will_accept = True
+            elif first_word == "no" or accept_trade == "no":
+                decision_result = "trade_rejected"
+                will_accept = False
+            else:
+                decision_result = "trade_rejected_unclear_response"
+                will_accept = False
+            
+            # Log full context with actual decision made
+            game.yulia_logger.log("player_context", {
+                "player": self.name,
+                "turn": game.turn,
+                "decision_type": decision_result,
+                "full_context": current_messages,
+                "ai_response": accept_trade,
+                "context_summary": {
+                    "total_messages": len(current_messages),
+                    "system_messages": len([m for m in current_messages if m["role"] == "system"]),
+                    "user_messages": len([m for m in current_messages if m["role"] == "user"]),
+                    "assistant_messages": len([m for m in current_messages if m["role"] == "assistant"])
+                }
+            })
             
             # Save to history if enabled
             if self.with_message_history:
@@ -656,16 +673,11 @@ Do you accept this trade?"""
             
             self.logger.log("accept_trade_response", {"player": self.name, "message": accept_trade})
             
-            # Strict yes/no parsing - look for exact words
-            first_word = accept_trade.split()[0] if accept_trade.split() else ""
-            if first_word == "yes" or accept_trade == "yes":
-                return True
-            elif first_word == "no" or accept_trade == "no":
-                return False
-            else:
-                # Default to no if response is unclear
+            # Return the decision we already determined
+            if not will_accept and decision_result == "trade_rejected_unclear_response":
                 print(f"Unclear response: '{accept_trade}', defaulting to NO")
-                return False
+            
+            return will_accept
 
     
     ## Utility Functions
