@@ -338,7 +338,7 @@ class Game:
                         "rejected": not trade_result.get("executed", False)
                     }
                     self.current_turn_summary["trades"].append(trade_summary)
-                    print(f"DEBUG: Added trade to summary: {trade_summary}")
+                    # print(f"DEBUG: Added trade to summary: {trade_summary}")
                 
                 # Add this player's move
                 move_summary = {
@@ -493,7 +493,12 @@ class Game:
         """Calculate and return the scores for each player."""
         scores = {}
         for player in self.players:
-            scores[player.name] = max(0, 100 - (10 * player.distance_to_goal())) + (5 * sum(player.resources.values()))
+            if player.has_finished():
+                # Player reached goal: get 100 points + 5 points per remaining resource
+                scores[player.name] = 100 + (5 * sum(player.resources.values()))
+            else:
+                # Player did not reach goal: get 0 points regardless of remaining resources
+                scores[player.name] = 0
         return scores
     
 
