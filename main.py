@@ -32,7 +32,7 @@ manual_goal_positions=[(3,3), (3,3)],
 
 
 # set LOGGER = GameLogger() to enable logging to a file, or None to disable logging
-LOGGER = GameLogger()
+LOGGER = GameLogger(filepath="logs/game_log.jsonl")
 
 if __name__ == "__main__":
     print(f"""

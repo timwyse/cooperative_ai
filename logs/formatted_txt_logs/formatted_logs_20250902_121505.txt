@@ -1,0 +1,3826 @@
+Reading complete game logs
+================================================================================
+
+================================================================================
+TURN 0
+================================================================================
+
+ Player 0
+----------------------------------------
+
+ Decision: trade_proposal
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   === GAME STATUS FOR Player 0 - TURN 0 ===
+   YOUR CURRENT STATUS:
+   - You are at position (0, 0)
+   - Your goal is at (3, 3)
+   - Your resources: {'B': 0, 'G': 0, 'R': 10}
+   - Distance to goal: 6 steps
+   BOARD LAYOUT:
+   Row 0: G B R B
+   Row 1: B R B R
+   Row 2: R B R B
+   Row 3: B R B R
+   HISTORY OF EVENTS:
+   This is the first turn.
+   POSSIBLE PATHS TO GOAL:
+   The shortest path requires these resources: {'B': 3, 'R': 3}
+   You are missing these resources: {'B': 3}
+   OTHER PLAYERS' STATUS:
+   - Player 1: at (0, 0), has {'B': 10, 'G': 0, 'R': 0}
+   IMPORTANT: First check if you need to trade at all:
+   1. Look at your best paths above. For the shortest path:
+      - Required resources: {'B': 3, 'R': 3}
+      - Missing resources: {'B': 3}
+   2. If you have NO missing resources (empty dict {} above), respond with exactly: "n"
+      YOUR CURRENT RESOURCES: {'B': 0, 'G': 0, 'R': 10}
+      If you have enough resources to reach your goal, say "n"
+   3. Only if you are missing resources, consider a trade:
+      - Your current resources: {dict(self.resources)}
+      - You can ONLY request resources you're missing
+      - You can ONLY offer resources you have in excess
+      - NEVER trade with yourself ({self.name})
+      - NEVER offer 0 resources
+      - NEVER request resources you already have enough of
+      - Make the trade beneficial for both players
+   Respond in ONE of these two formats:
+   1. If you want to make a trade, use EXACTLY this JSON format (replace values in <>):
+   {
+     "player_to_trade_with": "<other player's name>",
+     "resources_to_offer": [["<color>", <number>]],
+     "resources_to_receive": [["<color>", <number>]]
+   }
+   Example of valid trade:
+   {
+     "player_to_trade_with": "Player 1",
+     "resources_to_offer": [["R", 3]],
+     "resources_to_receive": [["B", 2]]
+   }
+   2. If you don't want to trade, respond with exactly: n
+   Remember:
+   - Use EXACTLY the format shown above
+   - Only ONE resource pair in each array
+   - No spaces in color names
+   - Numbers must be > 0
+   - Don't trade with yourself ({self.name})
+   Keep your response below 1000 characters.
+
+ AI ACTION:
+────────────────────
+   AI Response: {
+  "player_to_trade_with": "player 1",
+  "resources_to_offer": [["r", 2]],
+  "resources_to_receive": [["b", 3]]
+}
+
+
+ Player 1
+----------------------------------------
+
+ Decision: trade_acceptance
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   You have been offered a trade:
+   PLAYER 0 wants to give you [['R', 2]] in exchange for [['B', 3]].
+   Do you accept this trade? Answer 'yes' or 'no'.
+
+ AI ACTION:
+────────────────────
+   AI Response: to decide whether to accept the trade, i need to know your current resource status and goal position. however, based on the general strategy of prioritizing reaching your goal over conserving resources, let's evaluate the trade in a generic sense.
+
+the trade offered is 2 red (r) for 3 blue (b). red and blue are typically different resources that you might find in different parts of the board. assuming this trade is proposed because you might need the blue to get to your goal and you have the red to trade, here's a quick analysis:
+
+- **if you need the blue to reach your goal**: accepting the trade could be beneficial because it might make your journey to the goal more feasible.
+- **if you don't have a clear need for the blue and the red might not be critical for reaching the goal**: there might be no immediate benefit, but accepting the trade based on potential future needs could be a good strategy.
+
+given the critical nature of reaching your goal, accepting this trade is generally a good move if you need the blue resources to proceed towards your goal. however, without knowing your current resource status and the exact distance to your goal, i'll provide a generic response.
+
+if you need the blue resources to reach your goal, accept the trade. if you don't need the blue resources for your goal, it might be wise to hold off on the trade unless you foresee needing the blue soon.
+
+**response:**
+- if you need the blue to reach your goal, **yes**, accept the trade.
+- if you don't need the blue to reach your goal, **no**, decline the trade.
+
+since you didn't provide specific details about your current resources and goal, a general recommendation would be to **accept** the trade if you need the blue to reach your goal.
+
+
+ Player 0
+----------------------------------------
+
+ Decision: move
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   === GAME STATUS FOR Player 0 - TURN 0 ===
+   YOUR CURRENT STATUS:
+   - You are at position (0, 0)
+   - Your goal is at (3, 3)
+   - Your resources: {'B': 3, 'G': 0, 'R': 8}
+   - Distance to goal: 6 steps
+   BOARD LAYOUT:
+   Row 0: G B R B
+   Row 1: B R B R
+   Row 2: R B R B
+   Row 3: B R B R
+   HISTORY OF EVENTS:
+   This is the first turn.
+   POSSIBLE PATHS TO GOAL:
+   The shortest path requires these resources: {'B': 3, 'R': 3}
+   You are missing these resources: {}
+   OTHER PLAYERS' STATUS:
+   - Player 1: at (0, 0), has {'B': 10, 'G': 0, 'R': 0}
+   Choose your next move:
+   1. Look at the best path from your current position (0, 0) to your goal (3, 3):
+      - Next move in best path: (1, 0)
+      - Resources needed: {'B': 3, 'G': 0, 'R': 8}
+   2. Check if you can make this move:
+      - You can ONLY move one tile horizontally or vertically
+      - You MUST have the resource matching the tile's color
+      - The move MUST be adjacent to your current position
+   3. If you can make the move toward your goal, output it in format "r,c" (e.g. "1,2")
+      If you cannot make a valid move, output exactly: "n"
+   Remember:
+   - NEVER try to move to a tile you don't have resources for
+   - NEVER try to move more than one tile
+   - If you can't follow the best path, try another valid move toward the goal
+
+ AI ACTION:
+────────────────────
+   AI Response: 1,0
+
+
+ Player 1
+----------------------------------------
+
+ Decision: trade_proposal
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   === GAME STATUS FOR Player 1 - TURN 0 ===
+   YOUR CURRENT STATUS:
+   - You are at position (0, 0)
+   - Your goal is at (3, 3)
+   - Your resources: {'B': 7, 'G': 0, 'R': 2}
+   - Distance to goal: 6 steps
+   BOARD LAYOUT:
+   Row 0: G B R B
+   Row 1: B R B R
+   Row 2: R B R B
+   Row 3: B R B R
+   HISTORY OF EVENTS:
+   This is the first turn.
+   POSSIBLE PATHS TO GOAL:
+   The shortest path requires these resources: {'B': 3, 'R': 3}
+   You are missing these resources: {'R': 1}
+   OTHER PLAYERS' STATUS:
+   - Player 0: at (0, 0), has {'B': 0, 'G': 0, 'R': 10}
+   IMPORTANT: First check if you need to trade at all:
+   1. Look at your best paths above. For the shortest path:
+      - Required resources: {'B': 3, 'R': 3}
+      - Missing resources: {'R': 1}
+   2. If you have NO missing resources (empty dict {} above), respond with exactly: "n"
+      YOUR CURRENT RESOURCES: {'B': 7, 'G': 0, 'R': 2}
+      If you have enough resources to reach your goal, say "n"
+   3. Only if you are missing resources, consider a trade:
+      - Your current resources: {dict(self.resources)}
+      - You can ONLY request resources you're missing
+      - You can ONLY offer resources you have in excess
+      - NEVER trade with yourself ({self.name})
+      - NEVER offer 0 resources
+      - NEVER request resources you already have enough of
+      - Make the trade beneficial for both players
+   Respond in ONE of these two formats:
+   1. If you want to make a trade, use EXACTLY this JSON format (replace values in <>):
+   {
+     "player_to_trade_with": "<other player's name>",
+     "resources_to_offer": [["<color>", <number>]],
+     "resources_to_receive": [["<color>", <number>]]
+   }
+   Example of valid trade:
+   {
+     "player_to_trade_with": "Player 1",
+     "resources_to_offer": [["R", 3]],
+     "resources_to_receive": [["B", 2]]
+   }
+   2. If you don't want to trade, respond with exactly: n
+   Remember:
+   - Use EXACTLY the format shown above
+   - Only ONE resource pair in each array
+   - No spaces in color names
+   - Numbers must be > 0
+   - Don't trade with yourself ({self.name})
+   Keep your response below 1000 characters.
+
+ AI ACTION:
+────────────────────
+   AI Response: {
+  "player_to_trade_with": "player 0",
+  "resources_to_offer": [["r", 2]],
+  "resources_to_receive": [["r", 1]]
+}
+
+
+ Player 0
+----------------------------------------
+
+ Decision: trade_acceptance
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   You have been offered a trade:
+   PLAYER 1 wants to give you [['R', 2]] in exchange for [['R', 1]].
+   Do you accept this trade? Answer 'yes' or 'no'.
+
+ AI ACTION:
+────────────────────
+   AI Response: no
+
+
+ Player 1
+----------------------------------------
+
+ Decision: move
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   === GAME STATUS FOR Player 1 - TURN 0 ===
+   YOUR CURRENT STATUS:
+   - You are at position (0, 0)
+   - Your goal is at (3, 3)
+   - Your resources: {'B': 7, 'G': 0, 'R': 2}
+   - Distance to goal: 6 steps
+   BOARD LAYOUT:
+   Row 0: G B R B
+   Row 1: B R B R
+   Row 2: R B R B
+   Row 3: B R B R
+   HISTORY OF EVENTS:
+   This is the first turn.
+   POSSIBLE PATHS TO GOAL:
+   The shortest path requires these resources: {'B': 3, 'R': 3}
+   You are missing these resources: {'R': 1}
+   OTHER PLAYERS' STATUS:
+   - Player 0: at (0, 0), has {'B': 0, 'G': 0, 'R': 10}
+   Choose your next move:
+   1. Look at the best path from your current position (0, 0) to your goal (3, 3):
+      - Next move in best path: (1, 0)
+      - Resources needed: {'B': 7, 'G': 0, 'R': 2}
+   2. Check if you can make this move:
+      - You can ONLY move one tile horizontally or vertically
+      - You MUST have the resource matching the tile's color
+      - The move MUST be adjacent to your current position
+   3. If you can make the move toward your goal, output it in format "r,c" (e.g. "1,2")
+      If you cannot make a valid move, output exactly: "n"
+   Remember:
+   - NEVER try to move to a tile you don't have resources for
+   - NEVER try to move more than one tile
+   - If you can't follow the best path, try another valid move toward the goal
+
+ AI ACTION:
+────────────────────
+   AI Response: 1,0
+
+
+================================================================================
+TURN 1
+================================================================================
+
+ Player 0
+----------------------------------------
+
+ Decision: trade_proposal
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   === GAME STATUS FOR Player 0 - TURN 1 ===
+   YOUR CURRENT STATUS:
+   - You are at position (1, 0)
+   - Your goal is at (3, 3)
+   - Your resources: {'B': 2, 'G': 0, 'R': 8}
+   - Distance to goal: 5 steps
+   BOARD LAYOUT:
+   Row 0: G B R B
+   Row 1: B R B R
+   Row 2: R B R B
+   Row 3: B R B R
+   HISTORY OF EVENTS:
+   Recent turn history:
+   === TURN 0 ===
+   Player 0 proposed trade to Player 1:
+   - Player 0 offered: [['R', 2]]
+   - Player 0 requested: [['B', 3]]
+   Player 1 ACCEPTED the trade
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 2]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (0, 0) to (1, 0)
+   MOVE: Player 1 moved from (0, 0) to (1, 0)
+   POSITIONS:
+   - Player 0: at (1, 0), resources: {'B': 2, 'G': 0, 'R': 8}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   POSSIBLE PATHS TO GOAL:
+   The shortest path requires these resources: {'R': 3, 'B': 2}
+   You are missing these resources: {}
+   OTHER PLAYERS' STATUS:
+   - Player 1: at (1, 0), has {'B': 6, 'G': 0, 'R': 2}
+   IMPORTANT: First check if you need to trade at all:
+   1. Look at your best paths above. For the shortest path:
+      - Required resources: {'R': 3, 'B': 2}
+      - Missing resources: {}
+   2. If you have NO missing resources (empty dict {} above), respond with exactly: "n"
+      YOUR CURRENT RESOURCES: {'B': 2, 'G': 0, 'R': 8}
+      If you have enough resources to reach your goal, say "n"
+   3. Only if you are missing resources, consider a trade:
+      - Your current resources: {dict(self.resources)}
+      - You can ONLY request resources you're missing
+      - You can ONLY offer resources you have in excess
+      - NEVER trade with yourself ({self.name})
+      - NEVER offer 0 resources
+      - NEVER request resources you already have enough of
+      - Make the trade beneficial for both players
+   Respond in ONE of these two formats:
+   1. If you want to make a trade, use EXACTLY this JSON format (replace values in <>):
+   {
+     "player_to_trade_with": "<other player's name>",
+     "resources_to_offer": [["<color>", <number>]],
+     "resources_to_receive": [["<color>", <number>]]
+   }
+   Example of valid trade:
+   {
+     "player_to_trade_with": "Player 1",
+     "resources_to_offer": [["R", 3]],
+     "resources_to_receive": [["B", 2]]
+   }
+   2. If you don't want to trade, respond with exactly: n
+   Remember:
+   - Use EXACTLY the format shown above
+   - Only ONE resource pair in each array
+   - No spaces in color names
+   - Numbers must be > 0
+   - Don't trade with yourself ({self.name})
+   Keep your response below 1000 characters.
+
+ AI ACTION:
+────────────────────
+   AI Response: {
+  "player_to_trade_with": "player 1",
+  "resources_to_offer": [["r", 1]],
+  "resources_to_receive": [["b", 2]]
+}
+
+
+ Decision: move
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   === GAME STATUS FOR Player 0 - TURN 1 ===
+   YOUR CURRENT STATUS:
+   - You are at position (1, 0)
+   - Your goal is at (3, 3)
+   - Your resources: {'B': 2, 'G': 0, 'R': 8}
+   - Distance to goal: 5 steps
+   BOARD LAYOUT:
+   Row 0: G B R B
+   Row 1: B R B R
+   Row 2: R B R B
+   Row 3: B R B R
+   HISTORY OF EVENTS:
+   Recent turn history:
+   === TURN 0 ===
+   Player 0 proposed trade to Player 1:
+   - Player 0 offered: [['R', 2]]
+   - Player 0 requested: [['B', 3]]
+   Player 1 ACCEPTED the trade
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 2]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (0, 0) to (1, 0)
+   MOVE: Player 1 moved from (0, 0) to (1, 0)
+   POSITIONS:
+   - Player 0: at (1, 0), resources: {'B': 2, 'G': 0, 'R': 8}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   POSSIBLE PATHS TO GOAL:
+   The shortest path requires these resources: {'R': 3, 'B': 2}
+   You are missing these resources: {}
+   OTHER PLAYERS' STATUS:
+   - Player 1: at (1, 0), has {'B': 6, 'G': 0, 'R': 2}
+   Choose your next move:
+   1. Look at the best path from your current position (1, 0) to your goal (3, 3):
+      - Next move in best path: (2, 0)
+      - Resources needed: {'B': 2, 'G': 0, 'R': 8}
+   2. Check if you can make this move:
+      - You can ONLY move one tile horizontally or vertically
+      - You MUST have the resource matching the tile's color
+      - The move MUST be adjacent to your current position
+   3. If you can make the move toward your goal, output it in format "r,c" (e.g. "1,2")
+      If you cannot make a valid move, output exactly: "n"
+   Remember:
+   - NEVER try to move to a tile you don't have resources for
+   - NEVER try to move more than one tile
+   - If you can't follow the best path, try another valid move toward the goal
+
+ AI ACTION:
+────────────────────
+   AI Response: 1,1
+
+
+ Player 1
+----------------------------------------
+
+ Decision: trade_proposal
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   === GAME STATUS FOR Player 1 - TURN 1 ===
+   YOUR CURRENT STATUS:
+   - You are at position (1, 0)
+   - Your goal is at (3, 3)
+   - Your resources: {'B': 6, 'G': 0, 'R': 2}
+   - Distance to goal: 5 steps
+   BOARD LAYOUT:
+   Row 0: G B R B
+   Row 1: B R B R
+   Row 2: R B R B
+   Row 3: B R B R
+   HISTORY OF EVENTS:
+   Recent turn history:
+   === TURN 0 ===
+   Player 0 proposed trade to Player 1:
+   - Player 0 offered: [['R', 2]]
+   - Player 0 requested: [['B', 3]]
+   Player 1 ACCEPTED the trade
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 2]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (0, 0) to (1, 0)
+   MOVE: Player 1 moved from (0, 0) to (1, 0)
+   POSITIONS:
+   - Player 0: at (1, 0), resources: {'B': 2, 'G': 0, 'R': 8}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   POSSIBLE PATHS TO GOAL:
+   The shortest path requires these resources: {'R': 3, 'B': 2}
+   You are missing these resources: {'R': 1}
+   OTHER PLAYERS' STATUS:
+   - Player 0: at (1, 0), has {'B': 2, 'G': 0, 'R': 8}
+   IMPORTANT: First check if you need to trade at all:
+   1. Look at your best paths above. For the shortest path:
+      - Required resources: {'R': 3, 'B': 2}
+      - Missing resources: {'R': 1}
+   2. If you have NO missing resources (empty dict {} above), respond with exactly: "n"
+      YOUR CURRENT RESOURCES: {'B': 6, 'G': 0, 'R': 2}
+      If you have enough resources to reach your goal, say "n"
+   3. Only if you are missing resources, consider a trade:
+      - Your current resources: {dict(self.resources)}
+      - You can ONLY request resources you're missing
+      - You can ONLY offer resources you have in excess
+      - NEVER trade with yourself ({self.name})
+      - NEVER offer 0 resources
+      - NEVER request resources you already have enough of
+      - Make the trade beneficial for both players
+   Respond in ONE of these two formats:
+   1. If you want to make a trade, use EXACTLY this JSON format (replace values in <>):
+   {
+     "player_to_trade_with": "<other player's name>",
+     "resources_to_offer": [["<color>", <number>]],
+     "resources_to_receive": [["<color>", <number>]]
+   }
+   Example of valid trade:
+   {
+     "player_to_trade_with": "Player 1",
+     "resources_to_offer": [["R", 3]],
+     "resources_to_receive": [["B", 2]]
+   }
+   2. If you don't want to trade, respond with exactly: n
+   Remember:
+   - Use EXACTLY the format shown above
+   - Only ONE resource pair in each array
+   - No spaces in color names
+   - Numbers must be > 0
+   - Don't trade with yourself ({self.name})
+   Keep your response below 1000 characters.
+
+ AI ACTION:
+────────────────────
+   AI Response: {
+  "player_to_trade_with": "player 0",
+  "resources_to_offer": [["r", 1]],
+  "resources_to_receive": [["r", 1]]
+}
+
+
+ Player 0
+----------------------------------------
+
+ Decision: trade_acceptance
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   You have been offered a trade:
+   PLAYER 1 wants to give you [['R', 1]] in exchange for [['R', 1]].
+   Do you accept this trade? Answer 'yes' or 'no'.
+
+ AI ACTION:
+────────────────────
+   AI Response: no.接受这个交易不会让你获得更多资源，也不会对达成目标有所助益。在这种情况下，保持目前的资源状况可能是更有利的。
+
+
+ Player 1
+----------------------------------------
+
+ Decision: move
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   === GAME STATUS FOR Player 1 - TURN 1 ===
+   YOUR CURRENT STATUS:
+   - You are at position (1, 0)
+   - Your goal is at (3, 3)
+   - Your resources: {'B': 6, 'G': 0, 'R': 2}
+   - Distance to goal: 5 steps
+   BOARD LAYOUT:
+   Row 0: G B R B
+   Row 1: B R B R
+   Row 2: R B R B
+   Row 3: B R B R
+   HISTORY OF EVENTS:
+   Recent turn history:
+   === TURN 0 ===
+   Player 0 proposed trade to Player 1:
+   - Player 0 offered: [['R', 2]]
+   - Player 0 requested: [['B', 3]]
+   Player 1 ACCEPTED the trade
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 2]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (0, 0) to (1, 0)
+   MOVE: Player 1 moved from (0, 0) to (1, 0)
+   POSITIONS:
+   - Player 0: at (1, 0), resources: {'B': 2, 'G': 0, 'R': 8}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   POSSIBLE PATHS TO GOAL:
+   The shortest path requires these resources: {'R': 3, 'B': 2}
+   You are missing these resources: {'R': 1}
+   OTHER PLAYERS' STATUS:
+   - Player 0: at (1, 0), has {'B': 2, 'G': 0, 'R': 8}
+   Choose your next move:
+   1. Look at the best path from your current position (1, 0) to your goal (3, 3):
+      - Next move in best path: (2, 0)
+      - Resources needed: {'B': 6, 'G': 0, 'R': 2}
+   2. Check if you can make this move:
+      - You can ONLY move one tile horizontally or vertically
+      - You MUST have the resource matching the tile's color
+      - The move MUST be adjacent to your current position
+   3. If you can make the move toward your goal, output it in format "r,c" (e.g. "1,2")
+      If you cannot make a valid move, output exactly: "n"
+   Remember:
+   - NEVER try to move to a tile you don't have resources for
+   - NEVER try to move more than one tile
+   - If you can't follow the best path, try another valid move toward the goal
+
+ AI ACTION:
+────────────────────
+   AI Response: n
+
+
+================================================================================
+TURN 2
+================================================================================
+
+ Player 0
+----------------------------------------
+
+ Decision: trade_proposal
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   === GAME STATUS FOR Player 0 - TURN 2 ===
+   YOUR CURRENT STATUS:
+   - You are at position (1, 1)
+   - Your goal is at (3, 3)
+   - Your resources: {'B': 2, 'G': 0, 'R': 7}
+   - Distance to goal: 4 steps
+   BOARD LAYOUT:
+   Row 0: G B R B
+   Row 1: B R B R
+   Row 2: R B R B
+   Row 3: B R B R
+   HISTORY OF EVENTS:
+   Recent turn history:
+   === TURN 0 ===
+   Player 0 proposed trade to Player 1:
+   - Player 0 offered: [['R', 2]]
+   - Player 0 requested: [['B', 3]]
+   Player 1 ACCEPTED the trade
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 2]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (0, 0) to (1, 0)
+   MOVE: Player 1 moved from (0, 0) to (1, 0)
+   POSITIONS:
+   - Player 0: at (1, 0), resources: {'B': 2, 'G': 0, 'R': 8}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   ---
+   === TURN 1 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (1, 0) to (1, 1)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (1, 1), resources: {'B': 2, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   POSSIBLE PATHS TO GOAL:
+   The shortest path requires these resources: {'B': 2, 'R': 2}
+   You are missing these resources: {}
+   OTHER PLAYERS' STATUS:
+   - Player 1: at (1, 0), has {'B': 6, 'G': 0, 'R': 2}
+   IMPORTANT: First check if you need to trade at all:
+   1. Look at your best paths above. For the shortest path:
+      - Required resources: {'B': 2, 'R': 2}
+      - Missing resources: {}
+   2. If you have NO missing resources (empty dict {} above), respond with exactly: "n"
+      YOUR CURRENT RESOURCES: {'B': 2, 'G': 0, 'R': 7}
+      If you have enough resources to reach your goal, say "n"
+   3. Only if you are missing resources, consider a trade:
+      - Your current resources: {dict(self.resources)}
+      - You can ONLY request resources you're missing
+      - You can ONLY offer resources you have in excess
+      - NEVER trade with yourself ({self.name})
+      - NEVER offer 0 resources
+      - NEVER request resources you already have enough of
+      - Make the trade beneficial for both players
+   Respond in ONE of these two formats:
+   1. If you want to make a trade, use EXACTLY this JSON format (replace values in <>):
+   {
+     "player_to_trade_with": "<other player's name>",
+     "resources_to_offer": [["<color>", <number>]],
+     "resources_to_receive": [["<color>", <number>]]
+   }
+   Example of valid trade:
+   {
+     "player_to_trade_with": "Player 1",
+     "resources_to_offer": [["R", 3]],
+     "resources_to_receive": [["B", 2]]
+   }
+   2. If you don't want to trade, respond with exactly: n
+   Remember:
+   - Use EXACTLY the format shown above
+   - Only ONE resource pair in each array
+   - No spaces in color names
+   - Numbers must be > 0
+   - Don't trade with yourself ({self.name})
+   Keep your response below 1000 characters.
+
+ AI ACTION:
+────────────────────
+   AI Response: n
+
+
+ Decision: move
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   === GAME STATUS FOR Player 0 - TURN 2 ===
+   YOUR CURRENT STATUS:
+   - You are at position (1, 1)
+   - Your goal is at (3, 3)
+   - Your resources: {'B': 2, 'G': 0, 'R': 7}
+   - Distance to goal: 4 steps
+   BOARD LAYOUT:
+   Row 0: G B R B
+   Row 1: B R B R
+   Row 2: R B R B
+   Row 3: B R B R
+   HISTORY OF EVENTS:
+   Recent turn history:
+   === TURN 0 ===
+   Player 0 proposed trade to Player 1:
+   - Player 0 offered: [['R', 2]]
+   - Player 0 requested: [['B', 3]]
+   Player 1 ACCEPTED the trade
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 2]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (0, 0) to (1, 0)
+   MOVE: Player 1 moved from (0, 0) to (1, 0)
+   POSITIONS:
+   - Player 0: at (1, 0), resources: {'B': 2, 'G': 0, 'R': 8}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   ---
+   === TURN 1 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (1, 0) to (1, 1)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (1, 1), resources: {'B': 2, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   POSSIBLE PATHS TO GOAL:
+   The shortest path requires these resources: {'B': 2, 'R': 2}
+   You are missing these resources: {}
+   OTHER PLAYERS' STATUS:
+   - Player 1: at (1, 0), has {'B': 6, 'G': 0, 'R': 2}
+   Choose your next move:
+   1. Look at the best path from your current position (1, 1) to your goal (3, 3):
+      - Next move in best path: (2, 1)
+      - Resources needed: {'B': 2, 'G': 0, 'R': 7}
+   2. Check if you can make this move:
+      - You can ONLY move one tile horizontally or vertically
+      - You MUST have the resource matching the tile's color
+      - The move MUST be adjacent to your current position
+   3. If you can make the move toward your goal, output it in format "r,c" (e.g. "1,2")
+      If you cannot make a valid move, output exactly: "n"
+   Remember:
+   - NEVER try to move to a tile you don't have resources for
+   - NEVER try to move more than one tile
+   - If you can't follow the best path, try another valid move toward the goal
+
+ AI ACTION:
+────────────────────
+   AI Response: 2,1
+
+
+ Player 1
+----------------------------------------
+
+ Decision: trade_proposal
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   === GAME STATUS FOR Player 1 - TURN 2 ===
+   YOUR CURRENT STATUS:
+   - You are at position (1, 0)
+   - Your goal is at (3, 3)
+   - Your resources: {'B': 6, 'G': 0, 'R': 2}
+   - Distance to goal: 5 steps
+   BOARD LAYOUT:
+   Row 0: G B R B
+   Row 1: B R B R
+   Row 2: R B R B
+   Row 3: B R B R
+   HISTORY OF EVENTS:
+   Recent turn history:
+   === TURN 0 ===
+   Player 0 proposed trade to Player 1:
+   - Player 0 offered: [['R', 2]]
+   - Player 0 requested: [['B', 3]]
+   Player 1 ACCEPTED the trade
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 2]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (0, 0) to (1, 0)
+   MOVE: Player 1 moved from (0, 0) to (1, 0)
+   POSITIONS:
+   - Player 0: at (1, 0), resources: {'B': 2, 'G': 0, 'R': 8}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   ---
+   === TURN 1 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (1, 0) to (1, 1)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (1, 1), resources: {'B': 2, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   POSSIBLE PATHS TO GOAL:
+   The shortest path requires these resources: {'R': 3, 'B': 2}
+   You are missing these resources: {'R': 1}
+   OTHER PLAYERS' STATUS:
+   - Player 0: at (1, 1), has {'B': 2, 'G': 0, 'R': 7}
+   IMPORTANT: First check if you need to trade at all:
+   1. Look at your best paths above. For the shortest path:
+      - Required resources: {'R': 3, 'B': 2}
+      - Missing resources: {'R': 1}
+   2. If you have NO missing resources (empty dict {} above), respond with exactly: "n"
+      YOUR CURRENT RESOURCES: {'B': 6, 'G': 0, 'R': 2}
+      If you have enough resources to reach your goal, say "n"
+   3. Only if you are missing resources, consider a trade:
+      - Your current resources: {dict(self.resources)}
+      - You can ONLY request resources you're missing
+      - You can ONLY offer resources you have in excess
+      - NEVER trade with yourself ({self.name})
+      - NEVER offer 0 resources
+      - NEVER request resources you already have enough of
+      - Make the trade beneficial for both players
+   Respond in ONE of these two formats:
+   1. If you want to make a trade, use EXACTLY this JSON format (replace values in <>):
+   {
+     "player_to_trade_with": "<other player's name>",
+     "resources_to_offer": [["<color>", <number>]],
+     "resources_to_receive": [["<color>", <number>]]
+   }
+   Example of valid trade:
+   {
+     "player_to_trade_with": "Player 1",
+     "resources_to_offer": [["R", 3]],
+     "resources_to_receive": [["B", 2]]
+   }
+   2. If you don't want to trade, respond with exactly: n
+   Remember:
+   - Use EXACTLY the format shown above
+   - Only ONE resource pair in each array
+   - No spaces in color names
+   - Numbers must be > 0
+   - Don't trade with yourself ({self.name})
+   Keep your response below 1000 characters.
+
+ AI ACTION:
+────────────────────
+   AI Response: {
+  "player_to_trade_with": "player 0",
+  "resources_to_offer": [["r", 1]],
+  "resources_to_receive": [["r", 1]]
+}
+
+
+ Player 0
+----------------------------------------
+
+ Decision: trade_acceptance
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   You have been offered a trade:
+   PLAYER 1 wants to give you [['R', 1]] in exchange for [['R', 1]].
+   Do you accept this trade? Answer 'yes' or 'no'.
+
+ AI ACTION:
+────────────────────
+   AI Response: no
+
+
+ Player 1
+----------------------------------------
+
+ Decision: move
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   === GAME STATUS FOR Player 1 - TURN 2 ===
+   YOUR CURRENT STATUS:
+   - You are at position (1, 0)
+   - Your goal is at (3, 3)
+   - Your resources: {'B': 6, 'G': 0, 'R': 2}
+   - Distance to goal: 5 steps
+   BOARD LAYOUT:
+   Row 0: G B R B
+   Row 1: B R B R
+   Row 2: R B R B
+   Row 3: B R B R
+   HISTORY OF EVENTS:
+   Recent turn history:
+   === TURN 0 ===
+   Player 0 proposed trade to Player 1:
+   - Player 0 offered: [['R', 2]]
+   - Player 0 requested: [['B', 3]]
+   Player 1 ACCEPTED the trade
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 2]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (0, 0) to (1, 0)
+   MOVE: Player 1 moved from (0, 0) to (1, 0)
+   POSITIONS:
+   - Player 0: at (1, 0), resources: {'B': 2, 'G': 0, 'R': 8}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   ---
+   === TURN 1 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (1, 0) to (1, 1)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (1, 1), resources: {'B': 2, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   POSSIBLE PATHS TO GOAL:
+   The shortest path requires these resources: {'R': 3, 'B': 2}
+   You are missing these resources: {'R': 1}
+   OTHER PLAYERS' STATUS:
+   - Player 0: at (1, 1), has {'B': 2, 'G': 0, 'R': 7}
+   Choose your next move:
+   1. Look at the best path from your current position (1, 0) to your goal (3, 3):
+      - Next move in best path: (2, 0)
+      - Resources needed: {'B': 6, 'G': 0, 'R': 2}
+   2. Check if you can make this move:
+      - You can ONLY move one tile horizontally or vertically
+      - You MUST have the resource matching the tile's color
+      - The move MUST be adjacent to your current position
+   3. If you can make the move toward your goal, output it in format "r,c" (e.g. "1,2")
+      If you cannot make a valid move, output exactly: "n"
+   Remember:
+   - NEVER try to move to a tile you don't have resources for
+   - NEVER try to move more than one tile
+   - If you can't follow the best path, try another valid move toward the goal
+
+ AI ACTION:
+────────────────────
+   AI Response: n
+
+
+================================================================================
+TURN 3
+================================================================================
+
+ Player 0
+----------------------------------------
+
+ Decision: trade_proposal
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   === GAME STATUS FOR Player 0 - TURN 3 ===
+   YOUR CURRENT STATUS:
+   - You are at position (2, 1)
+   - Your goal is at (3, 3)
+   - Your resources: {'B': 1, 'G': 0, 'R': 7}
+   - Distance to goal: 3 steps
+   BOARD LAYOUT:
+   Row 0: G B R B
+   Row 1: B R B R
+   Row 2: R B R B
+   Row 3: B R B R
+   HISTORY OF EVENTS:
+   Recent turn history:
+   === TURN 0 ===
+   Player 0 proposed trade to Player 1:
+   - Player 0 offered: [['R', 2]]
+   - Player 0 requested: [['B', 3]]
+   Player 1 ACCEPTED the trade
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 2]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (0, 0) to (1, 0)
+   MOVE: Player 1 moved from (0, 0) to (1, 0)
+   POSITIONS:
+   - Player 0: at (1, 0), resources: {'B': 2, 'G': 0, 'R': 8}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   ---
+   === TURN 1 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (1, 0) to (1, 1)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (1, 1), resources: {'B': 2, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   ---
+   === TURN 2 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (1, 1) to (2, 1)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 1), resources: {'B': 1, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   POSSIBLE PATHS TO GOAL:
+   The shortest path requires these resources: {'R': 2, 'B': 1}
+   You are missing these resources: {}
+   OTHER PLAYERS' STATUS:
+   - Player 1: at (1, 0), has {'B': 6, 'G': 0, 'R': 2}
+   IMPORTANT: First check if you need to trade at all:
+   1. Look at your best paths above. For the shortest path:
+      - Required resources: {'R': 2, 'B': 1}
+      - Missing resources: {}
+   2. If you have NO missing resources (empty dict {} above), respond with exactly: "n"
+      YOUR CURRENT RESOURCES: {'B': 1, 'G': 0, 'R': 7}
+      If you have enough resources to reach your goal, say "n"
+   3. Only if you are missing resources, consider a trade:
+      - Your current resources: {dict(self.resources)}
+      - You can ONLY request resources you're missing
+      - You can ONLY offer resources you have in excess
+      - NEVER trade with yourself ({self.name})
+      - NEVER offer 0 resources
+      - NEVER request resources you already have enough of
+      - Make the trade beneficial for both players
+   Respond in ONE of these two formats:
+   1. If you want to make a trade, use EXACTLY this JSON format (replace values in <>):
+   {
+     "player_to_trade_with": "<other player's name>",
+     "resources_to_offer": [["<color>", <number>]],
+     "resources_to_receive": [["<color>", <number>]]
+   }
+   Example of valid trade:
+   {
+     "player_to_trade_with": "Player 1",
+     "resources_to_offer": [["R", 3]],
+     "resources_to_receive": [["B", 2]]
+   }
+   2. If you don't want to trade, respond with exactly: n
+   Remember:
+   - Use EXACTLY the format shown above
+   - Only ONE resource pair in each array
+   - No spaces in color names
+   - Numbers must be > 0
+   - Don't trade with yourself ({self.name})
+   Keep your response below 1000 characters.
+
+ AI ACTION:
+────────────────────
+   AI Response: n
+
+
+ Decision: move
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   === GAME STATUS FOR Player 0 - TURN 3 ===
+   YOUR CURRENT STATUS:
+   - You are at position (2, 1)
+   - Your goal is at (3, 3)
+   - Your resources: {'B': 1, 'G': 0, 'R': 7}
+   - Distance to goal: 3 steps
+   BOARD LAYOUT:
+   Row 0: G B R B
+   Row 1: B R B R
+   Row 2: R B R B
+   Row 3: B R B R
+   HISTORY OF EVENTS:
+   Recent turn history:
+   === TURN 0 ===
+   Player 0 proposed trade to Player 1:
+   - Player 0 offered: [['R', 2]]
+   - Player 0 requested: [['B', 3]]
+   Player 1 ACCEPTED the trade
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 2]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (0, 0) to (1, 0)
+   MOVE: Player 1 moved from (0, 0) to (1, 0)
+   POSITIONS:
+   - Player 0: at (1, 0), resources: {'B': 2, 'G': 0, 'R': 8}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   ---
+   === TURN 1 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (1, 0) to (1, 1)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (1, 1), resources: {'B': 2, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   ---
+   === TURN 2 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (1, 1) to (2, 1)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 1), resources: {'B': 1, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   POSSIBLE PATHS TO GOAL:
+   The shortest path requires these resources: {'R': 2, 'B': 1}
+   You are missing these resources: {}
+   OTHER PLAYERS' STATUS:
+   - Player 1: at (1, 0), has {'B': 6, 'G': 0, 'R': 2}
+   Choose your next move:
+   1. Look at the best path from your current position (2, 1) to your goal (3, 3):
+      - Next move in best path: (3, 1)
+      - Resources needed: {'B': 1, 'G': 0, 'R': 7}
+   2. Check if you can make this move:
+      - You can ONLY move one tile horizontally or vertically
+      - You MUST have the resource matching the tile's color
+      - The move MUST be adjacent to your current position
+   3. If you can make the move toward your goal, output it in format "r,c" (e.g. "1,2")
+      If you cannot make a valid move, output exactly: "n"
+   Remember:
+   - NEVER try to move to a tile you don't have resources for
+   - NEVER try to move more than one tile
+   - If you can't follow the best path, try another valid move toward the goal
+
+ AI ACTION:
+────────────────────
+   AI Response: 2,2
+
+
+ Player 1
+----------------------------------------
+
+ Decision: trade_proposal
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   === GAME STATUS FOR Player 1 - TURN 3 ===
+   YOUR CURRENT STATUS:
+   - You are at position (1, 0)
+   - Your goal is at (3, 3)
+   - Your resources: {'B': 6, 'G': 0, 'R': 2}
+   - Distance to goal: 5 steps
+   BOARD LAYOUT:
+   Row 0: G B R B
+   Row 1: B R B R
+   Row 2: R B R B
+   Row 3: B R B R
+   HISTORY OF EVENTS:
+   Recent turn history:
+   === TURN 0 ===
+   Player 0 proposed trade to Player 1:
+   - Player 0 offered: [['R', 2]]
+   - Player 0 requested: [['B', 3]]
+   Player 1 ACCEPTED the trade
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 2]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (0, 0) to (1, 0)
+   MOVE: Player 1 moved from (0, 0) to (1, 0)
+   POSITIONS:
+   - Player 0: at (1, 0), resources: {'B': 2, 'G': 0, 'R': 8}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   ---
+   === TURN 1 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (1, 0) to (1, 1)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (1, 1), resources: {'B': 2, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   ---
+   === TURN 2 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (1, 1) to (2, 1)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 1), resources: {'B': 1, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   POSSIBLE PATHS TO GOAL:
+   The shortest path requires these resources: {'R': 3, 'B': 2}
+   You are missing these resources: {'R': 1}
+   OTHER PLAYERS' STATUS:
+   - Player 0: at (2, 1), has {'B': 1, 'G': 0, 'R': 7}
+   IMPORTANT: First check if you need to trade at all:
+   1. Look at your best paths above. For the shortest path:
+      - Required resources: {'R': 3, 'B': 2}
+      - Missing resources: {'R': 1}
+   2. If you have NO missing resources (empty dict {} above), respond with exactly: "n"
+      YOUR CURRENT RESOURCES: {'B': 6, 'G': 0, 'R': 2}
+      If you have enough resources to reach your goal, say "n"
+   3. Only if you are missing resources, consider a trade:
+      - Your current resources: {dict(self.resources)}
+      - You can ONLY request resources you're missing
+      - You can ONLY offer resources you have in excess
+      - NEVER trade with yourself ({self.name})
+      - NEVER offer 0 resources
+      - NEVER request resources you already have enough of
+      - Make the trade beneficial for both players
+   Respond in ONE of these two formats:
+   1. If you want to make a trade, use EXACTLY this JSON format (replace values in <>):
+   {
+     "player_to_trade_with": "<other player's name>",
+     "resources_to_offer": [["<color>", <number>]],
+     "resources_to_receive": [["<color>", <number>]]
+   }
+   Example of valid trade:
+   {
+     "player_to_trade_with": "Player 1",
+     "resources_to_offer": [["R", 3]],
+     "resources_to_receive": [["B", 2]]
+   }
+   2. If you don't want to trade, respond with exactly: n
+   Remember:
+   - Use EXACTLY the format shown above
+   - Only ONE resource pair in each array
+   - No spaces in color names
+   - Numbers must be > 0
+   - Don't trade with yourself ({self.name})
+   Keep your response below 1000 characters.
+
+ AI ACTION:
+────────────────────
+   AI Response: {
+  "player_to_trade_with": "player 0",
+  "resources_to_offer": [["r", 1]],
+  "resources_to_receive": [["b", 1]]
+}
+
+
+ Player 0
+----------------------------------------
+
+ Decision: trade_acceptance
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   You have been offered a trade:
+   PLAYER 1 wants to give you [['R', 1]] in exchange for [['B', 1]].
+   Do you accept this trade? Answer 'yes' or 'no'.
+
+ AI ACTION:
+────────────────────
+   AI Response: to make an informed decision, i need to know the following:
+
+1. your current resource status.
+2. the color of the trail from your current position to your goal (let's assume it's r for red or b for blue).
+3. the trade-offs involved in accepting or rejecting the trade.
+
+if the trail to your goal is r (red) and you have b (blue) resources, it would make sense to accept the trade because it would help you conserve your blue resource. if the trail to your goal is b (blue) and you have r (red) resources, you should consider accepting the trade for the same reason. if neither trail is matched, the trade might be less critical.
+
+since i don't have this information, i'll assume a general scenario where accepting the trade will help you avoid wasting a resource on the goal tile. 
+
+in most cases:
+- if the trail to your goal is red, you should accept the trade if you have blue resources.
+- if the trail to your goal is blue, you should accept the trade if you have red resources.
+
+for the sake of this example, let's assume the trail to your goal is red (r). you have blue (b) resources, making the trade beneficial. 
+
+**answer: yes**
+
+
+ Player 1
+----------------------------------------
+
+ Decision: move
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   === GAME STATUS FOR Player 1 - TURN 3 ===
+   YOUR CURRENT STATUS:
+   - You are at position (1, 0)
+   - Your goal is at (3, 3)
+   - Your resources: {'B': 7, 'G': 0, 'R': 1}
+   - Distance to goal: 5 steps
+   BOARD LAYOUT:
+   Row 0: G B R B
+   Row 1: B R B R
+   Row 2: R B R B
+   Row 3: B R B R
+   HISTORY OF EVENTS:
+   Recent turn history:
+   === TURN 0 ===
+   Player 0 proposed trade to Player 1:
+   - Player 0 offered: [['R', 2]]
+   - Player 0 requested: [['B', 3]]
+   Player 1 ACCEPTED the trade
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 2]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (0, 0) to (1, 0)
+   MOVE: Player 1 moved from (0, 0) to (1, 0)
+   POSITIONS:
+   - Player 0: at (1, 0), resources: {'B': 2, 'G': 0, 'R': 8}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   ---
+   === TURN 1 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (1, 0) to (1, 1)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (1, 1), resources: {'B': 2, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   ---
+   === TURN 2 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (1, 1) to (2, 1)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 1), resources: {'B': 1, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   POSSIBLE PATHS TO GOAL:
+   The shortest path requires these resources: {'R': 3, 'B': 2}
+   You are missing these resources: {'R': 2}
+   OTHER PLAYERS' STATUS:
+   - Player 0: at (2, 1), has {'B': 1, 'G': 0, 'R': 7}
+   Choose your next move:
+   1. Look at the best path from your current position (1, 0) to your goal (3, 3):
+      - Next move in best path: (2, 0)
+      - Resources needed: {'B': 7, 'G': 0, 'R': 1}
+   2. Check if you can make this move:
+      - You can ONLY move one tile horizontally or vertically
+      - You MUST have the resource matching the tile's color
+      - The move MUST be adjacent to your current position
+   3. If you can make the move toward your goal, output it in format "r,c" (e.g. "1,2")
+      If you cannot make a valid move, output exactly: "n"
+   Remember:
+   - NEVER try to move to a tile you don't have resources for
+   - NEVER try to move more than one tile
+   - If you can't follow the best path, try another valid move toward the goal
+
+ AI ACTION:
+────────────────────
+   AI Response: n
+
+
+================================================================================
+TURN 4
+================================================================================
+
+ Player 0
+----------------------------------------
+
+ Decision: trade_proposal
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   === GAME STATUS FOR Player 0 - TURN 4 ===
+   YOUR CURRENT STATUS:
+   - You are at position (2, 2)
+   - Your goal is at (3, 3)
+   - Your resources: {'B': 0, 'G': 0, 'R': 7}
+   - Distance to goal: 2 steps
+   BOARD LAYOUT:
+   Row 0: G B R B
+   Row 1: B R B R
+   Row 2: R B R B
+   Row 3: B R B R
+   HISTORY OF EVENTS:
+   Recent turn history:
+   === TURN 1 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (1, 0) to (1, 1)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (1, 1), resources: {'B': 2, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   ---
+   === TURN 2 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (1, 1) to (2, 1)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 1), resources: {'B': 1, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   ---
+   === TURN 3 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['B', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (2, 1) to (2, 2)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 2), resources: {'B': 0, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 7, 'G': 0, 'R': 1}
+   POSSIBLE PATHS TO GOAL:
+   The shortest path requires these resources: {'B': 1, 'R': 1}
+   You are missing these resources: {'B': 1}
+   OTHER PLAYERS' STATUS:
+   - Player 1: at (1, 0), has {'B': 7, 'G': 0, 'R': 1}
+   IMPORTANT: First check if you need to trade at all:
+   1. Look at your best paths above. For the shortest path:
+      - Required resources: {'B': 1, 'R': 1}
+      - Missing resources: {'B': 1}
+   2. If you have NO missing resources (empty dict {} above), respond with exactly: "n"
+      YOUR CURRENT RESOURCES: {'B': 0, 'G': 0, 'R': 7}
+      If you have enough resources to reach your goal, say "n"
+   3. Only if you are missing resources, consider a trade:
+      - Your current resources: {dict(self.resources)}
+      - You can ONLY request resources you're missing
+      - You can ONLY offer resources you have in excess
+      - NEVER trade with yourself ({self.name})
+      - NEVER offer 0 resources
+      - NEVER request resources you already have enough of
+      - Make the trade beneficial for both players
+   Respond in ONE of these two formats:
+   1. If you want to make a trade, use EXACTLY this JSON format (replace values in <>):
+   {
+     "player_to_trade_with": "<other player's name>",
+     "resources_to_offer": [["<color>", <number>]],
+     "resources_to_receive": [["<color>", <number>]]
+   }
+   Example of valid trade:
+   {
+     "player_to_trade_with": "Player 1",
+     "resources_to_offer": [["R", 3]],
+     "resources_to_receive": [["B", 2]]
+   }
+   2. If you don't want to trade, respond with exactly: n
+   Remember:
+   - Use EXACTLY the format shown above
+   - Only ONE resource pair in each array
+   - No spaces in color names
+   - Numbers must be > 0
+   - Don't trade with yourself ({self.name})
+   Keep your response below 1000 characters.
+
+ AI ACTION:
+────────────────────
+   AI Response: {
+  "player_to_trade_with": "player 1",
+  "resources_to_offer": [["r", 1]],
+  "resources_to_receive": [["b", 1]]
+}
+
+
+ Player 1
+----------------------------------------
+
+ Decision: trade_acceptance
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   You have been offered a trade:
+   PLAYER 0 wants to give you [['R', 1]] in exchange for [['B', 1]].
+   Do you accept this trade? Answer 'yes' or 'no'.
+
+ AI ACTION:
+────────────────────
+   AI Response: to determine whether to accept the trade, i need to know the current color and quantity of resources i have and the cost of the goal in terms of resources. however, since that information is not provided, i will evaluate the trade based on general principles:
+
+1. **first priority**: reach the goal at all costs.
+2. **second priority**: conserve resources if it doesn't prevent you from reaching your goal.
+
+the trade offers:
+- recieve: 1 red (r)
+- give: 1 blue (b)
+
+### analysis:
+- if you have more blue (b) than you need and fewer red (r) than you need, accepting the trade would be beneficial.
+- if the cost of the goal in terms of red (r) is lower than in terms of blue (b), then accepting this trade could be advantageous.
+
+since the trade is 1b for 1r, it is a double-check on the resources. if you are more in need of red (r) than blue (b), accepting the trade would make sense.
+
+### conclusion:
+without exact resource counts, i can't definitively say yes or no. however, if you generally need more red (r) than blue (b), the trade would be beneficial to help you reach your goal. if you are more balanced or in need of more blue (b) than red (r), then you might want to decline the trade.
+
+assuming you need more red (r) than blue (b) and the goal is to reach the end, i would say:
+
+**yes, accept the trade**.
+
+
+ Player 0
+----------------------------------------
+
+ Decision: move
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   === GAME STATUS FOR Player 0 - TURN 4 ===
+   YOUR CURRENT STATUS:
+   - You are at position (2, 2)
+   - Your goal is at (3, 3)
+   - Your resources: {'B': 1, 'G': 0, 'R': 6}
+   - Distance to goal: 2 steps
+   BOARD LAYOUT:
+   Row 0: G B R B
+   Row 1: B R B R
+   Row 2: R B R B
+   Row 3: B R B R
+   HISTORY OF EVENTS:
+   Recent turn history:
+   === TURN 1 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (1, 0) to (1, 1)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (1, 1), resources: {'B': 2, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   ---
+   === TURN 2 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (1, 1) to (2, 1)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 1), resources: {'B': 1, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   ---
+   === TURN 3 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['B', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (2, 1) to (2, 2)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 2), resources: {'B': 0, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 7, 'G': 0, 'R': 1}
+   POSSIBLE PATHS TO GOAL:
+   The shortest path requires these resources: {'B': 1, 'R': 1}
+   You are missing these resources: {}
+   OTHER PLAYERS' STATUS:
+   - Player 1: at (1, 0), has {'B': 7, 'G': 0, 'R': 1}
+   Choose your next move:
+   1. Look at the best path from your current position (2, 2) to your goal (3, 3):
+      - Next move in best path: (3, 2)
+      - Resources needed: {'B': 1, 'G': 0, 'R': 6}
+   2. Check if you can make this move:
+      - You can ONLY move one tile horizontally or vertically
+      - You MUST have the resource matching the tile's color
+      - The move MUST be adjacent to your current position
+   3. If you can make the move toward your goal, output it in format "r,c" (e.g. "1,2")
+      If you cannot make a valid move, output exactly: "n"
+   Remember:
+   - NEVER try to move to a tile you don't have resources for
+   - NEVER try to move more than one tile
+   - If you can't follow the best path, try another valid move toward the goal
+
+ AI ACTION:
+────────────────────
+   AI Response: "3,2"
+
+
+ Player 1
+----------------------------------------
+
+ Decision: trade_proposal
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   === GAME STATUS FOR Player 1 - TURN 4 ===
+   YOUR CURRENT STATUS:
+   - You are at position (1, 0)
+   - Your goal is at (3, 3)
+   - Your resources: {'B': 6, 'G': 0, 'R': 2}
+   - Distance to goal: 5 steps
+   BOARD LAYOUT:
+   Row 0: G B R B
+   Row 1: B R B R
+   Row 2: R B R B
+   Row 3: B R B R
+   HISTORY OF EVENTS:
+   Recent turn history:
+   === TURN 1 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (1, 0) to (1, 1)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (1, 1), resources: {'B': 2, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   ---
+   === TURN 2 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (1, 1) to (2, 1)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 1), resources: {'B': 1, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   ---
+   === TURN 3 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['B', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (2, 1) to (2, 2)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 2), resources: {'B': 0, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 7, 'G': 0, 'R': 1}
+   POSSIBLE PATHS TO GOAL:
+   The shortest path requires these resources: {'R': 3, 'B': 2}
+   You are missing these resources: {'R': 1}
+   OTHER PLAYERS' STATUS:
+   - Player 0: at (2, 2), has {'B': 0, 'G': 0, 'R': 7}
+   IMPORTANT: First check if you need to trade at all:
+   1. Look at your best paths above. For the shortest path:
+      - Required resources: {'R': 3, 'B': 2}
+      - Missing resources: {'R': 1}
+   2. If you have NO missing resources (empty dict {} above), respond with exactly: "n"
+      YOUR CURRENT RESOURCES: {'B': 6, 'G': 0, 'R': 2}
+      If you have enough resources to reach your goal, say "n"
+   3. Only if you are missing resources, consider a trade:
+      - Your current resources: {dict(self.resources)}
+      - You can ONLY request resources you're missing
+      - You can ONLY offer resources you have in excess
+      - NEVER trade with yourself ({self.name})
+      - NEVER offer 0 resources
+      - NEVER request resources you already have enough of
+      - Make the trade beneficial for both players
+   Respond in ONE of these two formats:
+   1. If you want to make a trade, use EXACTLY this JSON format (replace values in <>):
+   {
+     "player_to_trade_with": "<other player's name>",
+     "resources_to_offer": [["<color>", <number>]],
+     "resources_to_receive": [["<color>", <number>]]
+   }
+   Example of valid trade:
+   {
+     "player_to_trade_with": "Player 1",
+     "resources_to_offer": [["R", 3]],
+     "resources_to_receive": [["B", 2]]
+   }
+   2. If you don't want to trade, respond with exactly: n
+   Remember:
+   - Use EXACTLY the format shown above
+   - Only ONE resource pair in each array
+   - No spaces in color names
+   - Numbers must be > 0
+   - Don't trade with yourself ({self.name})
+   Keep your response below 1000 characters.
+
+ AI ACTION:
+────────────────────
+   AI Response: {
+  "player_to_trade_with": "player 0",
+  "resources_to_offer": [["b", 1]],
+  "resources_to_receive": [["r", 1]]
+}
+
+
+ Player 0
+----------------------------------------
+
+ Decision: trade_acceptance
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   You have been offered a trade:
+   PLAYER 1 wants to give you [['B', 1]] in exchange for [['R', 1]].
+   Do you accept this trade? Answer 'yes' or 'no'.
+
+ AI ACTION:
+────────────────────
+   AI Response: to decide whether to accept the trade, i need to know your current resources and the position on the board. however, without that information, i can still provide a general analysis based on typical situations.
+
+### analysis
+
+1. **gain or loss of resources:**
+   - giving away 1 red resource and receiving 1 black resource does not change the net number of resources you have. if you were planning to use the red resource for a crucial move, you would be foregoing that plan.
+
+2. **positional effect:**
+   - if the black resource is more valuable for your path to the goal, it could be a good trade. conversely, if the path that requires a red resource is more critical, you might want to keep the red resource.
+
+3. **goal-oriented focus:**
+   - remember, the primary goal is to reach the end tile. if the trade helps you achieve your goal, even if it means giving up a resource, it might be beneficial.
+
+given the limited information, i cannot definitively tell you to accept or reject the trade. if you can provide more context, such as your current position and resource status, i can give a more specific recommendation.
+
+**general advice:**
+- if the black resource is more beneficial for your path to the goal than the red resource, accept the trade.
+- if you are in a position where the red resource is critical and you cannot afford to use the black resource, reject the trade.
+
+since we lack specific details, i recommend a trade that benefits your path to the goal. if you feel the trade aligns with helping you reach your goal, accept it.
+
+### final answer
+**yes** (assuming the black resource is more beneficial for your path to the goal)
+
+
+ Player 1
+----------------------------------------
+
+ Decision: move
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   === GAME STATUS FOR Player 1 - TURN 4 ===
+   YOUR CURRENT STATUS:
+   - You are at position (1, 0)
+   - Your goal is at (3, 3)
+   - Your resources: {'B': 5, 'G': 0, 'R': 3}
+   - Distance to goal: 5 steps
+   BOARD LAYOUT:
+   Row 0: G B R B
+   Row 1: B R B R
+   Row 2: R B R B
+   Row 3: B R B R
+   HISTORY OF EVENTS:
+   Recent turn history:
+   === TURN 1 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (1, 0) to (1, 1)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (1, 1), resources: {'B': 2, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   ---
+   === TURN 2 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (1, 1) to (2, 1)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 1), resources: {'B': 1, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   ---
+   === TURN 3 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['B', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (2, 1) to (2, 2)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 2), resources: {'B': 0, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 7, 'G': 0, 'R': 1}
+   POSSIBLE PATHS TO GOAL:
+   The shortest path requires these resources: {'R': 3, 'B': 2}
+   You are missing these resources: {}
+   OTHER PLAYERS' STATUS:
+   - Player 0: at (2, 2), has {'B': 0, 'G': 0, 'R': 7}
+   Choose your next move:
+   1. Look at the best path from your current position (1, 0) to your goal (3, 3):
+      - Next move in best path: (2, 0)
+      - Resources needed: {'B': 5, 'G': 0, 'R': 3}
+   2. Check if you can make this move:
+      - You can ONLY move one tile horizontally or vertically
+      - You MUST have the resource matching the tile's color
+      - The move MUST be adjacent to your current position
+   3. If you can make the move toward your goal, output it in format "r,c" (e.g. "1,2")
+      If you cannot make a valid move, output exactly: "n"
+   Remember:
+   - NEVER try to move to a tile you don't have resources for
+   - NEVER try to move more than one tile
+   - If you can't follow the best path, try another valid move toward the goal
+
+ AI ACTION:
+────────────────────
+   AI Response: n
+
+
+================================================================================
+TURN 5
+================================================================================
+
+ Player 0
+----------------------------------------
+
+ Decision: trade_proposal
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   === GAME STATUS FOR Player 0 - TURN 5 ===
+   YOUR CURRENT STATUS:
+   - You are at position (2, 2)
+   - Your goal is at (3, 3)
+   - Your resources: {'B': 2, 'G': 0, 'R': 5}
+   - Distance to goal: 2 steps
+   BOARD LAYOUT:
+   Row 0: G B R B
+   Row 1: B R B R
+   Row 2: R B R B
+   Row 3: B R B R
+   HISTORY OF EVENTS:
+   Recent turn history:
+   === TURN 2 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (1, 1) to (2, 1)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 1), resources: {'B': 1, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   ---
+   === TURN 3 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['B', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (2, 1) to (2, 2)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 2), resources: {'B': 0, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 7, 'G': 0, 'R': 1}
+   ---
+   === TURN 4 ===
+   Player 0 proposed trade to Player 1:
+   - Player 0 offered: [['R', 1]]
+   - Player 0 requested: [['B', 1]]
+   Player 1 ACCEPTED the trade
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['B', 1]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 chose not to move
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 2), resources: {'B': 2, 'G': 0, 'R': 5}
+   - Player 1: at (1, 0), resources: {'B': 5, 'G': 0, 'R': 3}
+   POSSIBLE PATHS TO GOAL:
+   The shortest path requires these resources: {'B': 1, 'R': 1}
+   You are missing these resources: {}
+   OTHER PLAYERS' STATUS:
+   - Player 1: at (1, 0), has {'B': 5, 'G': 0, 'R': 3}
+   IMPORTANT: First check if you need to trade at all:
+   1. Look at your best paths above. For the shortest path:
+      - Required resources: {'B': 1, 'R': 1}
+      - Missing resources: {}
+   2. If you have NO missing resources (empty dict {} above), respond with exactly: "n"
+      YOUR CURRENT RESOURCES: {'B': 2, 'G': 0, 'R': 5}
+      If you have enough resources to reach your goal, say "n"
+   3. Only if you are missing resources, consider a trade:
+      - Your current resources: {dict(self.resources)}
+      - You can ONLY request resources you're missing
+      - You can ONLY offer resources you have in excess
+      - NEVER trade with yourself ({self.name})
+      - NEVER offer 0 resources
+      - NEVER request resources you already have enough of
+      - Make the trade beneficial for both players
+   Respond in ONE of these two formats:
+   1. If you want to make a trade, use EXACTLY this JSON format (replace values in <>):
+   {
+     "player_to_trade_with": "<other player's name>",
+     "resources_to_offer": [["<color>", <number>]],
+     "resources_to_receive": [["<color>", <number>]]
+   }
+   Example of valid trade:
+   {
+     "player_to_trade_with": "Player 1",
+     "resources_to_offer": [["R", 3]],
+     "resources_to_receive": [["B", 2]]
+   }
+   2. If you don't want to trade, respond with exactly: n
+   Remember:
+   - Use EXACTLY the format shown above
+   - Only ONE resource pair in each array
+   - No spaces in color names
+   - Numbers must be > 0
+   - Don't trade with yourself ({self.name})
+   Keep your response below 1000 characters.
+
+ AI ACTION:
+────────────────────
+   AI Response: n
+
+
+ Decision: move
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   === GAME STATUS FOR Player 0 - TURN 5 ===
+   YOUR CURRENT STATUS:
+   - You are at position (2, 2)
+   - Your goal is at (3, 3)
+   - Your resources: {'B': 2, 'G': 0, 'R': 5}
+   - Distance to goal: 2 steps
+   BOARD LAYOUT:
+   Row 0: G B R B
+   Row 1: B R B R
+   Row 2: R B R B
+   Row 3: B R B R
+   HISTORY OF EVENTS:
+   Recent turn history:
+   === TURN 2 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (1, 1) to (2, 1)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 1), resources: {'B': 1, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   ---
+   === TURN 3 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['B', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (2, 1) to (2, 2)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 2), resources: {'B': 0, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 7, 'G': 0, 'R': 1}
+   ---
+   === TURN 4 ===
+   Player 0 proposed trade to Player 1:
+   - Player 0 offered: [['R', 1]]
+   - Player 0 requested: [['B', 1]]
+   Player 1 ACCEPTED the trade
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['B', 1]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 chose not to move
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 2), resources: {'B': 2, 'G': 0, 'R': 5}
+   - Player 1: at (1, 0), resources: {'B': 5, 'G': 0, 'R': 3}
+   POSSIBLE PATHS TO GOAL:
+   The shortest path requires these resources: {'B': 1, 'R': 1}
+   You are missing these resources: {}
+   OTHER PLAYERS' STATUS:
+   - Player 1: at (1, 0), has {'B': 5, 'G': 0, 'R': 3}
+   Choose your next move:
+   1. Look at the best path from your current position (2, 2) to your goal (3, 3):
+      - Next move in best path: (3, 2)
+      - Resources needed: {'B': 2, 'G': 0, 'R': 5}
+   2. Check if you can make this move:
+      - You can ONLY move one tile horizontally or vertically
+      - You MUST have the resource matching the tile's color
+      - The move MUST be adjacent to your current position
+   3. If you can make the move toward your goal, output it in format "r,c" (e.g. "1,2")
+      If you cannot make a valid move, output exactly: "n"
+   Remember:
+   - NEVER try to move to a tile you don't have resources for
+   - NEVER try to move more than one tile
+   - If you can't follow the best path, try another valid move toward the goal
+
+ AI ACTION:
+────────────────────
+   AI Response: 2,3
+
+
+ Player 1
+----------------------------------------
+
+ Decision: trade_proposal
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   === GAME STATUS FOR Player 1 - TURN 5 ===
+   YOUR CURRENT STATUS:
+   - You are at position (1, 0)
+   - Your goal is at (3, 3)
+   - Your resources: {'B': 5, 'G': 0, 'R': 3}
+   - Distance to goal: 5 steps
+   BOARD LAYOUT:
+   Row 0: G B R B
+   Row 1: B R B R
+   Row 2: R B R B
+   Row 3: B R B R
+   HISTORY OF EVENTS:
+   Recent turn history:
+   === TURN 2 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (1, 1) to (2, 1)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 1), resources: {'B': 1, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   ---
+   === TURN 3 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['B', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (2, 1) to (2, 2)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 2), resources: {'B': 0, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 7, 'G': 0, 'R': 1}
+   ---
+   === TURN 4 ===
+   Player 0 proposed trade to Player 1:
+   - Player 0 offered: [['R', 1]]
+   - Player 0 requested: [['B', 1]]
+   Player 1 ACCEPTED the trade
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['B', 1]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 chose not to move
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 2), resources: {'B': 2, 'G': 0, 'R': 5}
+   - Player 1: at (1, 0), resources: {'B': 5, 'G': 0, 'R': 3}
+   POSSIBLE PATHS TO GOAL:
+   The shortest path requires these resources: {'R': 3, 'B': 2}
+   You are missing these resources: {}
+   OTHER PLAYERS' STATUS:
+   - Player 0: at (2, 2), has {'B': 2, 'G': 0, 'R': 5}
+   IMPORTANT: First check if you need to trade at all:
+   1. Look at your best paths above. For the shortest path:
+      - Required resources: {'R': 3, 'B': 2}
+      - Missing resources: {}
+   2. If you have NO missing resources (empty dict {} above), respond with exactly: "n"
+      YOUR CURRENT RESOURCES: {'B': 5, 'G': 0, 'R': 3}
+      If you have enough resources to reach your goal, say "n"
+   3. Only if you are missing resources, consider a trade:
+      - Your current resources: {dict(self.resources)}
+      - You can ONLY request resources you're missing
+      - You can ONLY offer resources you have in excess
+      - NEVER trade with yourself ({self.name})
+      - NEVER offer 0 resources
+      - NEVER request resources you already have enough of
+      - Make the trade beneficial for both players
+   Respond in ONE of these two formats:
+   1. If you want to make a trade, use EXACTLY this JSON format (replace values in <>):
+   {
+     "player_to_trade_with": "<other player's name>",
+     "resources_to_offer": [["<color>", <number>]],
+     "resources_to_receive": [["<color>", <number>]]
+   }
+   Example of valid trade:
+   {
+     "player_to_trade_with": "Player 1",
+     "resources_to_offer": [["R", 3]],
+     "resources_to_receive": [["B", 2]]
+   }
+   2. If you don't want to trade, respond with exactly: n
+   Remember:
+   - Use EXACTLY the format shown above
+   - Only ONE resource pair in each array
+   - No spaces in color names
+   - Numbers must be > 0
+   - Don't trade with yourself ({self.name})
+   Keep your response below 1000 characters.
+
+ AI ACTION:
+────────────────────
+   AI Response: n
+
+
+ Decision: move
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   === GAME STATUS FOR Player 1 - TURN 5 ===
+   YOUR CURRENT STATUS:
+   - You are at position (1, 0)
+   - Your goal is at (3, 3)
+   - Your resources: {'B': 5, 'G': 0, 'R': 3}
+   - Distance to goal: 5 steps
+   BOARD LAYOUT:
+   Row 0: G B R B
+   Row 1: B R B R
+   Row 2: R B R B
+   Row 3: B R B R
+   HISTORY OF EVENTS:
+   Recent turn history:
+   === TURN 2 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (1, 1) to (2, 1)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 1), resources: {'B': 1, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 6, 'G': 0, 'R': 2}
+   ---
+   === TURN 3 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['B', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (2, 1) to (2, 2)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 2), resources: {'B': 0, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 7, 'G': 0, 'R': 1}
+   ---
+   === TURN 4 ===
+   Player 0 proposed trade to Player 1:
+   - Player 0 offered: [['R', 1]]
+   - Player 0 requested: [['B', 1]]
+   Player 1 ACCEPTED the trade
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['B', 1]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 chose not to move
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 2), resources: {'B': 2, 'G': 0, 'R': 5}
+   - Player 1: at (1, 0), resources: {'B': 5, 'G': 0, 'R': 3}
+   POSSIBLE PATHS TO GOAL:
+   The shortest path requires these resources: {'R': 3, 'B': 2}
+   You are missing these resources: {}
+   OTHER PLAYERS' STATUS:
+   - Player 0: at (2, 2), has {'B': 2, 'G': 0, 'R': 5}
+   Choose your next move:
+   1. Look at the best path from your current position (1, 0) to your goal (3, 3):
+      - Next move in best path: (2, 0)
+      - Resources needed: {'B': 5, 'G': 0, 'R': 3}
+   2. Check if you can make this move:
+      - You can ONLY move one tile horizontally or vertically
+      - You MUST have the resource matching the tile's color
+      - The move MUST be adjacent to your current position
+   3. If you can make the move toward your goal, output it in format "r,c" (e.g. "1,2")
+      If you cannot make a valid move, output exactly: "n"
+   Remember:
+   - NEVER try to move to a tile you don't have resources for
+   - NEVER try to move more than one tile
+   - If you can't follow the best path, try another valid move toward the goal
+
+ AI ACTION:
+────────────────────
+   AI Response: "2,0"
+
+
+================================================================================
+TURN 6
+================================================================================
+
+ Player 0
+----------------------------------------
+
+ Decision: trade_proposal
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   === GAME STATUS FOR Player 0 - TURN 6 ===
+   YOUR CURRENT STATUS:
+   - You are at position (2, 3)
+   - Your goal is at (3, 3)
+   - Your resources: {'B': 1, 'G': 0, 'R': 5}
+   - Distance to goal: 1 steps
+   BOARD LAYOUT:
+   Row 0: G B R B
+   Row 1: B R B R
+   Row 2: R B R B
+   Row 3: B R B R
+   HISTORY OF EVENTS:
+   Recent turn history:
+   === TURN 3 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['B', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (2, 1) to (2, 2)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 2), resources: {'B': 0, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 7, 'G': 0, 'R': 1}
+   ---
+   === TURN 4 ===
+   Player 0 proposed trade to Player 1:
+   - Player 0 offered: [['R', 1]]
+   - Player 0 requested: [['B', 1]]
+   Player 1 ACCEPTED the trade
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['B', 1]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 chose not to move
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 2), resources: {'B': 2, 'G': 0, 'R': 5}
+   - Player 1: at (1, 0), resources: {'B': 5, 'G': 0, 'R': 3}
+   ---
+   === TURN 5 ===
+   MOVE: Player 0 moved from (2, 2) to (2, 3)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 3), resources: {'B': 1, 'G': 0, 'R': 5}
+   - Player 1: at (1, 0), resources: {'B': 5, 'G': 0, 'R': 3}
+   POSSIBLE PATHS TO GOAL:
+   The shortest path requires these resources: {'R': 1}
+   You are missing these resources: {}
+   OTHER PLAYERS' STATUS:
+   - Player 1: at (1, 0), has {'B': 5, 'G': 0, 'R': 3}
+   IMPORTANT: First check if you need to trade at all:
+   1. Look at your best paths above. For the shortest path:
+      - Required resources: {'R': 1}
+      - Missing resources: {}
+   2. If you have NO missing resources (empty dict {} above), respond with exactly: "n"
+      YOUR CURRENT RESOURCES: {'B': 1, 'G': 0, 'R': 5}
+      If you have enough resources to reach your goal, say "n"
+   3. Only if you are missing resources, consider a trade:
+      - Your current resources: {dict(self.resources)}
+      - You can ONLY request resources you're missing
+      - You can ONLY offer resources you have in excess
+      - NEVER trade with yourself ({self.name})
+      - NEVER offer 0 resources
+      - NEVER request resources you already have enough of
+      - Make the trade beneficial for both players
+   Respond in ONE of these two formats:
+   1. If you want to make a trade, use EXACTLY this JSON format (replace values in <>):
+   {
+     "player_to_trade_with": "<other player's name>",
+     "resources_to_offer": [["<color>", <number>]],
+     "resources_to_receive": [["<color>", <number>]]
+   }
+   Example of valid trade:
+   {
+     "player_to_trade_with": "Player 1",
+     "resources_to_offer": [["R", 3]],
+     "resources_to_receive": [["B", 2]]
+   }
+   2. If you don't want to trade, respond with exactly: n
+   Remember:
+   - Use EXACTLY the format shown above
+   - Only ONE resource pair in each array
+   - No spaces in color names
+   - Numbers must be > 0
+   - Don't trade with yourself ({self.name})
+   Keep your response below 1000 characters.
+
+ AI ACTION:
+────────────────────
+   AI Response: n
+
+
+ Decision: move
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   === GAME STATUS FOR Player 0 - TURN 6 ===
+   YOUR CURRENT STATUS:
+   - You are at position (2, 3)
+   - Your goal is at (3, 3)
+   - Your resources: {'B': 1, 'G': 0, 'R': 5}
+   - Distance to goal: 1 steps
+   BOARD LAYOUT:
+   Row 0: G B R B
+   Row 1: B R B R
+   Row 2: R B R B
+   Row 3: B R B R
+   HISTORY OF EVENTS:
+   Recent turn history:
+   === TURN 3 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['B', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (2, 1) to (2, 2)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 2), resources: {'B': 0, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 7, 'G': 0, 'R': 1}
+   ---
+   === TURN 4 ===
+   Player 0 proposed trade to Player 1:
+   - Player 0 offered: [['R', 1]]
+   - Player 0 requested: [['B', 1]]
+   Player 1 ACCEPTED the trade
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['B', 1]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 chose not to move
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 2), resources: {'B': 2, 'G': 0, 'R': 5}
+   - Player 1: at (1, 0), resources: {'B': 5, 'G': 0, 'R': 3}
+   ---
+   === TURN 5 ===
+   MOVE: Player 0 moved from (2, 2) to (2, 3)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 3), resources: {'B': 1, 'G': 0, 'R': 5}
+   - Player 1: at (1, 0), resources: {'B': 5, 'G': 0, 'R': 3}
+   POSSIBLE PATHS TO GOAL:
+   The shortest path requires these resources: {'R': 1}
+   You are missing these resources: {}
+   OTHER PLAYERS' STATUS:
+   - Player 1: at (1, 0), has {'B': 5, 'G': 0, 'R': 3}
+   Choose your next move:
+   1. Look at the best path from your current position (2, 3) to your goal (3, 3):
+      - Next move in best path: (3, 3)
+      - Resources needed: {'B': 1, 'G': 0, 'R': 5}
+   2. Check if you can make this move:
+      - You can ONLY move one tile horizontally or vertically
+      - You MUST have the resource matching the tile's color
+      - The move MUST be adjacent to your current position
+   3. If you can make the move toward your goal, output it in format "r,c" (e.g. "1,2")
+      If you cannot make a valid move, output exactly: "n"
+   Remember:
+   - NEVER try to move to a tile you don't have resources for
+   - NEVER try to move more than one tile
+   - If you can't follow the best path, try another valid move toward the goal
+
+ AI ACTION:
+────────────────────
+   AI Response: 3,3
+
+
+ Player 1
+----------------------------------------
+
+ Decision: trade_proposal
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   === GAME STATUS FOR Player 1 - TURN 6 ===
+   YOUR CURRENT STATUS:
+   - You are at position (1, 0)
+   - Your goal is at (3, 3)
+   - Your resources: {'B': 5, 'G': 0, 'R': 3}
+   - Distance to goal: 5 steps
+   BOARD LAYOUT:
+   Row 0: G B R B
+   Row 1: B R B R
+   Row 2: R B R B
+   Row 3: B R B R
+   HISTORY OF EVENTS:
+   Recent turn history:
+   === TURN 3 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['B', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (2, 1) to (2, 2)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 2), resources: {'B': 0, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 7, 'G': 0, 'R': 1}
+   ---
+   === TURN 4 ===
+   Player 0 proposed trade to Player 1:
+   - Player 0 offered: [['R', 1]]
+   - Player 0 requested: [['B', 1]]
+   Player 1 ACCEPTED the trade
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['B', 1]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 chose not to move
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 2), resources: {'B': 2, 'G': 0, 'R': 5}
+   - Player 1: at (1, 0), resources: {'B': 5, 'G': 0, 'R': 3}
+   ---
+   === TURN 5 ===
+   MOVE: Player 0 moved from (2, 2) to (2, 3)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 3), resources: {'B': 1, 'G': 0, 'R': 5}
+   - Player 1: at (1, 0), resources: {'B': 5, 'G': 0, 'R': 3}
+   POSSIBLE PATHS TO GOAL:
+   The shortest path requires these resources: {'R': 3, 'B': 2}
+   You are missing these resources: {}
+   OTHER PLAYERS' STATUS:
+   - Player 0: at (2, 3), has {'B': 1, 'G': 0, 'R': 5}
+   IMPORTANT: First check if you need to trade at all:
+   1. Look at your best paths above. For the shortest path:
+      - Required resources: {'R': 3, 'B': 2}
+      - Missing resources: {}
+   2. If you have NO missing resources (empty dict {} above), respond with exactly: "n"
+      YOUR CURRENT RESOURCES: {'B': 5, 'G': 0, 'R': 3}
+      If you have enough resources to reach your goal, say "n"
+   3. Only if you are missing resources, consider a trade:
+      - Your current resources: {dict(self.resources)}
+      - You can ONLY request resources you're missing
+      - You can ONLY offer resources you have in excess
+      - NEVER trade with yourself ({self.name})
+      - NEVER offer 0 resources
+      - NEVER request resources you already have enough of
+      - Make the trade beneficial for both players
+   Respond in ONE of these two formats:
+   1. If you want to make a trade, use EXACTLY this JSON format (replace values in <>):
+   {
+     "player_to_trade_with": "<other player's name>",
+     "resources_to_offer": [["<color>", <number>]],
+     "resources_to_receive": [["<color>", <number>]]
+   }
+   Example of valid trade:
+   {
+     "player_to_trade_with": "Player 1",
+     "resources_to_offer": [["R", 3]],
+     "resources_to_receive": [["B", 2]]
+   }
+   2. If you don't want to trade, respond with exactly: n
+   Remember:
+   - Use EXACTLY the format shown above
+   - Only ONE resource pair in each array
+   - No spaces in color names
+   - Numbers must be > 0
+   - Don't trade with yourself ({self.name})
+   Keep your response below 1000 characters.
+
+ AI ACTION:
+────────────────────
+   AI Response: {
+  "player_to_trade_with": "player 0",
+  "resources_to_offer": [["b", 1]],
+  "resources_to_receive": [["r", 1]]
+}
+
+
+ Decision: move
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   === GAME STATUS FOR Player 1 - TURN 6 ===
+   YOUR CURRENT STATUS:
+   - You are at position (1, 0)
+   - Your goal is at (3, 3)
+   - Your resources: {'B': 5, 'G': 0, 'R': 3}
+   - Distance to goal: 5 steps
+   BOARD LAYOUT:
+   Row 0: G B R B
+   Row 1: B R B R
+   Row 2: R B R B
+   Row 3: B R B R
+   HISTORY OF EVENTS:
+   Recent turn history:
+   === TURN 3 ===
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['R', 1]]
+   - Player 1 requested: [['B', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 moved from (2, 1) to (2, 2)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 2), resources: {'B': 0, 'G': 0, 'R': 7}
+   - Player 1: at (1, 0), resources: {'B': 7, 'G': 0, 'R': 1}
+   ---
+   === TURN 4 ===
+   Player 0 proposed trade to Player 1:
+   - Player 0 offered: [['R', 1]]
+   - Player 0 requested: [['B', 1]]
+   Player 1 ACCEPTED the trade
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['B', 1]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 chose not to move
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 2), resources: {'B': 2, 'G': 0, 'R': 5}
+   - Player 1: at (1, 0), resources: {'B': 5, 'G': 0, 'R': 3}
+   ---
+   === TURN 5 ===
+   MOVE: Player 0 moved from (2, 2) to (2, 3)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 3), resources: {'B': 1, 'G': 0, 'R': 5}
+   - Player 1: at (1, 0), resources: {'B': 5, 'G': 0, 'R': 3}
+   POSSIBLE PATHS TO GOAL:
+   The shortest path requires these resources: {'R': 3, 'B': 2}
+   You are missing these resources: {}
+   OTHER PLAYERS' STATUS:
+   - Player 0: at (2, 3), has {'B': 1, 'G': 0, 'R': 5}
+   Choose your next move:
+   1. Look at the best path from your current position (1, 0) to your goal (3, 3):
+      - Next move in best path: (2, 0)
+      - Resources needed: {'B': 5, 'G': 0, 'R': 3}
+   2. Check if you can make this move:
+      - You can ONLY move one tile horizontally or vertically
+      - You MUST have the resource matching the tile's color
+      - The move MUST be adjacent to your current position
+   3. If you can make the move toward your goal, output it in format "r,c" (e.g. "1,2")
+      If you cannot make a valid move, output exactly: "n"
+   Remember:
+   - NEVER try to move to a tile you don't have resources for
+   - NEVER try to move more than one tile
+   - If you can't follow the best path, try another valid move toward the goal
+
+ AI ACTION:
+────────────────────
+   AI Response: n
+
+
+================================================================================
+TURN 7
+================================================================================
+
+ Decision: trade_proposal
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   === GAME STATUS FOR Player 1 - TURN 7 ===
+   YOUR CURRENT STATUS:
+   - You are at position (1, 0)
+   - Your goal is at (3, 3)
+   - Your resources: {'B': 5, 'G': 0, 'R': 3}
+   - Distance to goal: 5 steps
+   BOARD LAYOUT:
+   Row 0: G B R B
+   Row 1: B R B R
+   Row 2: R B R B
+   Row 3: B R B R
+   HISTORY OF EVENTS:
+   Recent turn history:
+   === TURN 4 ===
+   Player 0 proposed trade to Player 1:
+   - Player 0 offered: [['R', 1]]
+   - Player 0 requested: [['B', 1]]
+   Player 1 ACCEPTED the trade
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['B', 1]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 chose not to move
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 2), resources: {'B': 2, 'G': 0, 'R': 5}
+   - Player 1: at (1, 0), resources: {'B': 5, 'G': 0, 'R': 3}
+   ---
+   === TURN 5 ===
+   MOVE: Player 0 moved from (2, 2) to (2, 3)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 3), resources: {'B': 1, 'G': 0, 'R': 5}
+   - Player 1: at (1, 0), resources: {'B': 5, 'G': 0, 'R': 3}
+   ---
+   === TURN 6 ===
+   MOVE: Player 0 moved from (2, 3) to (3, 3)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: FINISHED!, resources: {'B': 1, 'G': 0, 'R': 4}
+   - Player 1: at (1, 0), resources: {'B': 5, 'G': 0, 'R': 3}
+   POSSIBLE PATHS TO GOAL:
+   The shortest path requires these resources: {'R': 3, 'B': 2}
+   You are missing these resources: {}
+   OTHER PLAYERS' STATUS:
+   - Player 0: at (3, 3), has {'B': 1, 'G': 0, 'R': 4}
+   IMPORTANT: First check if you need to trade at all:
+   1. Look at your best paths above. For the shortest path:
+      - Required resources: {'R': 3, 'B': 2}
+      - Missing resources: {}
+   2. If you have NO missing resources (empty dict {} above), respond with exactly: "n"
+      YOUR CURRENT RESOURCES: {'B': 5, 'G': 0, 'R': 3}
+      If you have enough resources to reach your goal, say "n"
+   3. Only if you are missing resources, consider a trade:
+      - Your current resources: {dict(self.resources)}
+      - You can ONLY request resources you're missing
+      - You can ONLY offer resources you have in excess
+      - NEVER trade with yourself ({self.name})
+      - NEVER offer 0 resources
+      - NEVER request resources you already have enough of
+      - Make the trade beneficial for both players
+   Respond in ONE of these two formats:
+   1. If you want to make a trade, use EXACTLY this JSON format (replace values in <>):
+   {
+     "player_to_trade_with": "<other player's name>",
+     "resources_to_offer": [["<color>", <number>]],
+     "resources_to_receive": [["<color>", <number>]]
+   }
+   Example of valid trade:
+   {
+     "player_to_trade_with": "Player 1",
+     "resources_to_offer": [["R", 3]],
+     "resources_to_receive": [["B", 2]]
+   }
+   2. If you don't want to trade, respond with exactly: n
+   Remember:
+   - Use EXACTLY the format shown above
+   - Only ONE resource pair in each array
+   - No spaces in color names
+   - Numbers must be > 0
+   - Don't trade with yourself ({self.name})
+   Keep your response below 1000 characters.
+
+ AI ACTION:
+────────────────────
+   AI Response: n
+
+
+ Decision: move
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   === GAME STATUS FOR Player 1 - TURN 7 ===
+   YOUR CURRENT STATUS:
+   - You are at position (1, 0)
+   - Your goal is at (3, 3)
+   - Your resources: {'B': 5, 'G': 0, 'R': 3}
+   - Distance to goal: 5 steps
+   BOARD LAYOUT:
+   Row 0: G B R B
+   Row 1: B R B R
+   Row 2: R B R B
+   Row 3: B R B R
+   HISTORY OF EVENTS:
+   Recent turn history:
+   === TURN 4 ===
+   Player 0 proposed trade to Player 1:
+   - Player 0 offered: [['R', 1]]
+   - Player 0 requested: [['B', 1]]
+   Player 1 ACCEPTED the trade
+   Player 1 proposed trade to Player 0:
+   - Player 1 offered: [['B', 1]]
+   - Player 1 requested: [['R', 1]]
+   Player 0 ACCEPTED the trade
+   MOVE: Player 0 chose not to move
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 2), resources: {'B': 2, 'G': 0, 'R': 5}
+   - Player 1: at (1, 0), resources: {'B': 5, 'G': 0, 'R': 3}
+   ---
+   === TURN 5 ===
+   MOVE: Player 0 moved from (2, 2) to (2, 3)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 3), resources: {'B': 1, 'G': 0, 'R': 5}
+   - Player 1: at (1, 0), resources: {'B': 5, 'G': 0, 'R': 3}
+   ---
+   === TURN 6 ===
+   MOVE: Player 0 moved from (2, 3) to (3, 3)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: FINISHED!, resources: {'B': 1, 'G': 0, 'R': 4}
+   - Player 1: at (1, 0), resources: {'B': 5, 'G': 0, 'R': 3}
+   POSSIBLE PATHS TO GOAL:
+   The shortest path requires these resources: {'R': 3, 'B': 2}
+   You are missing these resources: {}
+   OTHER PLAYERS' STATUS:
+   - Player 0: at (3, 3), has {'B': 1, 'G': 0, 'R': 4}
+   Choose your next move:
+   1. Look at the best path from your current position (1, 0) to your goal (3, 3):
+      - Next move in best path: (2, 0)
+      - Resources needed: {'B': 5, 'G': 0, 'R': 3}
+   2. Check if you can make this move:
+      - You can ONLY move one tile horizontally or vertically
+      - You MUST have the resource matching the tile's color
+      - The move MUST be adjacent to your current position
+   3. If you can make the move toward your goal, output it in format "r,c" (e.g. "1,2")
+      If you cannot make a valid move, output exactly: "n"
+   Remember:
+   - NEVER try to move to a tile you don't have resources for
+   - NEVER try to move more than one tile
+   - If you can't follow the best path, try another valid move toward the goal
+
+ AI ACTION:
+────────────────────
+   AI Response: 1,0
+
+
+================================================================================
+TURN 8
+================================================================================
+
+ Decision: trade_proposal
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   === GAME STATUS FOR Player 1 - TURN 8 ===
+   YOUR CURRENT STATUS:
+   - You are at position (1, 0)
+   - Your goal is at (3, 3)
+   - Your resources: {'B': 5, 'G': 0, 'R': 3}
+   - Distance to goal: 5 steps
+   BOARD LAYOUT:
+   Row 0: G B R B
+   Row 1: B R B R
+   Row 2: R B R B
+   Row 3: B R B R
+   HISTORY OF EVENTS:
+   Recent turn history:
+   === TURN 5 ===
+   MOVE: Player 0 moved from (2, 2) to (2, 3)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 3), resources: {'B': 1, 'G': 0, 'R': 5}
+   - Player 1: at (1, 0), resources: {'B': 5, 'G': 0, 'R': 3}
+   ---
+   === TURN 6 ===
+   MOVE: Player 0 moved from (2, 3) to (3, 3)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: FINISHED!, resources: {'B': 1, 'G': 0, 'R': 4}
+   - Player 1: at (1, 0), resources: {'B': 5, 'G': 0, 'R': 3}
+   ---
+   === TURN 7 ===
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: FINISHED!, resources: {'B': 1, 'G': 0, 'R': 4}
+   - Player 1: at (1, 0), resources: {'B': 5, 'G': 0, 'R': 3}
+   POSSIBLE PATHS TO GOAL:
+   The shortest path requires these resources: {'R': 3, 'B': 2}
+   You are missing these resources: {}
+   OTHER PLAYERS' STATUS:
+   - Player 0: at (3, 3), has {'B': 1, 'G': 0, 'R': 4}
+   IMPORTANT: First check if you need to trade at all:
+   1. Look at your best paths above. For the shortest path:
+      - Required resources: {'R': 3, 'B': 2}
+      - Missing resources: {}
+   2. If you have NO missing resources (empty dict {} above), respond with exactly: "n"
+      YOUR CURRENT RESOURCES: {'B': 5, 'G': 0, 'R': 3}
+      If you have enough resources to reach your goal, say "n"
+   3. Only if you are missing resources, consider a trade:
+      - Your current resources: {dict(self.resources)}
+      - You can ONLY request resources you're missing
+      - You can ONLY offer resources you have in excess
+      - NEVER trade with yourself ({self.name})
+      - NEVER offer 0 resources
+      - NEVER request resources you already have enough of
+      - Make the trade beneficial for both players
+   Respond in ONE of these two formats:
+   1. If you want to make a trade, use EXACTLY this JSON format (replace values in <>):
+   {
+     "player_to_trade_with": "<other player's name>",
+     "resources_to_offer": [["<color>", <number>]],
+     "resources_to_receive": [["<color>", <number>]]
+   }
+   Example of valid trade:
+   {
+     "player_to_trade_with": "Player 1",
+     "resources_to_offer": [["R", 3]],
+     "resources_to_receive": [["B", 2]]
+   }
+   2. If you don't want to trade, respond with exactly: n
+   Remember:
+   - Use EXACTLY the format shown above
+   - Only ONE resource pair in each array
+   - No spaces in color names
+   - Numbers must be > 0
+   - Don't trade with yourself ({self.name})
+   Keep your response below 1000 characters.
+
+ AI ACTION:
+────────────────────
+   AI Response: n
+
+
+ Decision: move
+
+ AI PROMPTS:
+────────────────────────────────────────────────────────────
+
+ SYSTEM (Game Rules):
+   You are a player in a game called Coloured Trails.
+   Objective:
+   - Reach your goal position from your starting position using as few resources as possible.
+   - You only care to reach the end tile, you dont care to outperform other player.
+   Movement rules:
+   1. You can move one tile per turn, either horizontally or vertically.
+   2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+   3. You do not pay to remain on your current tile.
+   Trading rules:
+   - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+   - You may propose trades to other players, or accept trades proposed by others.
+   CRITICAL SCORING RULES - READ CAREFULLY:
+   - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
+   - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+   - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+   - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
+   Your priorities:
+   1. FIRST AND MOST IMPORTANT: Reach your goal position at all costs.
+   2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
+   3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
+   4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+   5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy.
+
+ USER (Game State & Request):
+   === GAME STATUS FOR Player 1 - TURN 8 ===
+   YOUR CURRENT STATUS:
+   - You are at position (1, 0)
+   - Your goal is at (3, 3)
+   - Your resources: {'B': 5, 'G': 0, 'R': 3}
+   - Distance to goal: 5 steps
+   BOARD LAYOUT:
+   Row 0: G B R B
+   Row 1: B R B R
+   Row 2: R B R B
+   Row 3: B R B R
+   HISTORY OF EVENTS:
+   Recent turn history:
+   === TURN 5 ===
+   MOVE: Player 0 moved from (2, 2) to (2, 3)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: at (2, 3), resources: {'B': 1, 'G': 0, 'R': 5}
+   - Player 1: at (1, 0), resources: {'B': 5, 'G': 0, 'R': 3}
+   ---
+   === TURN 6 ===
+   MOVE: Player 0 moved from (2, 3) to (3, 3)
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: FINISHED!, resources: {'B': 1, 'G': 0, 'R': 4}
+   - Player 1: at (1, 0), resources: {'B': 5, 'G': 0, 'R': 3}
+   ---
+   === TURN 7 ===
+   MOVE: Player 1 chose not to move
+   POSITIONS:
+   - Player 0: FINISHED!, resources: {'B': 1, 'G': 0, 'R': 4}
+   - Player 1: at (1, 0), resources: {'B': 5, 'G': 0, 'R': 3}
+   POSSIBLE PATHS TO GOAL:
+   The shortest path requires these resources: {'R': 3, 'B': 2}
+   You are missing these resources: {}
+   OTHER PLAYERS' STATUS:
+   - Player 0: at (3, 3), has {'B': 1, 'G': 0, 'R': 4}
+   Choose your next move:
+   1. Look at the best path from your current position (1, 0) to your goal (3, 3):
+      - Next move in best path: (2, 0)
+      - Resources needed: {'B': 5, 'G': 0, 'R': 3}
+   2. Check if you can make this move:
+      - You can ONLY move one tile horizontally or vertically
+      - You MUST have the resource matching the tile's color
+      - The move MUST be adjacent to your current position
+   3. If you can make the move toward your goal, output it in format "r,c" (e.g. "1,2")
+      If you cannot make a valid move, output exactly: "n"
+   Remember:
+   - NEVER try to move to a tile you don't have resources for
+   - NEVER try to move more than one tile
+   - If you can't follow the best path, try another valid move toward the goal
+
+ AI ACTION:
+────────────────────
+   AI Response: n
+
