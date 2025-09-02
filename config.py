@@ -40,6 +40,12 @@ class GameConfig:
 
     # LLM PARAMETERS
     temperature: float = 1.0
+    with_context: bool = True  # turn history between players (goes with system role prompt)
+    with_message_history: bool = True  # conversation history for each player (goes with assistant role prompt)
+    
+    # DISPLAY PARAMETERS
+    display_gui: bool = True  # if False, only show console output (no Pygame window)
+    wait_for_enter: bool = False  # if True, wait for Enter key between turns
 
     def __post_init__(self):
         import agents as a 
