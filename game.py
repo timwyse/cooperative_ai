@@ -299,6 +299,7 @@ class Game:
                 print(f"{player.name} chose not to trade")
 
             # Handle movement
+            old_position = player.position  # Capture position before move
             move = player.come_up_with_move(self, self.grid)
             if move is None:
                 print(f"{player.name} did not move.")
@@ -307,7 +308,7 @@ class Game:
                 if player.can_move_to(move, self.grid):
                     self.logger.log("move", {
                         "player": player.name,
-                        "move_from": player.position,
+                        "move_from": old_position,
                         "move_to": move,})
                     player.move(move, self.grid)
                     move_result = move
@@ -342,7 +343,7 @@ class Game:
                 # Add this player's move
                 move_summary = {
                     "player": player.name,
-                    "from_pos": player.position,
+                    "from_pos": old_position,
                     "to_pos": move_result if isinstance(move_result, tuple) else None,
                     "success": isinstance(move_result, tuple),
                     "reason": "successful" if isinstance(move_result, tuple) else move_result
