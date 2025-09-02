@@ -412,6 +412,10 @@ class Game:
                     player.resources[resource] += quantity
                     player_to_trade_with.resources[resource] -= quantity
 
+                # Update game state immediately after trade execution
+                self.game_state[player.name]["resources"] = dict(player.resources)
+                self.game_state[player_to_trade_with.name]["resources"] = dict(player_to_trade_with.resources)
+
                 print(f"\nTRADE ACCEPTED between {player.name} and {player_to_trade_with.name}")
                 print(f"- {player.name} now has: {dict(player.resources)}")
                 print(f"- {player_to_trade_with.name} now has: {dict(player_to_trade_with.resources)}")
