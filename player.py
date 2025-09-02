@@ -46,15 +46,15 @@ Trading rules:
 
 CRITICAL SCORING RULES - READ CAREFULLY:
 - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
-- If you do NOT reach your goal, ALL your remaining resources are WORTHLESS - you get 0 points.
+- If you do NOT reach your goal, ALL your remaining resources are WORTHLESS.
 - If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
 - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
 
 Your priorities:
-1. MOST IMPORTANT: Reach your goal position at all costs.
-2. SECOND: Conserve resources only if it doesn't prevent you from reaching your goal.
-3. Remember: Having 100 resources is worthless if you don't reach your goal (0 points).
-4. Remember: Having 0 resources but reaching your goal gives you 100 points.
+1. MOST IMPORTANT: Reach your goal position.
+2. Conserve resources only if it doesn't prevent you from reaching your goal.
+3. Having 100 resources is worthless if you don't reach your goal (0 points).
+4. Having 0 resources but reaching your goal gives you 100 points.
 5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy. 
 """
 #TODO: review the above, is it too scaffolded? ^^ 
@@ -266,10 +266,6 @@ BOARD LAYOUT:
 HISTORY OF EVENTS:
 {recent_history if recent_history else "This is the first turn."}
 
-POSSIBLE PATHS TO GOAL:
-The shortest path requires these resources: {self.best_routes(grid)[0]["resources_required_for_path"]}
-You are missing these resources: {self.best_routes(grid)[0]["resources_missing_due_to_insufficient_inventory"]}
-
 OTHER PLAYERS' STATUS:
 {chr(10).join(f"- {name}: at {state['position']}, has {state['resources']}" for name, state in game.game_state.items() if name != self.name)}
 """
@@ -322,7 +318,8 @@ Choose your next move:
 
 1. Look at the best path from your current position {self.position} to your goal {self.goal}:
    - Next move in best path: {next_move}
-   - Resources needed: {dict(self.resources)}
+   - Required resources: {str(self.best_routes(grid)[0]["resources_required_for_path"])}
+   - Missing resources: {str(self.best_routes(grid)[0]["resources_missing_due_to_insufficient_inventory"])}
 
 2. Check if you can make this move:
    - You can ONLY move one tile horizontally or vertically
@@ -480,10 +477,10 @@ IMPORTANT: First check if you need to trade at all:
    If you have enough resources to reach your goal, say "n"
 
 3. Only if you are missing resources, consider a trade:
-   - Your current resources: {dict(self.resources)}
+   - Your current resources: """ + str(dict(self.resources))+ """
    - You can ONLY request resources you're missing
    - You can ONLY offer resources you have in excess
-   - NEVER trade with yourself ({self.name})
+   - NEVER trade with yourself """ + str(self.name) + """
    - NEVER offer 0 resources
    - NEVER request resources you already have enough of
    - Make the trade beneficial for both players
@@ -511,7 +508,7 @@ Remember:
 - Only ONE resource pair in each array
 - No spaces in color names
 - Numbers must be > 0
-- Don't trade with yourself ({self.name})
+- Don't trade with yourself """ + str(self.name) + """
 
 Keep your response below 1000 characters.
 """
@@ -618,7 +615,11 @@ Keep your response below 1000 characters.
             # Simple trade acceptance prompt
             user_message = f"""You have been offered a trade:
 {trade_proposer} wants to give you {resources_to_offer} in exchange for {resources_to_receive}.
-Do you accept this trade? Answer 'yes' or 'no'."""
+
+IMPORTANT: Respond with ONLY one word: "yes" or "no"
+Do not provide explanations, reasoning, or additional text.
+
+Do you accept this trade?"""
             
             # Prepare messages for this request
             current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}]
@@ -643,7 +644,7 @@ Do you accept this trade? Answer 'yes' or 'no'."""
                 model=self.model,
                 temperature=self.temperature,
                 messages=current_messages,
-                max_completion_tokens=1000)
+                max_completion_tokens=10)
             accept_trade = response.choices[0].message.content.strip().lower()
             
             # Save to history if enabled
@@ -655,10 +656,15 @@ Do you accept this trade? Answer 'yes' or 'no'."""
             
             self.logger.log("accept_trade_response", {"player": self.name, "message": accept_trade})
             
-            # Simple yes/no check
-            if "yes" in accept_trade:
+            # Strict yes/no parsing - look for exact words
+            first_word = accept_trade.split()[0] if accept_trade.split() else ""
+            if first_word == "yes" or accept_trade == "yes":
                 return True
+            elif first_word == "no" or accept_trade == "no":
+                return False
             else:
+                # Default to no if response is unclear
+                print(f"Unclear response: '{accept_trade}', defaulting to NO")
                 return False
 
     

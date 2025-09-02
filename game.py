@@ -290,9 +290,9 @@ class Game:
                     print(f"- Requesting: {propose_trade['resources_to_receive']}")
                     
                     # Handle the trade
-                    self.handle_trade(player, propose_trade)
-                    # Mark that this trade was executed
-                    trade_result["executed"] = True
+                    trade_executed = self.handle_trade(player, propose_trade)
+                    # Mark whether this trade was actually executed
+                    trade_result["executed"] = trade_executed
                 else:
                     print(f"{player.name}'s trade proposal was invalid: {trade_result['message']}")
             else:
@@ -386,13 +386,14 @@ class Game:
         Handle a trade proposal from a player.
         - Validate the trade proposal.
         - Execute the trade if the target player accepts.
+        Returns True if trade was executed, False otherwise.
         """
         try:
             # Validate the trade proposal
             validation_result = self.validate_trade(player, propose_trade)
             if not validation_result["is_valid"]:
                 print(f"Trade validation failed: {validation_result['message']}")
-                return
+                return False
 
             player_to_trade_with = validation_result["player_to_trade_with"]
             resources_to_offer = propose_trade['resources_to_offer']
@@ -417,14 +418,17 @@ class Game:
                 
                 trade_log['result'] = 'accepted'
                 self.logger.log("trade", trade_log)
+                return True
             else:
                 print(f"\nTRADE REJECTED by {player_to_trade_with.name}")
                 trade_log['result'] = 'declined'
                 self.logger.log("trade", trade_log)
+                return False
 
         except Exception as e:
             print(f"An error occurred while handling the trade: {e}")
             self.logger.log("trade_error", {"error": str(e), "propose_trade": propose_trade})
+            return False
 
     def validate_trade(self, player, propose_trade):
         """
