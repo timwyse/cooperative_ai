@@ -24,7 +24,7 @@ class Game:
         # Create a separate logger for yulia's logs
         from datetime import datetime
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.yulia_logger = GameLogger(filepath=f"yulia_logs_{timestamp}.jsonl")
+        self.yulia_logger = GameLogger(filepath=f"logs/yulia_agent_prompt_logs/yulia_logs_{timestamp}.jsonl")
 
         # Grid Setup
         self.grid_size = self.config.grid_size
