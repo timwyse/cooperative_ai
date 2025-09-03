@@ -39,12 +39,41 @@ Always maximise your total points. Note that reaching your goal is the most impo
 """
 
 # %%
-user_message = """
-The board is:
-Row 0: [R, G, R]
-Row 1: [G,R,B]
-Row 2: [B,B,B]
 
-Your position is (0, 1) 
-Your opponent is at position (0,0) and has resources {'B': 10}.
+import re
+
+def extract_move(text: str):
+    pair_matches = re.findall(r'(-?\d+)\s*,\s*(-?\d+)', text)
+    if pair_matches:
+        a, b = map(int, pair_matches[-1])
+        return (a, b)
+    return None
+
+text = """
+
+**move: "``1,0]"**
 """
+
+print(extract_move(text))  # -> (0, 1)
+
+# %%
+import re
+def ends_with_n(text: str) -> bool:
+    """
+    Returns True if the last alphanumeric 'word' in the text
+    is exactly 'n' or 'N'.
+    """
+    # Find all alphanumeric words
+    words = re.findall(r"[A-Za-z0-9]+", text)
+    if not words:
+        return False
+    return words[-1].lower() == "n"
+
+print(ends_with_n("your output should be:\n\nn\n"))  # True
+print(ends_with_n("i think that's too thin"))              # False
+print(ends_with_n("...\nn   "))                            # True
+print(ends_with_n("word ending N   "))                     # True
+print(ends_with_n("hello world"))                          # False
+print(ends_with_n("n (5,2)"))                          # False
+print(ends_with_n("(5,2) n"))                          # True
+# %%
