@@ -2,12 +2,10 @@ from collections import Counter, defaultdict
 import copy
 import random
 from time import sleep
-from typing import Optional
 
 import pygame
 from tabulate import tabulate
 
-from config import GameConfig, DEFAULT_CONFIG
 from constants import AVAILABLE_COLORS, COLOR_MAP, TILE_SIZE, FPS
 from grid import Grid
 from logger import GameLogger, NullLogger
@@ -17,7 +15,7 @@ from utils import freeze
 
 class Game:
    
-    def __init__(self, config: Optional[GameConfig] = DEFAULT_CONFIG, logger=None):
+    def __init__(self, config, logger=None):
         # Configuration and Logging
         self.config = config
         self.logger = logger if logger is not None else NullLogger()
@@ -38,6 +36,9 @@ class Game:
 
         # Resource Distribution
         self.distribute_resources()
+
+        # trade version
+        self.pay4partner = self.config.pay4partner
 
         # Game State Initialization
         self.initialize_player_positions()
@@ -153,7 +154,9 @@ class Game:
                 "model": player.model_name,
                 "position": player.position,
                 "goal": player.goal,
-                "resources": dict(player.resources)
+                "resources": dict(player.resources),
+                "promised_to_give": dict(player.promised_resources_to_give) if self.pay4partner else None,
+                "promised_to_receive": dict(player.promised_resources_to_receive) if self.pay4partner else None,
             }
         return state
     
@@ -175,15 +178,15 @@ class Game:
 
     
     # 2. Core Game Loop
-    def run(self, full_draw=True):
+    def run(self):
         while self.running and not all(p.has_finished() for p in self.players):
             # Handle Pygame events only if GUI is enabled
             if self.display_gui:
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         self.running = False
-                if full_draw:
-                    self.draw()
+                
+                self.draw()
                 self.clock.tick(FPS)
             
             # Always show console output
@@ -248,7 +251,6 @@ class Game:
             pygame.quit()
 
 
-
     def handle_turn(self, players):
         """
         Handle each player's turn:
@@ -269,6 +271,7 @@ class Game:
             print("\nCURRENT TURN ACTIONS:")
             print("-"*20)
 
+        #TODO: consider either remove for loop (diplomacy-style simultaneous turns), or shuffle players each turn to be fair
         for player in players:
             if player.has_finished():
                 print(f"{player.name} has already finished the game.")
@@ -313,6 +316,11 @@ class Game:
                     player.move(move, self.grid)
                     move_result = move
                     print(f"{player.name} moved to {move}.")
+                elif player.can_move_to_with_promised(move, self.grid):
+                    partner_agrees_to_pay = self.handle_pay4partner_move(player, move)
+                    if partner_agrees_to_pay:
+                        player.move(move, self.grid)
+                        print(f"{player.name} moved to {move} via pay4partner.")
                 else:
                     move_result = "invalid_move"
             
@@ -381,6 +389,23 @@ class Game:
                     print("=============================================\n")
                     
 
+    def handle_pay4partner_move(self, player, move):
+        # TODO: currently only supports 2 player version as we're not keeping track of who owes whom what
+        partner = next((p for p in self.players if p.name != player.name), None)
+        r, c = move
+        color = self.grid.get_color(r, c)
+        partner_agrees = partner.agree_to_pay4partner(player, color)
+        if partner_agrees:
+            partner.promised_resources_to_give[color] -= 1
+            player.promised_resources_to_receive[color] -= 1
+            player.resources[color] += 1
+            print(f"{partner.name} agreed to pay4partner.")
+            return True
+        else:
+            print(f"{partner.name} declined pay4partner, move not executed.")
+            return False
+            
+    
     def handle_trade(self, player, propose_trade):
         """
         Handle a trade proposal from a player.
@@ -403,22 +428,55 @@ class Game:
 
             # Ask the target player if they accept the trade
             if player_to_trade_with.accept_trade(self.grid, self, propose_trade):
-                # Execute the trade
-                for resource, quantity in resources_to_offer:
-                    player.resources[resource] -= quantity
-                    player_to_trade_with.resources[resource] += quantity
 
-                for resource, quantity in resources_to_receive:
-                    player.resources[resource] += quantity
-                    player_to_trade_with.resources[resource] -= quantity
+                if self.pay4partner is False:
+                # Execute the trade by swapping resources
+                    for resource, quantity in resources_to_offer:
+                        player.resources[resource] -= quantity
+                        player_to_trade_with.resources[resource] += quantity
+
+                    for resource, quantity in resources_to_receive:
+                        player.resources[resource] += quantity
+                        player_to_trade_with.resources[resource] -= quantity
+                else:
+                    # In pay4partner mode, update promised resources instead of actual resources
+                    for resource, quantity in resources_to_offer:
+                        player.promised_resources_to_give[resource] += quantity
+                        player.resources[resource] -= quantity
+                        player_to_trade_with.promised_resources_to_receive[resource] += quantity
+
+                    for resource, quantity in resources_to_receive:
+                        player.promised_resources_to_receive[resource] += quantity
+                        player_to_trade_with.promised_resources_to_give[resource] += quantity
+                        player_to_trade_with.resources[resource] -= quantity
+                    player.pay4partner_log.append({
+                        "agreement_turn": self.turn,
+                        "with": player_to_trade_with.name,
+                        "offered": resources_to_offer,
+                        "requested": resources_to_receive,
+                        "text_summary": "On turn {self.turn}, {player.name} and {player_to_trade_with.name} agreed that at some stage in the future, {player.name} would pay {resources_to_offer} to {player_to_trade_with.name} in exchange for {player_to_trade_with.name} at some stage in the future paying for {resources_to_receive} to {player.name}.",
+                    })
+                    player_to_trade_with.pay4partner_log.append({
+                        "agreement_turn": self.turn,
+                        "with": player.name,
+                        "offered": resources_to_receive,
+                        "requested": resources_to_offer,
+                        "text_summary": "On turn {self.turn}, {player.name} and {player_to_trade_with.name} agreed that at some stage in the future, {player.name} would pay {resources_to_offer} to {player_to_trade_with.name} in exchange for {player_to_trade_with.name} at some stage in the future paying for {resources_to_receive} to {player.name}.",
+                    })
 
                 # Update game state immediately after trade execution
                 self.game_state[player.name]["resources"] = dict(player.resources)
                 self.game_state[player_to_trade_with.name]["resources"] = dict(player_to_trade_with.resources)
+                self.game_state[player.name]["promised_to_give"] = dict(player.promised_resources_to_give)
+                self.game_state[player.name]["promised_to_receive"] = dict(player.promised_resources_to_give)
 
                 print(f"\nTRADE ACCEPTED between {player.name} and {player_to_trade_with.name}")
                 print(f"- {player.name} now has: {dict(player.resources)}")
                 print(f"- {player_to_trade_with.name} now has: {dict(player_to_trade_with.resources)}")
+                if self.pay4partner:
+                    print('Additionally:')
+                    print(f"- {player.name} has promised to give: {dict(player.promised_resources_to_give)}")
+                    print(f"- {player_to_trade_with.name} has promised to give: {dict(player_to_trade_with.promised_resources_to_give)}")
                 
                 trade_log['result'] = 'accepted'
                 self.logger.log("trade", trade_log)
@@ -494,6 +552,8 @@ class Game:
         for player in self.players:
             self.game_state[player.name]["position"] = player.position
             self.game_state[player.name]["resources"] = dict(player.resources)
+            self.game_state[player.name]["promised_to_give"] = dict(player.promised_resources_to_give) if self.pay4partner else None
+            self.game_state[player.name]["promised_to_receive"] = dict(player.promised_resources_to_receive) if self.pay4partner else None
 
 
     # 3. Game State and Metrics
@@ -670,6 +730,9 @@ class Game:
         for player_name, state in self.game_state.items():
             print(f"""{player_name} ({state['model']}):
                   Resources: {state['resources']}""")
+            if self.pay4partner:
+                print(f"Promised to give: {state['promised_to_give']}")
+                print(f"Promised to receive: {state['promised_to_receive']}")
         
 
 def draw_player_circle(screen, player, position, radius, offset=(0, 0)):

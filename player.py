@@ -5,27 +5,11 @@ import random
 import re
 
 from openai import OpenAI
-from tabulate import tabulate
 from together import Together
 
 from config import GameConfig
 from constants import OPENAI_API_KEY, TOGETHER_API_KEY, AVAILABLE_COLORS
 from grid import Grid
-
-
-
-### AGENTS - add more below as needed
-# https://openai.com/api/pricing/
-# https://api.together.ai/models
-Agent = namedtuple("Agent", ["name", "value", "api"])
-HUMAN = Agent(name="human", value=None, api=None)
-NANO = Agent(name="4.1 nano", value="gpt-4.1-nano-2025-04-14", api='open_ai') # $0.40 per million output tokens
-MINI = Agent(name="4.1 mini", value="gpt-4.1-mini", api='open_ai') # $1.60 per million output tokens
-FOUR_1 = Agent(name="4.1", value="gpt-4.1", api='open_ai') # $8 per million output tokens
-FOUR_0 = Agent(name="4o", value="gpt-4o", api='open_ai') # $10 per million output tokens
-DEEPSEEK = Agent(name="DeepSeek_R1", value="deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free", api='together') # free, but slow/ limited
-QWEN_2_7B = Agent(name="QWEN_25_7B", value="Qwen/Qwen2.5-7B-Instruct-Turbo", api='together') # $0.30 per million output tokens
-LLAMA_3_3B = Agent(name="Llama_3_3B", value="meta-llama/Llama-3.2-3B-Instruct-Turbo", api='together')# $0.06 per output million tokens
 
 
 DEFAULT_SYSTEM_PROMPT = """
@@ -90,11 +74,15 @@ class Player:
         self.position = self.start_pos
         
         self.n_total_players = len(config.players)
+        self.pay4partner = config.pay4partner
         self.surplus = config.surplus
         self.grid_size = config.grid_size
         self.resource_mode = config.resource_mode
         self.colors = config.colors
         self.resources = {color: 0 for color in self.colors}
+        self.promised_resources_to_give = {color: 0 for color in self.colors}
+        self.promised_resources_to_receive = {color: 0 for color in self.colors}
+        self.pay4partner_log = []
 
     ## Core Gameplay
     def distance_to_goal(self):
@@ -107,6 +95,10 @@ class Player:
             return True
         return False
 
+    def can_move_to_with_promised(self, new_pos, grid):
+        if new_pos in grid.get_adjacent(self.position) and self.promised_resources_to_receive[grid.get_color(*new_pos)] > 0:
+            return True
+        return False
 
     def move(self, new_pos, grid):
         tile_color = grid.get_color(*new_pos)
@@ -224,7 +216,7 @@ class Player:
                 summary.append(f"MOVE: {move['player']} moved from {move['from_pos']} to {move['to_pos']}")
             else:
                 if move["reason"] == "no_move":
-                    summary.append(f"MOVE: {move['player']} chose not to move")
+                    summary.append(f"MOVE: {move['player']} did not move")
         
         # End positions
         summary.append("\nPOSITIONS:")
@@ -258,6 +250,8 @@ YOUR CURRENT STATUS:
 - You are at position {self.position}
 - Your goal is at {self.goal}
 - Your resources: {dict(self.resources)}
+- Resources you have promised to give to other players (still yours, not yet given): {self.promised_resources_to_give}
+- Resources you have been promised to receive from other players (still theirs, not yet received): {self.promised_resources_to_receive}
 - Distance to goal: {self.distance_to_goal()} steps
 
 BOARD LAYOUT:
@@ -269,6 +263,27 @@ HISTORY OF EVENTS:
 OTHER PLAYERS' STATUS:
 {chr(10).join(f"- {name}: at {state['position']}, has {state['resources']}" for name, state in game.game_state.items() if name != self.name)}
 """
+    def generate_pay4partner_mode_info(self, short_summary=False):
+        if self.pay4partner:
+            promised_resources_to_receive = {color: amt for color, amt in self.promised_resources_to_receive.items() if amt > 0}
+            promised_resources_to_give = {color: amt for color, amt in self.promised_resources_to_give.items() if amt > 0}
+            pay4partner_mode_info = """
+Important Note: The game is in ‘pay for partner’ mode. This means that trades are not made by directly swapping resources. Instead, when a trade agreement is reached, each player commits to covering the cost of their partner’s movement on the agreed tile colors. In practice:
+	•	If your partner steps onto a tile of a color you agreed to cover, you pay the resource cost for that move.
+	•	If you step onto a tile of a color your partner agreed to cover, they pay the resource cost for you.
+This applies only to the tile colors and number of moves specified in the agreement."""
+            if short_summary:
+                return pay4partner_mode_info
+            else:
+                pay4partner_mode_info += f"""
+In addition to the information above, please consider any promises you're already involved in:
+\n- So far you have promised to give these resources to other players: {promised_resources_to_give if promised_resources_to_give else '{}'}"
+\n- So far you have been promised to receive these resources from other players: {promised_resources_to_receive if promised_resources_to_receive else '{}'}
+In order to move onto a tile of a color you have been promised, select that move as normal and your partner will be asked to cover the cost for you.
+"""
+            return pay4partner_mode_info
+        else:
+            return ""
     
     ## Decision-Making
 
@@ -303,26 +318,35 @@ OTHER PLAYERS' STATUS:
                         print("Invalid move: You can only move to an adjacent tile. Try again.")
                         continue
                     tile_color = grid.get_color(r, c)
-                    if tile_color not in self.resources.keys() or self.resources[tile_color] <= 0:
+                    if (tile_color not in self.resources.keys() or self.resources[tile_color] <= 0) and (tile_color not in self.promised_resources_to_receive.keys() or self.promised_resources_to_receive[tile_color]) <= 0:
                         print(f"Invalid move: You don't have enough resources for a {tile_color} tile. Try again.")
                         continue
                     return new_pos
                 except (ValueError, IndexError):
                     print("Invalid input: Please enter the new tile in r,c format. Try again.")
+        # LLM Player
         else:
             best_path = self.best_routes(grid)[0]
             next_move = best_path["path"][1] if best_path["path"] else None
+            resources_needed = best_path["resources_required_for_path"]
+            resources_missing = best_path["resources_missing_due_to_insufficient_inventory"]
             user_message = self.generate_player_context_message(game, grid) + f"""
                     
 Choose your next move:
 
 1. Look at the best path from your current position {self.position} to your goal {self.goal}:
    - Next move in best path: {next_move}
+
+   - Resources needed for path: {resources_needed}
+
    - Your current resources: {dict(self.resources)}
    - Required resources for entire path: {str(self.best_routes(grid)[0]["resources_required_for_path"])}
    - Missing resources to complete the entire path: {str(self.best_routes(grid)[0]["resources_missing_due_to_insufficient_inventory"])}
    
 Important: You can still make individual moves if you have the required resource for that specific tile.
+   
+   {self.generate_pay4partner_mode_info()}
+
 
 2. For your NEXT MOVE to {next_move}:
    - Check what color tile {next_move} is on the board
@@ -374,11 +398,30 @@ Remember:
             self.logger.log("move_proposal", {"player": self.name, "message": move})
             print(f"{self.name} proposed a move: {move}")
             
-            cleaned_move = move.strip().replace("(", "").replace(")", "").replace("[", "").replace("]", "").replace('"', "").replace("'", "")
-            if cleaned_move == 'n':
+
+            def ends_with_n(text: str) -> bool:
+                """
+                Returns True if the last alphanumeric 'word' in the text
+                is exactly 'n' or 'N'.
+                """
+                # Find all alphanumeric words
+                words = re.findall(r"[A-Za-z0-9]+", text)
+                if not words:
+                    return False
+                return words[-1].lower() == "n"
+            if ends_with_n(move):
                 return None
             try:
-                r, c = map(int, cleaned_move.split(","))
+                def extract_move(text: str):
+                    '''
+                    Finds the last occurrence of a pair of integers in the text formatted as "int,int"
+                    '''
+                    pair_matches = re.findall(r'(-?\d+)\s*,\s*(-?\d+)', text)
+                    if pair_matches:
+                        r, c = map(int, pair_matches[-1])
+                        return r, c
+                    return None
+                r, c = extract_move(move)
                 new_pos = (r, c)
                 if not (0 <= r < self.grid_size and 0 <= c < self.grid_size):
                     print("Invalid move: The position is out of bounds.")
@@ -387,7 +430,7 @@ Remember:
                     print("Invalid move: You can only move to an adjacent tile.")
                     return None
                 tile_color = grid.get_color(r, c)
-                if tile_color not in self.resources.keys() or self.resources[tile_color] <= 0:
+                if (tile_color not in self.resources.keys() or self.resources[tile_color] <= 0) and (tile_color not in self.promised_resources_to_receive.keys() or self.promised_resources_to_receive[tile_color]) <= 0:
                     print(f"Invalid move: You don't have enough resources for a {tile_color} tile.")
                     return None
                 return new_pos
@@ -398,7 +441,10 @@ Remember:
     def propose_trade(self, grid, game):
         
         if self.model_name == 'human':
-            print(f"{self.name}, it's your turn to propose a trade.")
+            trade_message_for_human = f"{self.name}, it's your turn to propose a trade."
+            if self.pay4partner:
+                trade_message_for_human += "\nNote: You are in 'pay for partner' mode, so you will pay your partner to move onto tiles of your color as agreed instead of direct swapping of resources."
+            print(trade_message_for_human)
             make_trade = input("Do you want to make a trade? y/n ").strip().lower()
             if make_trade != 'y':
                 return None
@@ -468,17 +514,22 @@ Remember:
 
             return self.clean_trade_proposal(trade_proposal, grid)
 
+        # LLM Player
         else:
             user_message = self.generate_player_context_message(game, grid) + """
             
 IMPORTANT: First check if you need to trade at all:
 
 1. Look at your best paths above. For the shortest path:
-   - Your current resources: """ + str(dict(self.resources)) + """
-   - Required total resources: """ + str(self.best_routes(grid)[0]["resources_required_for_path"]) + """
-   - Missing resources: """ + str(self.best_routes(grid)[0]["resources_missing_due_to_insufficient_inventory"]) + """
+
+   - Required resources: """ + str(self.best_routes(grid)[0]["resources_required_for_path"]) + """
+   YOUR CURRENT RESOURCES: """ + str(dict(self.resources)) + """
+   - Required resources not currently in your possession: """ + str(self.best_routes(grid)[0]["resources_missing_due_to_insufficient_inventory"]) + """
+
+""" + self.generate_pay4partner_mode_info() + """
 
 2. If you have NO missing resources (empty dict {} above), respond with exactly: "n"
+
    If you have enough resources to reach your goal, say "n"
 
 3. Only if you are missing resources, consider a trade:
@@ -618,12 +669,9 @@ Keep your response below 1000 characters.
         else:
             # Simple trade acceptance prompt
             user_message = f"""You have been offered a trade:
-{trade_proposer} wants to give you {resources_to_offer} in exchange for {resources_to_receive}.
+{trade_proposer} wants to give you {resources_to_offer} in exchange for {resources_to_receive}. {self.generate_pay4partner_mode_info(short_summary=True)}
+Do you accept this trade? Answer 'yes' or 'no'."""
 
-IMPORTANT: Respond with ONLY one word: "yes" or "no"
-Do not provide explanations, reasoning, or additional text.
-
-Do you accept this trade?"""
             
             # Prepare messages for this request
             current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}]
@@ -717,3 +765,50 @@ Do you accept this trade?"""
             return trade_proposal.strip().upper()
         else:
             return trade_proposal
+        
+    
+    def agree_to_pay4partner(self, other_player, color):
+        message = f"""Recall the 'pay for partner' mode rules:
+{self.generate_pay4partner_mode_info(short_summary=True)}\n\n
+
+You have been asked by {other_player.name} to cover their movement cost onto a tile of color {color} as part of a previous trade agreement. Here are your past aggreements with this player:
+{[agreement['text_summary'] for agreement in self.pay4partner_log if agreement['with'] == other_player.name]}
+Do you agree to this pay a {color} resource to cover your partner? This is not mandatory but you did agree to it. Answer 'yes' or 'no'.
+"""
+        if self.model_name == 'human':
+            print(f"{self.name}, {other_player.name} is envoking 'pay for partner' and asking you to pay for their move onto a {color} tile.")
+            while True:
+                agree = input("Do you agree to this? y/n ").strip().lower()
+                if agree not in ('y', 'n'):
+                    print("Please enter 'y' or 'n'.")
+                    continue
+                return agree == 'y'
+        else:
+            # Prepare messages for this request
+            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}]
+            current_messages.append({"role": "user", "content": message})
+            
+            # Log full context to yulia logs
+            # Note: game object is not passed here, so we skip yulia logging for now
+            
+            # Make the API call
+            response = self.client.chat.completions.create(
+                model=self.model,
+                temperature=self.temperature,
+                messages=current_messages,
+                max_completion_tokens=1000)
+            agree = response.choices[0].message.content.strip().lower()
+            
+            # Save to history if enabled
+            if self.with_message_history:
+                self.messages.extend([
+                    {"role": "user", "content": message},
+                    {"role": "assistant", "content": agree}
+                ])
+            
+            self.logger.log("pay4partner_response", {"player": self.name, "message": agree})
+            
+            if "yes" in agree:
+                return True
+            else:
+                return False
