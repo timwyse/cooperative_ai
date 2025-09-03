@@ -18,6 +18,7 @@ class GameConfig:
 
     # PLAYER CONFIGURATION
     players: Optional[List[str]] = None  # list of Agent namedtuples (see agents.py)
+    pay4partner: bool = False # if True, rather than direct trading, players pay their partner to move onto tiles of their color
 
     # RESOURCE SETTINGS
     surplus: float = 1.5 # Multiplier of the minimum steps required to complete the game. Used to determine how many resources each player starts with.
