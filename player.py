@@ -682,7 +682,7 @@ Do you accept this trade? Answer 'yes' or 'no'."""
                 model=self.model,
                 temperature=self.temperature,
                 messages=current_messages,
-                max_completion_tokens=10)
+                max_completion_tokens=1000)
             accept_trade = response.choices[0].message.content.strip().lower()
             
             # Determine the actual decision made
