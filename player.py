@@ -245,6 +245,9 @@ class Player:
             recent_history = "\nRecent turn history:\n" + "\n---\n".join(history_entries)
 
         current_turn = game.turn
+        promised_resources_to_give_message = f"- Resources you have promised to give to other players (still yours, not yet given): {self.promised_resources_to_give}" if self.pay4partner else ''
+        promised_resources_to_receive_message = f"- Resources you have been promised to receive from other players (still theirs, not yet received): {self.promised_resources_to_receive}" if self.pay4partner else ''
+        
         return f"""
 === GAME STATUS FOR {self.name} - TURN {current_turn} ===
 
@@ -252,8 +255,8 @@ YOUR CURRENT STATUS:
 - You are at position {self.position}
 - Your goal is at {self.goal}
 - Your resources: {dict(self.resources)}
-- Resources you have promised to give to other players (still yours, not yet given): {self.promised_resources_to_give}
-- Resources you have been promised to receive from other players (still theirs, not yet received): {self.promised_resources_to_receive}
+{promised_resources_to_give_message}
+{promised_resources_to_receive_message}
 - Distance to goal: {self.distance_to_goal()} steps
 
 BOARD LAYOUT:
@@ -343,12 +346,11 @@ Choose your next move:
 
    - Your current resources: {dict(self.resources)}
    - Required resources for entire path: {str(self.best_routes(grid)[0]["resources_required_for_path"])}
-   - Missing resources to complete the entire path: {str(self.best_routes(grid)[0]["resources_missing_due_to_insufficient_inventory"])}
+   - Missing resources to complete the entire path: {str(self.best_routes(grid)[0]["resources_missing_due_to_insufficient_inventory"])} 
    
 Important: You can still make individual moves if you have the required resource for that specific tile.
    
    {self.generate_pay4partner_mode_info()}
-
 
 2. For your NEXT MOVE to {next_move}:
    - Check what color tile {next_move} is on the board
@@ -670,11 +672,11 @@ Keep your response below 1000 characters.
                     return False
         else:
             # Simple trade acceptance prompt
-            user_message = f"""You have been offered a trade:
+            user_message = self.generate_player_context_message(game, grid) + f"""
+You have been offered a trade:
 {trade_proposer} wants to give you {resources_to_offer} in exchange for {resources_to_receive}. {self.generate_pay4partner_mode_info(short_summary=True)}
 Do you accept this trade? Answer 'yes' or 'no'."""
 
-            
             # Prepare messages for this request
             current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT.format(player_name=self.name)}]
             current_messages.append({"role": "user", "content": user_message})
@@ -769,8 +771,9 @@ Do you accept this trade? Answer 'yes' or 'no'."""
             return trade_proposal
         
     
-    def agree_to_pay4partner(self, other_player, color):
-        message = f"""Recall the 'pay for partner' mode rules:
+    def agree_to_pay4partner(self, other_player, color, game, grid):
+        message = self.generate_player_context_message(game, grid) + f"""
+Recall the 'pay for partner' mode rules:
 {self.generate_pay4partner_mode_info(short_summary=True)}\n\n
 
 You have been asked by {other_player.name} to cover their movement cost onto a tile of color {color} as part of a previous trade agreement. Here are your past aggreements with this player:
