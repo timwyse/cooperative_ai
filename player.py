@@ -13,6 +13,8 @@ from grid import Grid
 
 
 DEFAULT_SYSTEM_PROMPT = """
+You are {player_name}.
+
 You are a player in a game called Coloured Trails.
 
 Objective:
@@ -67,7 +69,7 @@ class Player:
             
         # Init message history settings
         self.with_message_history = config.with_message_history
-        self.messages = [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}] if self.with_message_history else []
+        self.messages = [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT.format(player_name=self.name)}] if self.with_message_history else []
 
         self.start_pos = (random.randint(0, config.random_start_block_size - 1), random.randint(0, config.random_start_block_size - 1))
         self.goal = (random.randint(config.grid_size - config.random_goal_block_size, config.grid_size - 1), random.randint(config.grid_size - config.random_goal_block_size, config.grid_size - 1)) 
@@ -364,7 +366,7 @@ Remember:
 - Try to move toward your goal even if you can't complete the entire journey yet
 """
             # Prepare messages for this request
-            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}]
+            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT.format(player_name=self.name)}]
             current_messages.append({"role": "user", "content": user_message})
             
             # Log full context to yulia logs
@@ -569,7 +571,7 @@ Keep your response below 1000 characters.
 """
 
             # Prepare messages for this request
-            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}]
+            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT.format(player_name=self.name)}]
             current_messages.append({"role": "user", "content": user_message})
             
             # Log full context to yulia logs
@@ -674,7 +676,7 @@ Do you accept this trade? Answer 'yes' or 'no'."""
 
             
             # Prepare messages for this request
-            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}]
+            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT.format(player_name=self.name)}]
             current_messages.append({"role": "user", "content": user_message})
             
             # Make the API call
@@ -785,7 +787,7 @@ Do you agree to this pay a {color} resource to cover your partner? This is not m
                 return agree == 'y'
         else:
             # Prepare messages for this request
-            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}]
+            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT.format(player_name=self.name)}]
             current_messages.append({"role": "user", "content": message})
             
             # Log full context to yulia logs
