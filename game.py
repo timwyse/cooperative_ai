@@ -293,9 +293,9 @@ class Game:
                     print(f"- Requesting: {propose_trade['resources_to_receive']}")
                     
                     # Handle the trade
-                    self.handle_trade(player, propose_trade)
-                    # Mark that this trade was executed
-                    trade_result["executed"] = True
+                    trade_executed = self.handle_trade(player, propose_trade)
+                    # Mark whether this trade was actually executed
+                    trade_result["executed"] = trade_executed
                 else:
                     print(f"{player.name}'s trade proposal was invalid: {trade_result['message']}")
             else:
@@ -411,13 +411,14 @@ class Game:
         Handle a trade proposal from a player.
         - Validate the trade proposal.
         - Execute the trade if the target player accepts.
+        Returns True if trade was executed, False otherwise.
         """
         try:
             # Validate the trade proposal
             validation_result = self.validate_trade(player, propose_trade)
             if not validation_result["is_valid"]:
                 print(f"Trade validation failed: {validation_result['message']}")
-                return
+                return False
 
             player_to_trade_with = validation_result["player_to_trade_with"]
             resources_to_offer = propose_trade['resources_to_offer']
@@ -427,6 +428,7 @@ class Game:
 
             # Ask the target player if they accept the trade
             if player_to_trade_with.accept_trade(self.grid, self, propose_trade):
+
                 if self.pay4partner is False:
                 # Execute the trade by swapping resources
                     for resource, quantity in resources_to_offer:
@@ -461,7 +463,13 @@ class Game:
                         "requested": resources_to_offer,
                         "text_summary": "On turn {self.turn}, {player.name} and {player_to_trade_with.name} agreed that at some stage in the future, {player.name} would pay {resources_to_offer} to {player_to_trade_with.name} in exchange for {player_to_trade_with.name} at some stage in the future paying for {resources_to_receive} to {player.name}.",
                     })
-                    
+
+                # Update game state immediately after trade execution
+                self.game_state[player.name]["resources"] = dict(player.resources)
+                self.game_state[player_to_trade_with.name]["resources"] = dict(player_to_trade_with.resources)
+                self.game_state[player.name]["promised_to_give"] = dict(player.promised_resources_to_give)
+                self.game_state[player.name]["promised_to_receive"] = dict(player.promised_resources_to_give)
+
                 print(f"\nTRADE ACCEPTED between {player.name} and {player_to_trade_with.name}")
                 print(f"- {player.name} now has: {dict(player.resources)}")
                 print(f"- {player_to_trade_with.name} now has: {dict(player_to_trade_with.resources)}")
@@ -472,14 +480,17 @@ class Game:
                 
                 trade_log['result'] = 'accepted'
                 self.logger.log("trade", trade_log)
+                return True
             else:
                 print(f"\nTRADE REJECTED by {player_to_trade_with.name}")
                 trade_log['result'] = 'declined'
                 self.logger.log("trade", trade_log)
+                return False
 
         except Exception as e:
             print(f"An error occurred while handling the trade: {e}")
             self.logger.log("trade_error", {"error": str(e), "propose_trade": propose_trade})
+            return False
 
     def validate_trade(self, player, propose_trade):
         """
