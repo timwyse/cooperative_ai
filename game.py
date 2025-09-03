@@ -394,7 +394,7 @@ class Game:
         partner = next((p for p in self.players if p.name != player.name), None)
         r, c = move
         color = self.grid.get_color(r, c)
-        partner_agrees = partner.agree_to_pay4partner(player, color)
+        partner_agrees = partner.agree_to_pay4partner(player, color, self, self.grid)
         if partner_agrees:
             partner.promised_resources_to_give[color] -= 1
             player.promised_resources_to_receive[color] -= 1
@@ -454,14 +454,14 @@ class Game:
                         "with": player_to_trade_with.name,
                         "offered": resources_to_offer,
                         "requested": resources_to_receive,
-                        "text_summary": "On turn {self.turn}, {player.name} and {player_to_trade_with.name} agreed that at some stage in the future, {player.name} would pay {resources_to_offer} to {player_to_trade_with.name} in exchange for {player_to_trade_with.name} at some stage in the future paying for {resources_to_receive} to {player.name}.",
+                        "text_summary": f"On turn {self.turn}, {player.name} and {player_to_trade_with.name} agreed that at some stage in the future, {player.name} would pay {resources_to_offer} to {player_to_trade_with.name} in exchange for {player_to_trade_with.name} at some stage in the future paying for {resources_to_receive} to {player.name}.",
                     })
                     player_to_trade_with.pay4partner_log.append({
                         "agreement_turn": self.turn,
                         "with": player.name,
                         "offered": resources_to_receive,
                         "requested": resources_to_offer,
-                        "text_summary": "On turn {self.turn}, {player.name} and {player_to_trade_with.name} agreed that at some stage in the future, {player.name} would pay {resources_to_offer} to {player_to_trade_with.name} in exchange for {player_to_trade_with.name} at some stage in the future paying for {resources_to_receive} to {player.name}.",
+                        "text_summary": f"On turn {self.turn}, {player.name} and {player_to_trade_with.name} agreed that at some stage in the future, {player.name} would pay {resources_to_offer} to {player_to_trade_with.name} in exchange for {player_to_trade_with.name} at some stage in the future paying for {resources_to_receive} to {player.name}.",
                     })
 
                 # Update game state immediately after trade execution
