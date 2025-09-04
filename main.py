@@ -20,7 +20,7 @@ CONFIG = replace(
 #           ['B', 'PK','PK', 'PK', 'B'],
 #           ['B', 'B', 'B', 'R', 'G'],
 #           ],
-#     manual_resources = [{'G':20, 'B': 4}, {'G':20, 'R': 4}],
+    manual_resources = [{'G':1, 'B': 3}, {'G':1, 'R': 3}],
 # #     manual_start_positions=[(0, 0), (0, 4)],
 # #     manual_goal_positions=[(4, 4), (4, 0)],
 

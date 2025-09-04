@@ -225,6 +225,10 @@ class Player:
         for player_name, state in turn_summary["player_states"].items():
             status = "FINISHED!" if state['has_finished'] else f"at {state['position']}"
             summary.append(f"- {player_name}: {status}, resources: {state['resources']}")
+            if self.pay4partner:
+                summary.append(f"  - promised to give: {state['promised_to_give']}")
+                summary.append(f"  - promised to receive: {state['promised_to_receive']}")
+
         
         return "\n".join(summary)
 
@@ -691,10 +695,16 @@ Do you accept this trade? Answer 'yes' or 'no'."""
             
             # Determine the actual decision made
             first_word = accept_trade.split()[0] if accept_trade.split() else ""
-            if first_word == "yes" or accept_trade == "yes":
+            def get_last_alphabetic_word(text):
+                # Find all alphabetic words in the text
+                words = re.findall(r"[a-zA-Z]+", text)
+                # Return the last word if the list is not empty
+                return words[-1] if words else None
+            last_word = get_last_alphabetic_word(accept_trade)
+            if first_word == "yes" or accept_trade == "yes" or last_word == "yes":
                 decision_result = "trade_accepted"
                 will_accept = True
-            elif first_word == "no" or accept_trade == "no":
+            elif first_word == "no" or accept_trade == "no" or last_word == "no":
                 decision_result = "trade_rejected"
                 will_accept = False
             else:

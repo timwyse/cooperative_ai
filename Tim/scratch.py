@@ -77,3 +77,11 @@ print(ends_with_n("hello world"))                          # False
 print(ends_with_n("n (5,2)"))                          # False
 print(ends_with_n("(5,2) n"))                          # True
 # %%
+import re
+def get_last_alphabetic_word(text):
+    # Find all alphabetic words in the text
+    words = re.findall(r"[a-zA-Z]+", text)
+    # Return the last word if the list is not empty
+    return words[-1] if words else None
+print(get_last_alphabetic_word("**my answer:**   yes **"))  # Output: "string"
+# %%
