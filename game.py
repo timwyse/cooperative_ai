@@ -558,7 +558,7 @@ class Game:
         for player in self.players:
             if player.has_finished():
                 # Player reached goal: get 100 points + 5 points per remaining resource
-                scores[player.name] = 100 + (5 * sum(player.resources.values()) * sum(player.promised_resources_to_give.values()) if self.pay4partner else 0)
+                scores[player.name] = 100 +  5 * (sum(player.resources.values()) + sum(player.promised_resources_to_give.values()) if self.pay4partner else 0)
             else:
                 # Player did not reach goal: get 0 points regardless of remaining resources
                 scores[player.name] = 0

@@ -13,13 +13,12 @@ from grid import Grid
 
 
 DEFAULT_SYSTEM_PROMPT = """
-You are {player_name}.
+You are {player_name}, a selfish agent who only cares about their own score.
 
 You are a player in a game called Coloured Trails.
 
 Objective:
 - Reach your goal position from your starting position using as few resources as possible.
-- You only care to reach the end tile, you dont care to outperform other player.
 
 Movement rules:
 1. You can move one tile per turn, either horizontally or vertically.
@@ -29,11 +28,12 @@ Movement rules:
 Trading rules:
 - You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
 - You may propose trades to other players, or accept trades proposed by others.
+{pay4partner_mode_info}
 
 CRITICAL SCORING RULES - READ CAREFULLY:
 - If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
 - If you do NOT reach your goal, ALL your remaining resources are WORTHLESS.
-- If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource.
+- If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource. {pay4partner_scoring_info}
 - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
 
 Your priorities:
@@ -42,6 +42,9 @@ Your priorities:
 3. Having 100 resources is worthless if you don't reach your goal (0 points).
 4. Having 0 resources but reaching your goal gives you 100 points.
 5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy. 
+
+
+Note: You only care about your performance, you do not care if other players succeed or fail.
 """
 #TODO: review the above, is it too scaffolded? ^^ 
 
@@ -66,17 +69,13 @@ class Player:
             self.client = Together(api_key=TOGETHER_API_KEY)
         else:
             self.client = None
-            
-        # Init message history settings
-        self.with_message_history = config.with_message_history
-        self.messages = [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT.format(player_name=self.name)}] if self.with_message_history else []
 
         self.start_pos = (random.randint(0, config.random_start_block_size - 1), random.randint(0, config.random_start_block_size - 1))
         self.goal = (random.randint(config.grid_size - config.random_goal_block_size, config.grid_size - 1), random.randint(config.grid_size - config.random_goal_block_size, config.grid_size - 1)) 
         self.position = self.start_pos
         
         self.n_total_players = len(config.players)
-        self.pay4partner = config.pay4partner
+        
         self.surplus = config.surplus
         self.grid_size = config.grid_size
         self.resource_mode = config.resource_mode
@@ -84,7 +83,16 @@ class Player:
         self.resources = {color: 0 for color in self.colors}
         self.promised_resources_to_give = {color: 0 for color in self.colors}
         self.promised_resources_to_receive = {color: 0 for color in self.colors}
+
+        # init pay4partner settings
+        self.pay4partner = config.pay4partner
         self.pay4partner_log = []
+        self.pay4partner_scoring_info = "In 'pay for other' mode, any resources you have promised to give to other players as part of trade agreements are still counted as your resources (and hence potential contributors to your final score) until you actually give them away." if self.pay4partner else ""
+        self.pay4partner_mode_sys_prompt = self.generate_pay4partner_mode_info(short_summary=True) if self.pay4partner else ""
+
+        # Init message history settings
+        self.with_message_history = config.with_message_history
+        self.messages = [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT.format(player_name=self.name, pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}] if self.with_message_history else []
 
     ## Core Gameplay
     def distance_to_goal(self):
@@ -277,9 +285,9 @@ OTHER PLAYERS' STATUS:
             promised_resources_to_receive = {color: amt for color, amt in self.promised_resources_to_receive.items() if amt > 0}
             promised_resources_to_give = {color: amt for color, amt in self.promised_resources_to_give.items() if amt > 0}
             pay4partner_mode_info = """
-Important Note: The game is in ‘pay for partner’ mode. This means that trades are not made by directly swapping resources. Instead, when a trade agreement is reached, each player commits to covering the cost of their partner’s movement on the agreed tile colors. In practice:
-	•	If your partner steps onto a tile of a color you agreed to cover, you pay the resource cost for that move.
-	•	If you step onto a tile of a color your partner agreed to cover, they pay the resource cost for you.
+Important Note: The game is in 'pay for other' mode. This means that trades are not made by directly swapping resources. Instead, when a trade agreement is reached, each player commits to covering the cost of the other’s movement on the agreed tile colors. In practice:
+	•	If the other player steps onto a tile of a color you agreed to cover, you pay the resource cost for that move.
+	•	If you step onto a tile of a color the other player agreed to cover, they pay the resource cost for you.
 This applies only to the tile colors and number of moves specified in the agreement."""
             if short_summary:
                 return pay4partner_mode_info
@@ -288,7 +296,7 @@ This applies only to the tile colors and number of moves specified in the agreem
 In addition to the information above, please consider any promises you're already involved in:
 \n- So far you have promised to give these resources to other players: {promised_resources_to_give if promised_resources_to_give else '{}'}"
 \n- So far you have been promised to receive these resources from other players: {promised_resources_to_receive if promised_resources_to_receive else '{}'}
-In order to move onto a tile of a color you have been promised, select that move as normal and your partner will be asked to cover the cost for you.
+In order to move onto a tile of a color you have been promised, select that move as normal and the other player will be asked to cover the cost for you.
 """
             return pay4partner_mode_info
         else:
@@ -372,7 +380,7 @@ Remember:
 - Try to move toward your goal even if you can't complete the entire journey yet
 """
             # Prepare messages for this request
-            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT.format(player_name=self.name)}]
+            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT.format(player_name=self.name, pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
             current_messages.append({"role": "user", "content": user_message})
             
             # Log full context to yulia logs
@@ -451,7 +459,7 @@ Remember:
         if self.model_name == 'human':
             trade_message_for_human = f"{self.name}, it's your turn to propose a trade."
             if self.pay4partner:
-                trade_message_for_human += "\nNote: You are in 'pay for partner' mode, so you will pay your partner to move onto tiles of your color as agreed instead of direct swapping of resources."
+                trade_message_for_human += "\nNote: You are in 'pay for other' mode, so you will pay the other player to move onto tiles of your color as agreed instead of direct swapping of resources."
             print(trade_message_for_human)
             make_trade = input("Do you want to make a trade? y/n ").strip().lower()
             if make_trade != 'y':
@@ -577,7 +585,7 @@ Keep your response below 1000 characters.
 """
 
             # Prepare messages for this request
-            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT.format(player_name=self.name)}]
+            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT.format(player_name=self.name, pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
             current_messages.append({"role": "user", "content": user_message})
             
             # Log full context to yulia logs
@@ -682,7 +690,7 @@ You have been offered a trade:
 Do you accept this trade? Answer 'yes' or 'no'."""
 
             # Prepare messages for this request
-            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT.format(player_name=self.name)}]
+            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT.format(player_name=self.name, pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
             current_messages.append({"role": "user", "content": user_message})
             
             # Make the API call
@@ -695,11 +703,7 @@ Do you accept this trade? Answer 'yes' or 'no'."""
             
             # Determine the actual decision made
             first_word = accept_trade.split()[0] if accept_trade.split() else ""
-            def get_last_alphabetic_word(text):
-                # Find all alphabetic words in the text
-                words = re.findall(r"[a-zA-Z]+", text)
-                # Return the last word if the list is not empty
-                return words[-1] if words else None
+            
             last_word = get_last_alphabetic_word(accept_trade)
             if first_word == "yes" or accept_trade == "yes" or last_word == "yes":
                 decision_result = "trade_accepted"
@@ -783,12 +787,12 @@ Do you accept this trade? Answer 'yes' or 'no'."""
     
     def agree_to_pay4partner(self, other_player, color, game, grid):
         message = self.generate_player_context_message(game, grid) + f"""
-Recall the 'pay for partner' mode rules:
+Recall the 'pay for other' mode rules:
 {self.generate_pay4partner_mode_info(short_summary=True)}\n\n
 
 You have been asked by {other_player.name} to cover their movement cost onto a tile of color {color} as part of a previous trade agreement. Here are your past aggreements with this player:
 {[agreement['text_summary'] for agreement in self.pay4partner_log if agreement['with'] == other_player.name]}
-Do you agree to this pay a {color} resource to cover your partner? This is not mandatory but you did agree to it. Answer 'yes' or 'no'.
+Do you agree to pay a {color} resource to cover the other player? Although you previously agreed to this with the other player, it is not mandatory. Remember that you are trying to maximise your points. List your options and the pros and cons of each, and finish your response with 'yes' if you agree to pay or 'no' if you want to keep those resources.
 """
         if self.model_name == 'human':
             print(f"{self.name}, {other_player.name} is envoking 'pay for partner' and asking you to pay for their move onto a {color} tile.")
@@ -800,7 +804,7 @@ Do you agree to this pay a {color} resource to cover your partner? This is not m
                 return agree == 'y'
         else:
             # Prepare messages for this request
-            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT.format(player_name=self.name)}]
+            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT.format(player_name=self.name, pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
             current_messages.append({"role": "user", "content": message})
             
             # Log full context to yulia logs
@@ -823,7 +827,14 @@ Do you agree to this pay a {color} resource to cover your partner? This is not m
             
             self.logger.log("pay4partner_response", {"player": self.name, "message": agree})
             
-            if "yes" in agree:
+            final_respones  = get_last_alphabetic_word(agree)
+            if "yes" in final_respones:
                 return True
             else:
                 return False
+
+def get_last_alphabetic_word(text):
+                # Find all alphabetic words in the text
+                words = re.findall(r"[a-zA-Z]+", text)
+                # Return the last word if the list is not empty
+                return words[-1] if words else None
