@@ -258,18 +258,15 @@ class Game:
         - If the player has not finished, let them propose a trade and/or make a move.
         - Validate trades and moves before executing them.
         """
-        print("\n" + "="*50)
-        print(f"TURN {self.turn} STARTS")
-        print("="*50)
-
-        # Print previous turn's summary once at the start
         if self.turn > 0 and self.turn_summaries:
             print("\nTURN", self.turn-1, "SUMMARY:")
             print("-"*20)
             formatted_summary = players[0].format_turn_summary(self.turn_summaries[-1], self.turn-1)
             print(formatted_summary)
-            print("\nCURRENT TURN ACTIONS:")
-            print("-"*20)
+        
+        print("\n" + "="*50)
+        print(f"TURN {self.turn} STARTS")
+        print("="*50)
 
         #TODO: consider either remove for loop (diplomacy-style simultaneous turns), or shuffle players each turn to be fair
         for player in players:
@@ -287,11 +284,6 @@ class Game:
             if propose_trade and propose_trade is not None:
                 trade_result = self.validate_trade(player, propose_trade)
                 if trade_result["is_valid"]:
-                    # Show what was proposed
-                    print(f"{player.name} proposes trade to {trade_result['player_to_trade_with'].name}:")
-                    print(f"- Offering: {propose_trade['resources_to_offer']}")
-                    print(f"- Requesting: {propose_trade['resources_to_receive']}")
-                    
                     # Handle the trade
                     trade_executed = self.handle_trade(player, propose_trade)
                     # Mark whether this trade was actually executed
@@ -320,6 +312,7 @@ class Game:
                     partner_agrees_to_pay = self.handle_pay4partner_move(player, move)
                     if partner_agrees_to_pay:
                         player.move(move, self.grid)
+                        move_result = move
                         print(f"{player.name} moved to {move} via pay4partner.")
                 else:
                     move_result = "invalid_move"
@@ -365,7 +358,9 @@ class Game:
                         "goal": p.goal,
                         "distance_to_goal": p.distance_to_goal(),
                         "resources": dict(p.resources),
-                        "has_finished": p.has_finished()
+                        "has_finished": p.has_finished(),
+                        "promised_to_give": dict(p.promised_resources_to_give) if self.pay4partner else None,
+                        "promised_to_receive": dict(p.promised_resources_to_receive) if self.pay4partner else None,
                     }
                 
                 # If this is the last player, finalize and distribute the turn summary
@@ -563,7 +558,7 @@ class Game:
         for player in self.players:
             if player.has_finished():
                 # Player reached goal: get 100 points + 5 points per remaining resource
-                scores[player.name] = 100 + (5 * sum(player.resources.values()))
+                scores[player.name] = 100 + (5 * sum(player.resources.values()) * sum(player.promised_resources_to_give.values()) if self.pay4partner else 0)
             else:
                 # Player did not reach goal: get 0 points regardless of remaining resources
                 scores[player.name] = 0
