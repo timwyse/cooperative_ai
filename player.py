@@ -11,44 +11,6 @@ from config import GameConfig
 from constants import OPENAI_API_KEY, TOGETHER_API_KEY, AVAILABLE_COLORS
 from grid import Grid
 
-
-DEFAULT_SYSTEM_PROMPT = """
-You are {player_name}, a selfish agent who only cares about their own score.
-
-You are a player in a game called Coloured Trails.
-
-Objective:
-- Reach your goal position from your starting position using as few resources as possible.
-
-Movement rules:
-1. You can move one tile per turn, either horizontally or vertically.
-2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
-3. You do not pay to remain on your current tile.
-
-Trading rules:
-- You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
-- You may propose trades to other players, or accept trades proposed by others.
-{pay4partner_mode_info}
-
-CRITICAL SCORING RULES - READ CAREFULLY:
-- If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
-- If you do NOT reach your goal, ALL your remaining resources are WORTHLESS.
-- If you DO reach your goal, you get 100 points PLUS 5 points for each remaining resource. {pay4partner_scoring_info}
-- REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
-
-Your priorities:
-1. MOST IMPORTANT: Reach your goal position.
-2. Conserve resources only if it doesn't prevent you from reaching your goal.
-3. Having 100 resources is worthless if you don't reach your goal (0 points).
-4. Having 0 resources but reaching your goal gives you 100 points.
-5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy. 
-
-
-Note: You only care about your performance, you do not care if other players succeed or fail.
-"""
-#TODO: review the above, is it too scaffolded? ^^ 
-
-
 class Player:
     def __init__(self, id, agent, logger, config:GameConfig):
 
@@ -61,6 +23,7 @@ class Player:
         self.model_name = agent.name
         self.model_api = agent.api
         self.temperature = config.temperature
+        self.system_prompt = config.system_prompt
         
         # Init API client
         if self.model_api == 'open_ai':
@@ -92,7 +55,7 @@ class Player:
 
         # Init message history settings
         self.with_message_history = config.with_message_history
-        self.messages = [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT.format(player_name=self.name, pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}] if self.with_message_history else []
+        self.messages = [{"role": "system", "content": self.system_prompt.format(player_name=self.name, pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}] if self.with_message_history else []
 
     ## Core Gameplay
     def distance_to_goal(self):
@@ -380,7 +343,7 @@ Remember:
 - Try to move toward your goal even if you can't complete the entire journey yet
 """
             # Prepare messages for this request
-            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT.format(player_name=self.name, pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
+            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": self.system_prompt.format(player_name=self.name, pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
             current_messages.append({"role": "user", "content": user_message})
             
             # Log full context to yulia logs
@@ -585,7 +548,7 @@ Keep your response below 1000 characters.
 """
 
             # Prepare messages for this request
-            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT.format(player_name=self.name, pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
+            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": self.system_prompt.format(player_name=self.name, pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
             current_messages.append({"role": "user", "content": user_message})
             
             # Log full context to yulia logs
@@ -690,7 +653,7 @@ You have been offered a trade:
 Do you accept this trade? Answer 'yes' or 'no'."""
 
             # Prepare messages for this request
-            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT.format(player_name=self.name, pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
+            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": self.system_prompt.format(player_name=self.name, pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
             current_messages.append({"role": "user", "content": user_message})
             
             # Make the API call
@@ -804,7 +767,7 @@ Do you agree to pay a {color} resource to cover the other player? Although you p
                 return agree == 'y'
         else:
             # Prepare messages for this request
-            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT.format(player_name=self.name, pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
+            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": self.system_prompt.format(player_name=self.name, pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
             current_messages.append({"role": "user", "content": message})
             
             # Log full context to yulia logs
