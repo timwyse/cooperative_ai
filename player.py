@@ -55,7 +55,7 @@ class Player:
 
         # Init message history settings
         self.with_message_history = config.with_message_history
-        self.messages = [{"role": "system", "content": self.system_prompt.format(player_name=self.name, pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}] if self.with_message_history else []
+        self.messages = [{"role": "system", "content": self.system_prompt.format(player_name="you", pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}] if self.with_message_history else []
 
     ## Core Gameplay
     def distance_to_goal(self):
@@ -81,6 +81,27 @@ class Player:
     def has_finished(self):
         return self.position == self.goal
 
+    ## Player Anonymization Methods
+    
+    def get_player_label(self, game):
+        """Get display label for this player for user/console output"""
+        # Just use the standard player name (Player 0, Player 1, etc.)
+        return self.name
+    
+    def get_other_player_label(self, game):
+        """Get display label for the other player"""
+        other_players = [p for p in game.players if p.id != self.id]
+        if other_players:
+            return other_players[0].get_player_label(game)
+        return "Player ?"
+    
+    def anonymize_player_reference(self, text, current_player_name, other_player_name):
+        """Convert player names to 'you' and 'the other player' in text"""
+        # Replace current player references with "you"
+        text = text.replace(current_player_name, "you")
+        # Replace other player references with "the other player"  
+        text = text.replace(other_player_name, "the other player")
+        return text
 
     ## Pathfinding and Strategy
 
@@ -169,33 +190,38 @@ class Player:
 
 
     def format_turn_summary(self, turn_summary, turn_number):
-        """Format turn summary focusing only on trades, moves, and positions"""
+        """Format turn summary with anonymized player names for AI prompts"""
         summary = [f"\n=== TURN {turn_number} ==="]
         
         # Trades
         if turn_summary["trades"]:
             for trade in turn_summary["trades"]:
-                summary.append(f"{trade['proposer']} proposed trade to {trade['target']}:")
-                summary.append(f"- {trade['proposer']} offered: {trade['offered']}")
-                summary.append(f"- {trade['proposer']} requested: {trade['requested']}")
+                proposer = "You" if trade['proposer'] == self.name else "The other player"
+                target = "you" if trade['target'] == self.name else "the other player"
+                
+                summary.append(f"{proposer} proposed trade to {target}:")
+                summary.append(f"- {proposer} offered: {trade['offered']}")
+                summary.append(f"- {proposer} requested: {trade['requested']}")
                 if trade.get("success", False):
-                    summary.append(f"{trade['target']} ACCEPTED the trade")
+                    summary.append(f"{target.capitalize()} ACCEPTED the trade")
                 elif trade.get("rejected", False):
-                    summary.append(f"{trade['target']} REJECTED the trade")
+                    summary.append(f"{target.capitalize()} REJECTED the trade")
         
         # Moves
         for move in turn_summary["moves"]:
+            player_ref = "You" if move['player'] == self.name else "The other player"
             if move["success"]:
-                summary.append(f"MOVE: {move['player']} moved from {move['from_pos']} to {move['to_pos']}")
+                summary.append(f"MOVE: {player_ref} moved from {move['from_pos']} to {move['to_pos']}")
             else:
                 if move["reason"] == "no_move":
-                    summary.append(f"MOVE: {move['player']} did not move")
+                    summary.append(f"MOVE: {player_ref} did not move")
         
         # End positions
         summary.append("\nPOSITIONS:")
         for player_name, state in turn_summary["player_states"].items():
+            player_ref = "You" if player_name == self.name else "The other player"
             status = "FINISHED!" if state['has_finished'] else f"at {state['position']}"
-            summary.append(f"- {player_name}: {status}, resources: {state['resources']}")
+            summary.append(f"- {player_ref}: {status}, resources: {state['resources']}")
             if self.pay4partner:
                 summary.append(f"  - promised to give: {state['promised_to_give']}")
                 summary.append(f"  - promised to receive: {state['promised_to_receive']}")
@@ -223,8 +249,14 @@ class Player:
         promised_resources_to_give_message = f"- Resources you have promised to give to other players (still yours, not yet given): {self.promised_resources_to_give}" if self.pay4partner else ''
         promised_resources_to_receive_message = f"- Resources you have been promised to receive from other players (still theirs, not yet received): {self.promised_resources_to_receive}" if self.pay4partner else ''
         
+        # Get other players' status with anonymized names
+        other_players_status = []
+        for name, state in game.game_state.items():
+            if name != self.name:
+                other_players_status.append(f"- The other player: at {state['position']}, has {state['resources']}")
+        
         return f"""
-=== GAME STATUS FOR {self.name} - TURN {current_turn} ===
+=== GAME STATUS FOR YOU - TURN {current_turn} ===
 
 YOUR CURRENT STATUS:
 - You are at position {self.position}
@@ -241,7 +273,7 @@ HISTORY OF EVENTS:
 {recent_history if recent_history else "This is the first turn."}
 
 OTHER PLAYERS' STATUS:
-{chr(10).join(f"- {name}: at {state['position']}, has {state['resources']}" for name, state in game.game_state.items() if name != self.name)}
+{chr(10).join(other_players_status)}
 """
     def generate_pay4partner_mode_info(self, short_summary=False):
         if self.pay4partner:
@@ -343,12 +375,14 @@ Remember:
 - Try to move toward your goal even if you can't complete the entire journey yet
 """
             # Prepare messages for this request
-            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": self.system_prompt.format(player_name=self.name, pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
+            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": self.system_prompt.format(player_name="you", pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
             current_messages.append({"role": "user", "content": user_message})
             
             # Log full context to yulia logs
             game.yulia_logger.log("player_context", {
                 "player": self.name,
+                "player_label": self.get_player_label(game),
+                "player_model": self.model_name,
                 "turn": game.turn,
                 "decision_type": "move",
                 "full_context": current_messages,
@@ -375,7 +409,8 @@ Remember:
                     {"role": "assistant", "content": move}
                 ])
             self.logger.log("move_proposal", {"player": self.name, "message": move})
-            print(f"{self.name} proposed a move: {move}")
+            player_label = self.get_player_label(game)
+            print(f"{player_label} proposed a move: {move}")
             
 
             def ends_with_n(text: str) -> bool:
@@ -491,7 +526,7 @@ Remember:
                 "resources_to_receive": resources_to_receive
             }
 
-            return self.clean_trade_proposal(trade_proposal, grid)
+            return self.clean_trade_proposal(trade_proposal, grid, game)
 
         # LLM Player
         else:
@@ -530,7 +565,7 @@ Respond in ONE of these two formats:
 
 Example of valid trade:
 {
-  "player_to_trade_with": "Player 1",
+  "player_to_trade_with": "the other player",
   "resources_to_offer": [["R", 3]],
   "resources_to_receive": [["B", 2]]
 }
@@ -548,12 +583,14 @@ Keep your response below 1000 characters.
 """
 
             # Prepare messages for this request
-            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": self.system_prompt.format(player_name=self.name, pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
+            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": self.system_prompt.format(player_name="you", pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
             current_messages.append({"role": "user", "content": user_message})
             
             # Log full context to yulia logs
             game.yulia_logger.log("player_context", {
                 "player": self.name,
+                "player_label": self.get_player_label(game),
+                "player_model": self.model_name,
                 "turn": game.turn,
                 "decision_type": "trade_proposal",
                 "full_context": current_messages,
@@ -585,7 +622,8 @@ Keep your response below 1000 characters.
             if trade_proposal == 'n':
                 return None
             
-            print(f"\n{self.name} proposes trade:")
+            player_label = self.get_player_label(game)
+            print(f"\n{player_label} proposes trade:")
             try:
                 match = re.search(r"\{.*\}", trade_proposal, re.DOTALL)
                 if match:
@@ -604,7 +642,7 @@ Keep your response below 1000 characters.
                             trade_proposal['resources_to_receive'] = trade_proposal.pop('resources to receive')
                         
                         trade_proposal['trade_proposer'] = self.name
-                        cleaned = self.clean_trade_proposal(trade_proposal, grid)
+                        cleaned = self.clean_trade_proposal(trade_proposal, grid, game)
                         if cleaned:
                             trade_proposal = cleaned
                             print(f"- To: {trade_proposal['player_to_trade_with']}")
@@ -653,7 +691,7 @@ You have been offered a trade:
 Do you accept this trade? Answer 'yes' or 'no'."""
 
             # Prepare messages for this request
-            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": self.system_prompt.format(player_name=self.name, pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
+            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": self.system_prompt.format(player_name="you", pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
             current_messages.append({"role": "user", "content": user_message})
             
             # Make the API call
@@ -681,6 +719,8 @@ Do you accept this trade? Answer 'yes' or 'no'."""
             # Log full context with actual decision made
             game.yulia_logger.log("player_context", {
                 "player": self.name,
+                "player_label": self.get_player_label(game),
+                "player_model": self.model_name,
                 "turn": game.turn,
                 "decision_type": decision_result,
                 "full_context": current_messages,
@@ -710,17 +750,28 @@ Do you accept this trade? Answer 'yes' or 'no'."""
 
     
     ## Utility Functions
-    def clean_trade_proposal(self, trade_proposal, grid=None):
+    def clean_trade_proposal(self, trade_proposal, grid=None, game=None):
         """
         Clean and validate a trade proposal:
         1. Make all strings uppercase and stripped
-        2. Prevent trading with self
-        3. Check if trade is needed (have enough resources)
-        4. Return None for invalid trades
+        2. Convert anonymized player references to actual names
+        3. Prevent trading with self
+        4. Check if trade is needed (have enough resources)
+        5. Return None for invalid trades
         """
         # First clean the strings
         if isinstance(trade_proposal, dict):
-            cleaned = {key: self.clean_trade_proposal(value, grid) for key, value in trade_proposal.items()}
+            cleaned = {key: self.clean_trade_proposal(value, grid, game) for key, value in trade_proposal.items()}
+            
+            # Convert anonymized player references to actual names
+            if cleaned.get('player_to_trade_with'):
+                player_to_trade_with = cleaned['player_to_trade_with']
+                if player_to_trade_with in ["THE OTHER PLAYER", "OTHER PLAYER", "the other player"]:
+                    # Find the other player's name
+                    if game:
+                        other_players = [p.name for p in game.players if p.name != self.name]
+                        if other_players:
+                            cleaned['player_to_trade_with'] = other_players[0]
             
             # Validate the cleaned proposal
             if cleaned.get('trade_proposer') and cleaned.get('player_to_trade_with'):
@@ -753,7 +804,7 @@ Do you accept this trade? Answer 'yes' or 'no'."""
 Recall the 'pay for other' mode rules:
 {self.generate_pay4partner_mode_info(short_summary=True)}\n\n
 
-You have been asked by {other_player.name} to cover their movement cost onto a tile of color {color} as part of a previous trade agreement. Here are your past aggreements with this player:
+You have been asked by the other player to cover their movement cost onto a tile of color {color} as part of a previous trade agreement. Here are your past aggreements with this player:
 {[agreement['text_summary'] for agreement in self.pay4partner_log if agreement['with'] == other_player.name]}
 Do you agree to pay a {color} resource to cover the other player? Although you previously agreed to this with the other player, it is not mandatory. Remember that you are trying to maximise your points. List your options and the pros and cons of each, and finish your response with 'yes' if you agree to pay or 'no' if you want to keep those resources.
 """
@@ -767,7 +818,7 @@ Do you agree to pay a {color} resource to cover the other player? Although you p
                 return agree == 'y'
         else:
             # Prepare messages for this request
-            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": self.system_prompt.format(player_name=self.name, pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
+            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": self.system_prompt.format(player_name="you", pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
             current_messages.append({"role": "user", "content": message})
             
             # Log full context to yulia logs

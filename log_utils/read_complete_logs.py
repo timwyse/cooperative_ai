@@ -54,6 +54,8 @@ def read_complete_logs(yulia_log_file, truncate=True, save_to_file=None):
                     
                     if event_type != 'final_game_state':
                         player = details.get('player', 'unknown')
+                        player_label = details.get('player_label', player)
+                        player_model = details.get('player_model', 'unknown')
                         turn = details.get('turn', 'unknown')
                         decision_type = details.get('decision_type', 'unknown')
                         full_context = details.get('full_context', [])
@@ -63,6 +65,8 @@ def read_complete_logs(yulia_log_file, truncate=True, save_to_file=None):
                             'timestamp': timestamp,
                             'turn': turn,
                             'player': player,
+                            'player_label': player_label,
+                            'player_model': player_model,
                             'decision_type': decision_type,
                             'full_context': full_context,
                             'type': 'prompt'
@@ -125,7 +129,8 @@ def read_complete_logs(yulia_log_file, truncate=True, save_to_file=None):
             
             if current_player != entry['player']:
                 current_player = entry['player']
-                output_print(f"\n {current_player}")
+                player_label = entry.get('player_label', current_player)
+                output_print(f"\n {player_label}")
                 output_print("-" * 40)
         
         elif entry['type'] == 'response' and prompt_entry:
@@ -171,7 +176,14 @@ def is_matching_response(decision_type, event):
     return matches.get(decision_type) == event
 
 def display_prompt_response_pair(prompt_entry, response_entry, truncate=True, output_func=print):
+    # Extract player information for better display
+    player_name = prompt_entry.get('player', 'unknown')
+    player_label = prompt_entry.get('player_label', player_name)
+    player_model = prompt_entry.get('player_model', 'unknown')
+    
     output_func(f"\n Decision: {prompt_entry['decision_type']}")
+    output_func(f" Player Context: {player_label} (Model: {player_model})")
+    output_func(f" ↳ In AI prompts: 'you' = this player, 'the other player' = other player")
     
     full_context = prompt_entry['full_context']
     if full_context:

@@ -10,8 +10,8 @@ import prompts as p
 # refer to config.py to see which arguments are available for the game and what their defaults are
 # can replace any of the default values in DEFAULT_CONFIG with your own values
 CONFIG = replace(
-    load_config("configs/mutual_trade_necessary.yaml"), # can use DEFAULT_CONFIG or load a specific configs here eg load_config("configs/simple_prisoners_dilemma.yaml"),
-    players=[FOUR_1, FOUR_1],
+    load_config("configs/yv_max_trade.yaml"), # can use DEFAULT_CONFIG or load a specific configs here eg load_config("configs/simple_prisoners_dilemma.yaml"),
+    players=[QWEN_2_7B, QWEN_2_7B],
 #     grid_size=5,
 #     colors=['R', 'B', 'G', 'Y', 'PK'],
 #     resource_mode='manual',
@@ -21,7 +21,7 @@ CONFIG = replace(
 #           ['B', 'PK','PK', 'PK', 'B'],
 #           ['B', 'B', 'B', 'R', 'G'],
 #           ],
-    manual_resources = [{'G':1, 'B': 3}, {'G':1, 'R': 3}],
+    manual_resources = [{'R':0, 'B': 10}, {'R':10, 'B': 0}],
 # #     manual_start_positions=[(0, 0), (0, 4)],
 # #     manual_goal_positions=[(4, 4), (4, 0)],
 
@@ -29,7 +29,7 @@ CONFIG = replace(
     # display_gui=False,  # Disable Pygame window, only show console output
     # with_context=True,  # Enable turn history between players
     with_message_history=True,  # Enable conversation memory for each player
-    pay4partner=True,  # Enable 'pay for partner' mode
+    pay4partner=False,  # Enable 'pay for partner' mode
 )
 
 
