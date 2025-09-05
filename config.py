@@ -7,6 +7,7 @@ from typing import List, Optional, TYPE_CHECKING
 from pathlib import Path
 
 from constants import AVAILABLE_COLORS
+from prompts import DEFAULT_SYSTEM_PROMPT
 
 
 @dataclass
@@ -43,6 +44,8 @@ class GameConfig:
     temperature: float = 1.0
     with_context: bool = True  # turn history between players (goes with system role prompt)
     with_message_history: bool = True  # conversation history for each player (goes with assistant role prompt)
+    system_prompt: Optional[str] = DEFAULT_SYSTEM_PROMPT  # custom system prompt to override DEFAULT_SYSTEM_PROMPT
+
     
     # DISPLAY PARAMETERS
     display_gui: bool = True  # if False, only show console output (no Pygame window)

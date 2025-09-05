@@ -1,9 +1,10 @@
 from dataclasses import replace
 
+from agents import *
 from config import DEFAULT_CONFIG, GameConfig, load_config
 from game import Game
 from logger import GameLogger
-from agents import *
+import prompts as p
 
 
 # refer to config.py to see which arguments are available for the game and what their defaults are
