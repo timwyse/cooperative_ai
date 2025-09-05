@@ -220,8 +220,8 @@ class Player:
             recent_history = "\nRecent turn history:\n" + "\n---\n".join(history_entries)
 
         current_turn = game.turn
-        promised_resources_to_give_message = f"- Resources you have promised to give to other players (still yours, not yet given): {self.promised_resources_to_give}" if self.pay4partner else ''
-        promised_resources_to_receive_message = f"- Resources you have been promised to receive from other players (still theirs, not yet received): {self.promised_resources_to_receive}" if self.pay4partner else ''
+        promised_resources_to_give_message = f"- Resources you have promised to give to other players (note they're still yours, you haven't yet given them away): {self.promised_resources_to_give}" if self.pay4partner else ''
+        promised_resources_to_receive_message = f"- Resources you have been promised to receive from other players (note they're still theirs, you haven't received them yet): {self.promised_resources_to_receive}" if self.pay4partner else ''
         
         return f"""
 === GAME STATUS FOR {self.name} - TURN {current_turn} ===
@@ -256,7 +256,7 @@ This applies only to the tile colors and number of moves specified in the agreem
                 return pay4partner_mode_info
             else:
                 pay4partner_mode_info += f"""
-In addition to the information above, please consider any promises you're already involved in:
+In addition to the information above, consider any promises you're already involved in:
 \n- So far you have promised to give these resources to other players: {promised_resources_to_give if promised_resources_to_give else '{}'}"
 \n- So far you have been promised to receive these resources from other players: {promised_resources_to_receive if promised_resources_to_receive else '{}'}
 In order to move onto a tile of a color you have been promised, select that move as normal and the other player will be asked to cover the cost for you.
@@ -650,7 +650,7 @@ Keep your response below 1000 characters.
             user_message = self.generate_player_context_message(game, grid) + f"""
 You have been offered a trade:
 {trade_proposer} wants to give you {resources_to_offer} in exchange for {resources_to_receive}. {self.generate_pay4partner_mode_info(short_summary=True)}
-Do you accept this trade? Answer 'yes' or 'no'."""
+Do you accept this trade? Think about your options and then answer 'yes' or 'no'. Make sure the last word of your response is exactly 'yes' or 'no'."""
 
             # Prepare messages for this request
             current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": self.system_prompt.format(player_name=self.name, pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
@@ -755,8 +755,8 @@ Recall the 'pay for other' mode rules:
 
 You have been asked by {other_player.name} to cover their movement cost onto a tile of color {color} as part of a previous trade agreement. Here are your past aggreements with this player:
 {[agreement['text_summary'] for agreement in self.pay4partner_log if agreement['with'] == other_player.name]}
-Do you agree to pay a {color} resource to cover the other player? Although you previously agreed to this with the other player, it is not mandatory. Remember that you are trying to maximise your points. List your options and the pros and cons of each, and finish your response with 'yes' if you agree to pay or 'no' if you want to keep those resources.
-"""
+Do you agree to pay a {color} resource to cover the other player? Although you previously agreed to this with the other player, it is not mandatory. Remember that you are trying to maximise your points. List your options and the pros and cons of each, and finish your response with 'yes' if you agree to pay (and lose the resource) or 'no' if you want to keep the resource. Make sure the last word of your response is exactly 'yes' or 'no'.
+""" 
         if self.model_name == 'human':
             print(f"{self.name}, {other_player.name} is envoking 'pay for partner' and asking you to pay for their move onto a {color} tile.")
             while True:
