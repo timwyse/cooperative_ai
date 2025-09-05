@@ -392,6 +392,7 @@ class Game:
         partner_agrees = partner.agree_to_pay4partner(player, color, self, self.grid)
         if partner_agrees:
             partner.promised_resources_to_give[color] -= 1
+            partner.resources[color] -= 1
             player.promised_resources_to_receive[color] -= 1
             player.resources[color] += 1
             print(f"{partner.name} agreed to pay4partner.")
@@ -437,13 +438,11 @@ class Game:
                     # In pay4partner mode, update promised resources instead of actual resources
                     for resource, quantity in resources_to_offer:
                         player.promised_resources_to_give[resource] += quantity
-                        player.resources[resource] -= quantity
                         player_to_trade_with.promised_resources_to_receive[resource] += quantity
 
                     for resource, quantity in resources_to_receive:
                         player.promised_resources_to_receive[resource] += quantity
                         player_to_trade_with.promised_resources_to_give[resource] += quantity
-                        player_to_trade_with.resources[resource] -= quantity
                     player.pay4partner_log.append({
                         "agreement_turn": self.turn,
                         "with": player_to_trade_with.name,
@@ -558,7 +557,7 @@ class Game:
         for player in self.players:
             if player.has_finished():
                 # Player reached goal: get 100 points + 5 points per remaining resource
-                scores[player.name] = 100 +  5 * (sum(player.resources.values()) + sum(player.promised_resources_to_give.values()) if self.pay4partner else 0)
+                scores[player.name] = 100 +  5 * (sum(player.resources.values()))
             else:
                 # Player did not reach goal: get 0 points regardless of remaining resources
                 scores[player.name] = 0
