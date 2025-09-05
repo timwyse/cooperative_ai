@@ -549,7 +549,7 @@ IMPORTANT: First check if you need to trade at all:
 3. Only if you are missing resources, consider a trade:
    - You can ONLY request resources you're missing
    - You can ONLY offer resources you have in excess
-   - NEVER trade with yourself """ + str(self.name) + """
+   - NEVER trade with yourself 
    - NEVER offer 0 resources
    - NEVER request resources you already have enough of
    - Make the trade beneficial for both players
@@ -577,7 +577,7 @@ Remember:
 - Only ONE resource pair in each array
 - No spaces in color names
 - Numbers must be > 0
-- Don't trade with yourself """ + str(self.name) + """
+- Don't trade with yourself
 
 Keep your response below 1000 characters.
 """
@@ -687,7 +687,7 @@ Keep your response below 1000 characters.
             # Simple trade acceptance prompt
             user_message = self.generate_player_context_message(game, grid) + f"""
 You have been offered a trade:
-{trade_proposer} wants to give you {resources_to_offer} in exchange for {resources_to_receive}. {self.generate_pay4partner_mode_info(short_summary=True)}
+The other player wants to give you {resources_to_offer} in exchange for {resources_to_receive}. {self.generate_pay4partner_mode_info(short_summary=True)}
 Do you accept this trade? Answer 'yes' or 'no'."""
 
             # Prepare messages for this request

@@ -267,18 +267,18 @@ class Game:
             formatted_summary = players[0].format_turn_summary(self.turn_summaries[-1], self.turn-1)
             print(formatted_summary)
         
-        print("\n" + "="*50)
-        print(f"TURN {self.turn} STARTS")
-        print("="*50)
+        print("\n" + "="*60)
+        print(f"=== USER LOGS VIEW - TURN {self.turn} STARTS ===")
+        print("="*60)
 
         #TODO: consider either remove for loop (diplomacy-style simultaneous turns), or shuffle players each turn to be fair
         for player in players:
             player_label = player.get_player_label(self)
             if player.has_finished():
-                print(f"{player_label} ({player.name}, {player.model_name}) has already finished the game.")
+                print(f"{player_label} ({player.model_name}) has already finished the game.")
                 continue
 
-            print(f"\n{player_label} ({player.name}, {player.model_name})'s turn:")
+            print(f"\n{player_label} ({player.model_name})'s turn:")
             
             trade_result = None
             move_result = None
@@ -369,13 +369,17 @@ class Game:
                 
                 # If this is the last player, finalize and distribute the turn summary
                 if player == players[-1]:
+                    print("\n" + "="*60)
+                    print("=== END USER LOGS VIEW ===")
+                    print("="*60)
+                    
                     print("\n=== ADDING TURN SUMMARY TO ALL PLAYERS' CONTEXT ===")
                     for p in self.players:
                         if p.model_name != 'human':
                             # Each player gets their own personalized turn summary
                             player_specific_summary = p.format_turn_summary(self.current_turn_summary, self.turn)
                             player_label = p.get_player_label(self)
-                            print(f"\nAdding to {player_label} ({p.name}, {p.model_name})'s context")
+                            print(f"\nAdding to {player_label} ({p.model_name})'s context")
                             print(f"Player-specific summary:\n{player_specific_summary}")
                             p.messages.append({
                                 "role": "system",
@@ -385,7 +389,7 @@ class Game:
                     self.turn_summaries.append(self.current_turn_summary)
                     # Clear for next turn
                     delattr(self, 'current_turn_summary')
-                    print("=============================================\n")
+                    print("="*60 + "\n")
                     
 
     def handle_pay4partner_move(self, player, move):
@@ -471,7 +475,7 @@ class Game:
 
                 proposer_label = player.get_player_label(self)
                 target_label = player_to_trade_with.get_player_label(self)
-                print(f"\nTRADE ACCEPTED between {proposer_label} and {target_label}")
+                print(f"\nTrade accepted between {proposer_label} and {target_label}")
                 print(f"- {proposer_label} now has: {dict(player.resources)}")
                 print(f"- {target_label} now has: {dict(player_to_trade_with.resources)}")
                 if self.pay4partner:
@@ -484,7 +488,7 @@ class Game:
                 return True
             else:
                 target_label = player_to_trade_with.get_player_label(self)
-                print(f"\nTRADE REJECTED by {target_label}")
+                print(f"\nTrade rejected by {target_label}")
                 trade_log['result'] = 'declined'
                 self.logger.log("trade", trade_log)
                 return False
