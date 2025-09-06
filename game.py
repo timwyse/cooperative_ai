@@ -258,19 +258,22 @@ class Game:
 
             print(f"\n{player_label} ({player.model_name})'s turn:")
             
-            # Initialize player turn data for event logging
-            player_turn_data[player.name] = {
-                'resources_start': dict(player.resources),
-                'position_start': player.position,
-                'trade_proposed': None,
-                'trade_proposal_outcome': 'none',
-                'trade_received': None,
-                'trade_response': 'none',
-                'resources_after_trades': None,
-                'move_made': None,
-                'position_end': None,
-                'resources_end': None
-            }
+            # For first player of the turn, initialize both players' data
+            if not player_turn_data:
+                # Record both players' resources at the start of the turn
+                for p in self.players:
+                    player_turn_data[p.name] = {
+                        'resources_start': dict(p.resources),  # Resources at start of turn before any trades
+                        'position_start': p.position,
+                        'trade_proposed': None,
+                        'trade_proposal_outcome': 'none',
+                        'trade_received': None,
+                        'trade_response': 'none',
+                        'resources_after_trades': None,
+                        'move_made': None,
+                        'position_end': None,
+                        'resources_end': None
+                    }
             
             
             trade_result = None
@@ -285,13 +288,33 @@ class Game:
                 trade_result = self.validate_trade(player, propose_trade)
                 if trade_result["is_valid"]:
                     # Handle the trade
-                    trade_executed = self.handle_trade(player, propose_trade)
+                    trade_executed = self.handle_trade(player, propose_trade, player_turn_data)
                     # Mark whether this trade was actually executed
                     trade_result["executed"] = trade_executed
                     player_turn_data[player.name]['trade_proposal_outcome'] = 'accepted' if trade_executed else 'rejected'
+                    
+                    # Add trade to turn summary immediately
+                    if self.with_context:
+                        if not hasattr(self, 'current_turn_summary'):
+                            self.current_turn_summary = {
+                                "trades": [],
+                                "moves": [],
+                                "player_states": {}
+                            }
+                        other_player = next(p for p in self.players if p.name != player.name)
+                        trade_summary = {
+                            "proposer": player.name,
+                            "target": other_player.name,
+                            "offered": propose_trade["resources_to_offer"],
+                            "requested": propose_trade["resources_to_receive"],
+                            "success": trade_executed,
+                            "rejected": not trade_executed
+                        }
+                        self.current_turn_summary["trades"].append(trade_summary)
                 else:
                     print(f"{player_label}'s trade proposal was invalid: {trade_result['message']}")
                     player_turn_data[player.name]['trade_proposal_outcome'] = 'invalid'
+                    # TODO: log if trade was invalid
             else:
                 print(f"{player_label} chose not to trade")
 
@@ -338,21 +361,6 @@ class Game:
                         "moves": [],
                         "player_states": {}
                     }
-                
-                # Add this player's trade if any
-                if propose_trade:  # If a trade was proposed
-                    other_player = next(p for p in self.players if p.name != player.name)
-                    trade_summary = {
-                        "proposer": player.name,
-                        "target": other_player.name,
-                        "offered": propose_trade["resources_to_offer"],
-                        "requested": propose_trade["resources_to_receive"],
-                        "success": trade_result.get("executed", False) if trade_result else False,
-                        "rejected": not trade_result.get("executed", False) if trade_result else True
-                    }
-                    if "trades" not in self.current_turn_summary:
-                        self.current_turn_summary["trades"] = []
-                    self.current_turn_summary["trades"].append(trade_summary)
                 
                 # Add this player's move
                 move_summary = {
@@ -427,11 +435,12 @@ class Game:
             return False
             
     
-    def handle_trade(self, player, propose_trade):
+    def handle_trade(self, player, propose_trade, player_turn_data):
         """
         Handle a trade proposal from a player.
         - Validate the trade proposal.
         - Execute the trade if the target player accepts.
+        - Update player_turn_data with new resources after trade.
         Returns True if trade was executed, False otherwise.
         """
         try:
@@ -455,8 +464,9 @@ class Game:
             trade_accepted = other_player.accept_trade(self.grid, self, propose_trade)
             
             if trade_accepted:
+                # Execute the trade immediately
                 if self.pay4partner is False:
-                # Execute the trade by swapping resources
+                    # Execute the trade by swapping resources
                     for resource, quantity in resources_to_offer:
                         player.resources[resource] -= quantity
                         other_player.resources[resource] += quantity
@@ -494,6 +504,7 @@ class Game:
                 self.game_state[player.name]["promised_to_give"] = dict(player.promised_resources_to_give)
                 self.game_state[player.name]["promised_to_receive"] = dict(player.promised_resources_to_receive)
 
+                # Print trade outcome
                 proposer_label = player.get_player_label(self)
                 target_label = other_player.get_player_label(self)
                 print(f"\nTrade accepted between {proposer_label} and {target_label}")
@@ -503,6 +514,10 @@ class Game:
                     print('Additionally:')
                     print(f"- {proposer_label} has promised to give: {dict(player.promised_resources_to_give)}")
                     print(f"- {target_label} has promised to give: {dict(other_player.promised_resources_to_give)}")
+
+                # Update both players' resources_after_trades
+                player_turn_data[player.name]['resources_after_trades'] = dict(player.resources)
+                player_turn_data[other_player.name]['resources_after_trades'] = dict(other_player.resources)
                 
                 return True
             else:

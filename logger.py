@@ -139,8 +139,8 @@ class Logger(BaseLogger):
         # Build clean player turn data
         player_turn_data = {
             "position": {
-                "start": list(player_data.get('position_start', [0, 0])),
-                "end": list(player_data.get('position_end', [0, 0]))
+                "start": list(player_data.get('position_start')) if player_data.get('position_start') is not None else [0, 0],
+                "end": list(player_data.get('position_end')) if player_data.get('position_end') is not None else [0, 0]
             },
             "resources": {
                 "start": player_data.get('resources_start', {}),
