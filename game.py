@@ -231,12 +231,6 @@ class Game:
         - If the player has not finished, let them propose a trade and/or make a move.
         - Validate trades and moves before executing them.
         """
-        if self.turn > 0 and self.turn_summaries:
-            print("\nTURN", self.turn-1, "SUMMARY:")
-            print("-"*20)
-            formatted_summary = players[0].format_turn_summary(self.turn_summaries[-1], self.turn-1)
-            print(formatted_summary)
-        
         print("\n" + "="*60)
         print(f"=== USER VIEW - TURN {self.turn} STARTS ===")
         print("="*60)
@@ -274,8 +268,7 @@ class Game:
                         'position_end': None,
                         'resources_end': None
                     }
-            
-            
+
             trade_result = None
             move_result = None
 
@@ -287,9 +280,7 @@ class Game:
                 
                 trade_result = self.validate_trade(player, propose_trade)
                 if trade_result["is_valid"]:
-                    # Handle the trade
                     trade_executed = self.handle_trade(player, propose_trade, player_turn_data)
-                    # Mark whether this trade was actually executed
                     trade_result["executed"] = trade_executed
                     player_turn_data[player.name]['trade_proposal_outcome'] = 'accepted' if trade_executed else 'rejected'
                     
@@ -314,20 +305,19 @@ class Game:
                 else:
                     print(f"{player_label}'s trade proposal was invalid: {trade_result['message']}")
                     player_turn_data[player.name]['trade_proposal_outcome'] = 'invalid'
-                    # TODO: log if trade was invalid
             else:
                 print(f"{player_label} chose not to trade")
 
-            # Record resources after trades (before movement)
+            # Record resources after trades (before moves)
             player_turn_data[player.name]['resources_after_trades'] = dict(player.resources)
             
-        # Now handle all moves after all trades are done
+        # Handle moves after all trades are done
         for player in players:
             if player.has_finished():
                 continue
                 
             player_label = player.get_player_label(self)
-            old_position = player.position  # Capture position before move
+            old_position = player.position
             move = player.come_up_with_move(self, self.grid)
             if move is None:
                 print(f"{player_label} did not move.")
@@ -355,7 +345,7 @@ class Game:
             # Collect actions for turn summary
             if self.with_context:
                 if not hasattr(self, 'current_turn_summary'):
-                    # Initialize empty summary for this turn
+                    # Initialize empty summary for this turn if not initialized before (if no trades happened)
                     self.current_turn_summary = {
                         "trades": [],
                         "moves": [],
@@ -395,17 +385,12 @@ class Game:
                         if p.name in player_turn_data:
                             self.logger.log_player_turn_summary(self.turn, p.name, player_turn_data[p.name])
                     
-                    # End turn in combined logger
                     self.logger.log_turn_end(self.turn)
                     
-                    print("\n=== ADDING TURN SUMMARY TO ALL PLAYERS' CONTEXT ===")
                     for p in self.players:
                         if p.model_name != 'human':
                             # Each player gets their own personalized turn summary
                             player_specific_summary = p.format_turn_summary(self.current_turn_summary, self.turn)
-                            player_label = p.get_player_label(self)
-                            print(f"\nAdding to {player_label} ({p.model_name})'s context")
-                            print(f"Player-specific summary:\n{player_specific_summary}")
                             p.messages.append({
                                 "role": "system",
                                 "content": player_specific_summary
