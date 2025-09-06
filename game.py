@@ -8,7 +8,7 @@ from tabulate import tabulate
 
 from constants import AVAILABLE_COLORS, COLOR_MAP, TILE_SIZE, FPS
 from grid import Grid
-from logger import GameLogger, NullLogger
+from logger import GameLogger, NullLogger, EventLogger
 from player import Player
 from utils import freeze
 
@@ -23,6 +23,8 @@ class Game:
         from datetime import datetime
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.yulia_logger = GameLogger(filepath=f"logs/yulia_agent_prompt_logs/yulia_logs_{timestamp}.jsonl")
+        # Create event logger for structured game events
+        self.event_logger = EventLogger(game_id=timestamp)
 
         # Grid Setup
         self.grid_size = self.config.grid_size
@@ -212,6 +214,10 @@ class Game:
 
         print("Game over!")
         self.print_game_state()
+        
+        # Log final game state to event logger
+        self.event_logger.log_game_end(self.players, self.turn)
+        
         scores = self.get_scores()
         total_scores = self.get_total_scores(scores)
         total_accuracy = self.get_total_accuracy(scores)
@@ -270,6 +276,20 @@ class Game:
         print("\n" + "="*60)
         print(f"=== USER LOGS VIEW - TURN {self.turn} STARTS ===")
         print("="*60)
+        
+        # Log turn start
+        self.yulia_logger.log("turn_start", {
+            "turn": self.turn,
+            "message": f"Turn {self.turn} of the game starts"
+        })
+        
+        # Initialize event logging for this turn (and config on first turn)
+        if self.turn == 0:
+            self.event_logger.log_game_config(self.config, self.players, self.grid)
+        self.event_logger.log_turn_start(self.turn)
+        
+        # Track player data for event logging
+        player_turn_data = {}
 
         #TODO: consider either remove for loop (diplomacy-style simultaneous turns), or shuffle players each turn to be fair
         for player in players:
@@ -280,23 +300,64 @@ class Game:
 
             print(f"\n{player_label} ({player.model_name})'s turn:")
             
+            # Initialize player turn data for event logging
+            player_turn_data[player.name] = {
+                'resources_start': dict(player.resources),
+                'position_start': player.position,
+                'trade_proposed': None,
+                'trade_proposal_outcome': 'none',
+                'trade_received': None,
+                'trade_response': 'none',
+                'resources_after_trades': None,
+                'move_made': None,
+                'position_end': None,
+                'resources_end': None
+            }
+            
+            # Log player turn start
+            self.yulia_logger.log("player_turn_start", {
+                "turn": self.turn,
+                "player": player.name,
+                "player_label": player.get_player_label(self),
+                "player_model": player.model_name,
+                "message": f"Turn {self.turn}, {player.name} turn starts"
+            })
+            
             trade_result = None
             move_result = None
 
             # Handle trade proposal
             propose_trade = player.propose_trade(self.grid, self)
             if propose_trade and propose_trade is not None:
+                # Record the trade proposal
+                player_turn_data[player.name]['trade_proposed'] = propose_trade
+                
                 trade_result = self.validate_trade(player, propose_trade)
                 if trade_result["is_valid"]:
                     # Handle the trade
                     trade_executed = self.handle_trade(player, propose_trade)
                     # Mark whether this trade was actually executed
                     trade_result["executed"] = trade_executed
+                    player_turn_data[player.name]['trade_proposal_outcome'] = 'accepted' if trade_executed else 'rejected'
                 else:
                     print(f"{player_label}'s trade proposal was invalid: {trade_result['message']}")
+                    player_turn_data[player.name]['trade_proposal_outcome'] = 'invalid'
+                    # Log the invalid trade proposal
+                    self.yulia_logger.log("trade_invalid", {
+                        "player": player.name,
+                        "player_label": player_label,
+                        "player_model": player.model_name,
+                        "turn": self.turn,
+                        "trade_proposal": propose_trade,
+                        "validation_result": trade_result,
+                        "message": f"{player.name} trade proposal was invalid: {trade_result['message']}"
+                    })
             else:
                 print(f"{player_label} chose not to trade")
 
+            # Record resources after trades (before movement)
+            player_turn_data[player.name]['resources_after_trades'] = dict(player.resources)
+            
             # Handle movement
             old_position = player.position  # Capture position before move
             move = player.come_up_with_move(self, self.grid)
@@ -311,15 +372,21 @@ class Game:
                         "move_to": move,})
                     player.move(move, self.grid)
                     move_result = move
+                    player_turn_data[player.name]['move_made'] = move
                     print(f"{player_label} moved to {move}.")
                 elif player.can_move_to_with_promised(move, self.grid):
                     partner_agrees_to_pay = self.handle_pay4partner_move(player, move)
                     if partner_agrees_to_pay:
                         player.move(move, self.grid)
                         move_result = move
+                        player_turn_data[player.name]['move_made'] = move
                         print(f"{player_label} moved to {move} via pay4partner.")
                 else:
                     move_result = "invalid_move"
+            
+            # Record final state
+            player_turn_data[player.name]['position_end'] = player.position
+            player_turn_data[player.name]['resources_end'] = dict(player.resources)
             
             # Collect actions for turn summary
             if self.with_context:
@@ -372,6 +439,20 @@ class Game:
                     print("\n" + "="*60)
                     print("=== END USER LOGS VIEW ===")
                     print("="*60)
+                    
+                    # Log end of turn
+                    self.yulia_logger.log("turn_end", {
+                        "turn": self.turn,
+                        "message": f"End of turn {self.turn} for both players"
+                    })
+                    
+                    # Log structured event data for each player
+                    for p in self.players:
+                        if p.name in player_turn_data:
+                            self.event_logger.log_player_turn_summary(self.turn, p.name, player_turn_data[p.name])
+                    
+                    # End turn in event logger
+                    self.event_logger.log_turn_end(self.turn)
                     
                     print("\n=== ADDING TURN SUMMARY TO ALL PLAYERS' CONTEXT ===")
                     for p in self.players:
