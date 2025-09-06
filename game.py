@@ -8,7 +8,7 @@ from tabulate import tabulate
 
 from constants import AVAILABLE_COLORS, COLOR_MAP, TILE_SIZE, FPS
 from grid import Grid
-from logger import GameLogger, NullLogger, EventLogger
+from logger import GameLogger, NullLogger, CombinedGameLogger
 from player import Player
 from utils import freeze
 
@@ -23,8 +23,8 @@ class Game:
         from datetime import datetime
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.yulia_logger = GameLogger(filepath=f"logs/yulia_agent_prompt_logs/yulia_logs_{timestamp}.jsonl")
-        # Create event logger for structured game events
-        self.event_logger = EventLogger(game_id=timestamp)
+        # Create combined logger for both event and verbose logging
+        self.combined_logger = CombinedGameLogger(game_id=timestamp)
 
         # Grid Setup
         self.grid_size = self.config.grid_size
@@ -215,8 +215,8 @@ class Game:
         print("Game over!")
         self.print_game_state()
         
-        # Log final game state to event logger
-        self.event_logger.log_game_end(self.players, self.turn)
+        # Log final game state to combined logger
+        self.combined_logger.log_game_end(self.players, self.turn)
         
         scores = self.get_scores()
         total_scores = self.get_total_scores(scores)
@@ -283,10 +283,10 @@ class Game:
             "message": f"Turn {self.turn} of the game starts"
         })
         
-        # Initialize event logging for this turn (and config on first turn)
+        # Initialize combined logging for this turn (and config on first turn)
         if self.turn == 0:
-            self.event_logger.log_game_config(self.config, self.players, self.grid)
-        self.event_logger.log_turn_start(self.turn)
+            self.combined_logger.log_game_config(self.config, self.players, self.grid)
+        self.combined_logger.log_turn_start(self.turn)
         
         # Track player data for event logging
         player_turn_data = {}
@@ -449,10 +449,10 @@ class Game:
                     # Log structured event data for each player
                     for p in self.players:
                         if p.name in player_turn_data:
-                            self.event_logger.log_player_turn_summary(self.turn, p.name, player_turn_data[p.name])
+                            self.combined_logger.log_player_turn_summary(self.turn, p.name, player_turn_data[p.name])
                     
-                    # End turn in event logger
-                    self.event_logger.log_turn_end(self.turn)
+                    # End turn in combined logger
+                    self.combined_logger.log_turn_end(self.turn)
                     
                     print("\n=== ADDING TURN SUMMARY TO ALL PLAYERS' CONTEXT ===")
                     for p in self.players:
