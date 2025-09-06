@@ -8,23 +8,19 @@ from tabulate import tabulate
 
 from constants import AVAILABLE_COLORS, COLOR_MAP, TILE_SIZE, FPS
 from grid import Grid
-from logger import GameLogger, NullLogger, CombinedGameLogger
+from logger import Logger
 from player import Player
 from utils import freeze
 
 
 class Game:
    
-    def __init__(self, config, logger=None):
+    def __init__(self, config):
         # Configuration and Logging
         self.config = config
-        self.logger = logger if logger is not None else NullLogger()
-        # Create a separate logger for yulia's logs
         from datetime import datetime
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.yulia_logger = GameLogger(filepath=f"logs/yulia_agent_prompt_logs/yulia_logs_{timestamp}.jsonl")
-        # Create combined logger for both event and verbose logging
-        self.combined_logger = CombinedGameLogger(game_id=timestamp)
+        self.logger = Logger(game_id=timestamp)
 
         # Grid Setup
         self.grid_size = self.config.grid_size
@@ -41,7 +37,6 @@ class Game:
         
         # Store initial resources for player labeling
         self.initial_resources = {player.name: dict(player.resources) for player in self.players}
-
         # trade version
         self.pay4partner = self.config.pay4partner
 
@@ -64,9 +59,7 @@ class Game:
         self.running = True
 
         # Logging Initial State
-        self.logger.log("game_config", {"config": self.config})
-        self.logger.log("initial_game_state", {"initial_game_state": copy.deepcopy(self.game_state)})
-        self.logger.log("grid", {"grid": self.grid.tile_colors})
+        self.logger.log_game_config(self.config, self.players, self.grid)
 
     
     # 1. Initialization and Setup
@@ -215,47 +208,18 @@ class Game:
         print("Game over!")
         self.print_game_state()
         
-        # Log final game state to combined logger
-        self.combined_logger.log_game_end(self.players, self.turn)
+        # Calculate final scores
+        scores = {p.name: (100 + 5 * sum(dict(p.resources).values())) if p.has_finished() else 0 
+                 for p in self.players}
         
-        scores = self.get_scores()
-        total_scores = self.get_total_scores(scores)
-        total_accuracy = self.get_total_accuracy(scores)
-        gini_coefficient = self.calculate_gini_coefficient(scores)
+        # Print final scores
+        print("\nFinal Scores:")
+        for player_name, score in scores.items():
+            print(f"{player_name}: {score} points")
         
-        # Consolidate all final game information in one log
-        final_log = {
-            "game_config": {
-                "total_turns": self.turn,
-                "context_enabled": self.with_context,
-                "grid_size": self.grid_size,
-                "colors": self.colors
-            },
-            "scores": scores,
-            "metrics": {
-                "total_scores": total_scores,
-                "total_accuracy": total_accuracy,
-                "gini_coefficient": gini_coefficient,
-                "max_possible_score": self.max_possible_score
-            },
-            "final_turn_summary": self.turn_summaries[-1] if self.turn_summaries else None,
-            "player_histories": {}
-        }
+        # Log final game state and metrics to combined logger
+        self.logger.log_game_end(self.players, self.turn)
         
-        # Add each player's final message history
-        for player in self.players:
-            if player.model_name != 'human':
-                final_log["player_histories"][player.name] = {
-                    "model": player.model_name,
-                    "with_message_history": player.with_message_history,
-                    "messages": player.messages if player.with_message_history else "Message history disabled"
-                }
-        
-        # Log to both loggers to maintain compatibility
-        self.logger.log("final_game_state", final_log)
-        self.yulia_logger.log("final_game_state", final_log)
-        
-        print(f"Final scores: {scores}")
         if self.display_gui:
             pygame.quit()
 
@@ -274,19 +238,13 @@ class Game:
             print(formatted_summary)
         
         print("\n" + "="*60)
-        print(f"=== USER LOGS VIEW - TURN {self.turn} STARTS ===")
+        print(f"=== USER VIEW - TURN {self.turn} STARTS ===")
         print("="*60)
         
-        # Log turn start
-        self.yulia_logger.log("turn_start", {
-            "turn": self.turn,
-            "message": f"Turn {self.turn} of the game starts"
-        })
-        
-        # Initialize combined logging for this turn (and config on first turn)
+        # Initialize logging for this turn (and config on first turn)
         if self.turn == 0:
-            self.combined_logger.log_game_config(self.config, self.players, self.grid)
-        self.combined_logger.log_turn_start(self.turn)
+            self.logger.log_game_config(self.config, self.players, self.grid)
+        self.logger.log_turn_start(self.turn)
         
         # Track player data for event logging
         player_turn_data = {}
@@ -314,14 +272,6 @@ class Game:
                 'resources_end': None
             }
             
-            # Log player turn start
-            self.yulia_logger.log("player_turn_start", {
-                "turn": self.turn,
-                "player": player.name,
-                "player_label": player.get_player_label(self),
-                "player_model": player.model_name,
-                "message": f"Turn {self.turn}, {player.name} turn starts"
-            })
             
             trade_result = None
             move_result = None
@@ -342,23 +292,18 @@ class Game:
                 else:
                     print(f"{player_label}'s trade proposal was invalid: {trade_result['message']}")
                     player_turn_data[player.name]['trade_proposal_outcome'] = 'invalid'
-                    # Log the invalid trade proposal
-                    self.yulia_logger.log("trade_invalid", {
-                        "player": player.name,
-                        "player_label": player_label,
-                        "player_model": player.model_name,
-                        "turn": self.turn,
-                        "trade_proposal": propose_trade,
-                        "validation_result": trade_result,
-                        "message": f"{player.name} trade proposal was invalid: {trade_result['message']}"
-                    })
             else:
                 print(f"{player_label} chose not to trade")
 
             # Record resources after trades (before movement)
             player_turn_data[player.name]['resources_after_trades'] = dict(player.resources)
             
-            # Handle movement
+        # Now handle all moves after all trades are done
+        for player in players:
+            if player.has_finished():
+                continue
+                
+            player_label = player.get_player_label(self)
             old_position = player.position  # Capture position before move
             move = player.come_up_with_move(self, self.grid)
             if move is None:
@@ -366,10 +311,6 @@ class Game:
                 move_result = "no_move"
             else:
                 if player.can_move_to(move, self.grid):
-                    self.logger.log("move", {
-                        "player": player.name,
-                        "move_from": old_position,
-                        "move_to": move,})
                     player.move(move, self.grid)
                     move_result = move
                     player_turn_data[player.name]['move_made'] = move
@@ -409,8 +350,10 @@ class Game:
                         "success": trade_result.get("executed", False),
                         "rejected": not trade_result.get("executed", False)
                     }
+                    if "trades" not in self.current_turn_summary:
+                        self.current_turn_summary["trades"] = []
                     self.current_turn_summary["trades"].append(trade_summary)
-                    # print(f"DEBUG: Added trade to summary: {trade_summary}")
+                    print(f"DEBUG: Added trade to summary: {trade_summary}")
                 
                 # Add this player's move
                 move_summary = {
@@ -437,22 +380,16 @@ class Game:
                 # If this is the last player, finalize and distribute the turn summary
                 if player == players[-1]:
                     print("\n" + "="*60)
-                    print("=== END USER LOGS VIEW ===")
+                    print("=== END USER VIEW ===")
                     print("="*60)
-                    
-                    # Log end of turn
-                    self.yulia_logger.log("turn_end", {
-                        "turn": self.turn,
-                        "message": f"End of turn {self.turn} for both players"
-                    })
                     
                     # Log structured event data for each player
                     for p in self.players:
                         if p.name in player_turn_data:
-                            self.combined_logger.log_player_turn_summary(self.turn, p.name, player_turn_data[p.name])
+                            self.logger.log_player_turn_summary(self.turn, p.name, player_turn_data[p.name])
                     
                     # End turn in combined logger
-                    self.combined_logger.log_turn_end(self.turn)
+                    self.logger.log_turn_end(self.turn)
                     
                     print("\n=== ADDING TURN SUMMARY TO ALL PLAYERS' CONTEXT ===")
                     for p in self.players:
@@ -481,6 +418,7 @@ class Game:
         partner_agrees = partner.agree_to_pay4partner(player, color, self, self.grid)
         if partner_agrees:
             partner.promised_resources_to_give[color] -= 1
+            partner.resources[color] -= 1
             player.promised_resources_to_receive[color] -= 1
             player.resources[color] += 1
             print(f"{partner.name} agreed to pay4partner.")
@@ -526,13 +464,11 @@ class Game:
                     # In pay4partner mode, update promised resources instead of actual resources
                     for resource, quantity in resources_to_offer:
                         player.promised_resources_to_give[resource] += quantity
-                        player.resources[resource] -= quantity
                         player_to_trade_with.promised_resources_to_receive[resource] += quantity
 
                     for resource, quantity in resources_to_receive:
                         player.promised_resources_to_receive[resource] += quantity
                         player_to_trade_with.promised_resources_to_give[resource] += quantity
-                        player_to_trade_with.resources[resource] -= quantity
                     player.pay4partner_log.append({
                         "agreement_turn": self.turn,
                         "with": player_to_trade_with.name,
@@ -564,19 +500,14 @@ class Game:
                     print(f"- {proposer_label} has promised to give: {dict(player.promised_resources_to_give)}")
                     print(f"- {target_label} has promised to give: {dict(player_to_trade_with.promised_resources_to_give)}")
                 
-                trade_log['result'] = 'accepted'
-                self.logger.log("trade", trade_log)
                 return True
             else:
                 target_label = player_to_trade_with.get_player_label(self)
                 print(f"\nTrade rejected by {target_label}")
-                trade_log['result'] = 'declined'
-                self.logger.log("trade", trade_log)
                 return False
 
         except Exception as e:
             print(f"An error occurred while handling the trade: {e}")
-            self.logger.log("trade_error", {"error": str(e), "propose_trade": propose_trade})
             return False
 
     def validate_trade(self, player, propose_trade):
@@ -644,44 +575,6 @@ class Game:
 
 
     # 3. Game State and Metrics
-    def get_scores(self):
-        """Calculate and return the scores for each player."""
-        scores = {}
-        for player in self.players:
-            if player.has_finished():
-                # Player reached goal: get 100 points + 5 points per remaining resource
-                scores[player.name] = 100 +  5 * (sum(player.resources.values()) + sum(player.promised_resources_to_give.values()) if self.pay4partner else 0)
-            else:
-                # Player did not reach goal: get 0 points regardless of remaining resources
-                scores[player.name] = 0
-        return scores
-    
-
-    def get_total_scores(self, scores):
-        return sum(scores.values())
-
-
-    def get_total_accuracy(self, scores):
-        """Defined as the total score divided by the maximum possible score."""
-        return sum(scores.values())/ self.max_possible_score
-
-
-    def calculate_gini_coefficient(self, scores):
-        """
-        Calculate the Gini coefficient for the final scores.
-        """
-        scores = list(scores.values())
-        scores.sort()  
-        n = len(scores)
-
-        cumulative_sum = sum((i + 1) * score for i, score in enumerate(scores))
-        total_sum = sum(scores)
-
-        if total_sum == 0:
-            return 0  
-
-        gini = (2 * cumulative_sum) / (n * total_sum) - (n + 1) / n
-        return gini
 
 
     def check_for_repeated_states(self, n_repeats=3):
@@ -692,7 +585,6 @@ class Game:
         count = state_counter[freeze(self.game_state)]
         if count == n_repeats:
             print(f"The position has repeated {n_repeats} times, finishing the game.")
-            self.logger.log("repeated_states_break", {"n_repeats": n_repeats})
             return True
         elif count == n_repeats - 1:
             print(f"Current position has repeated {count} times, game will stop if this occurs again.")
