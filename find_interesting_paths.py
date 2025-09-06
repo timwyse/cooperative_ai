@@ -2,6 +2,9 @@ import itertools
 import json
 from math import comb
 from collections import Counter
+from itertools import islice
+import os
+
 
 # grid size
 N = 5
@@ -88,31 +91,78 @@ def check_path_conditions(grid):
 
     return B_cond1, B_cond2, B_cond3, R_cond1, R_cond2, R_cond3
 
+def classify_board(grid):
+    start, goal = (0,0), (4,4)
+    all_paths = enumerate_paths(grid, start, goal, max_len=MAX_LEN)
+
+    # Track best/worst for each player
+    stats = {"B": {"min_trades": float("inf"), "max_trades": -1},
+             "R": {"min_trades": float("inf"), "max_trades": -1}}
+
+    for path in all_paths:
+        colors = [grid[r][c] for (r,c) in path[1:]]
+        b_count = colors.count("B")
+        r_count = colors.count("R")
+
+        # For Blue, "trades" are red squares encountered
+        stats["B"]["min_trades"] = min(stats["B"]["min_trades"], r_count)
+        stats["B"]["max_trades"] = max(stats["B"]["max_trades"], r_count)
+        # For Red, "trades" are blue squares encountered
+        stats["R"]["min_trades"] = min(stats["R"]["min_trades"], b_count)
+        stats["R"]["max_trades"] = max(stats["R"]["max_trades"], b_count)
+
+    # --- Scores ---
+    asymmetry_score = abs(stats["B"]["min_trades"] - stats["R"]["min_trades"])
+    efficiency_score = (
+        (stats["B"]["max_trades"] - stats["B"]["min_trades"]) +
+        (stats["R"]["max_trades"] - stats["R"]["min_trades"])
+    )
+    symmetry = (stats["B"]["min_trades"] > 0 and stats["R"]["min_trades"] > 0)
+
+    return {
+        "symmetry": symmetry,
+        "asymmetry_score": asymmetry_score,
+        "efficiency_score": efficiency_score,
+        "stats": stats
+    }
+
 # open file to stream results in JSON Lines format
-with open("boards_and_properties.jsonl", "w") as f:
-    for i, combo in enumerate(itertools.combinations(positions, num_B), start=1):
+output_file = "boards_and_properties.jsonl"
+
+# Count how many boards already generated
+if os.path.exists(output_file):
+    with open(output_file, "r") as f:
+        already_done = sum(1 for _ in f)
+else:
+    already_done = 0
+
+BATCH_SIZE = 100  # how many boards to generate per run
+
+with open(output_file, "a") as f:  # append mode
+    for i, combo in enumerate(
+            islice(itertools.combinations(positions, num_B),
+                   already_done,
+                   already_done + BATCH_SIZE),
+            start=already_done+1):
+
+        # Build the grid
         grid = [[None]*N for _ in range(N)]
-        
-        # place fixed 'G'
         for (r,c), v in fixed.items():
             grid[r][c] = v
-
-        # place 'B'
         for (r,c) in combo:
-            grid[r][c] = 'B'
-
-        # place 'R' in the rest
+            grid[r][c] = "B"
         for (r,c) in positions:
             if grid[r][c] is None:
-                grid[r][c] = 'R'
+                grid[r][c] = "R"
 
-        # check path conditions
-        conds = check_path_conditions(grid)
+        # Classification (replace with your function)
+        result = {
+            "grid": grid,
+            "classification": classify_board(grid)  # << uses your new scoring
+        }
 
-        # dump grid and path condition flags as JSON line
-        json.dump({"grid": grid, "conditions": conds}, f)
+        json.dump(result, f)
         f.write("\n")
 
-        # progress update every 100,000
-        if i % 100_000 == 0:
-            print(f"Written {i}/{total} configurations...")
+    print(f"Generated boards {already_done+1} to {already_done+BATCH_SIZE}")
+
