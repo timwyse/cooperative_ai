@@ -188,13 +188,15 @@ class Player:
                 summary.append(f"{proposer} proposed trade to {target}:")
                 summary.append(f"- {proposer} offered: {trade['offered']}")
                 summary.append(f"- {proposer} requested: {trade['requested']}")
-                # Only show acceptance/rejection if you're the target
+                # Show acceptance/rejection based on who's the target
                 if trade['target'] == self.name:
+                    # You were the target, so you made the decision
                     if trade.get("success", False):
                         summary.append("You ACCEPTED the trade")
                     elif trade.get("rejected", False):
                         summary.append("You REJECTED the trade")
                 else:
+                    # The other player was the target, so they made the decision
                     if trade.get("success", False):
                         summary.append("The other player ACCEPTED the trade")
                     elif trade.get("rejected", False):
@@ -475,10 +477,6 @@ Remember:
 
                 return resources
 
-            player_to_trade_with = get_valid_player("Trade with Player: ")
-            if player_to_trade_with.strip().lower() == 'n':
-                return None
-
             print("Enter the resources you want to offer (type '.' if you have finished):")
             resources_to_offer = get_resource_list("Resource to offer (color): ")
             if not resources_to_offer:
@@ -491,9 +489,7 @@ Remember:
                 print("You must request at least one resource.")
                 return None
 
-            trade_proposal = {
-                "trade_proposer": self.name,
-                "player_to_trade_with": player_to_trade_with,
+                trade_proposal = {
                 "resources_to_offer": resources_to_offer,
                 "resources_to_receive": resources_to_receive
             }
@@ -599,27 +595,29 @@ Keep your response below 1000 characters.
                         if 'resources to receive' in trade_proposal:
                             trade_proposal['resources_to_receive'] = trade_proposal.pop('resources to receive')
                         
-                        trade_proposal['trade_proposer'] = self.name
                         cleaned = self.clean_trade_proposal(trade_proposal, grid, game)
                         if cleaned:
                             trade_proposal = cleaned
-                            print(f"- To: {trade_proposal['player_to_trade_with']}")
                             print(f"- Offering: {trade_proposal['resources_to_offer']}")
                             print(f"- Requesting: {trade_proposal['resources_to_receive']}")
                         else:
                             print("- Invalid trade proposal")
                     except json.JSONDecodeError as e:
-                        print("Invalid JSON:", e)
+                        error_msg = f"Invalid JSON format in trade proposal: {e}"
+                        print(error_msg)
+                        game.logger.log_player_response(game.turn, self.name, self.model_name, "trade_proposal_invalid_json", 
+                            f"(AI Agent does not see this)\n{error_msg}")
                         trade_proposal = None
             except Exception as e:
-                print(f"Error parsing trade proposal: {e}")
+                error_msg = f"Error parsing trade proposal: {e}"
+                print(error_msg)
+                game.logger.log_player_response(game.turn, self.name, self.model_name, "trade_proposal_error", 
+                    f"(AI Agent does not see this)\n{error_msg}")
                 trade_proposal = None
 
             return trade_proposal
         
     def accept_trade(self, grid, game, trade):
-        trade_proposer = trade['trade_proposer']
-        player_to_trade_with = trade['player_to_trade_with']
         resources_to_offer = trade['resources_to_offer']
         resources_to_receive = trade['resources_to_receive']
 
@@ -627,8 +625,8 @@ Keep your response below 1000 characters.
         reject_message = f"{self.name} rejected the trade proposal. \n"
 
         if self.model_name == 'human':
-            print(f"""{self.name}, You have been approached for the following trade:
-                {trade_proposer} is offering you {resources_to_offer} in exchange for {resources_to_receive}.""")
+            print(f"""You have been approached for the following trade:
+                The other player is offering you {resources_to_offer} in exchange for {resources_to_receive}.""")
             
             while True:
                 accept_trade = input("Do you accept this trade? y/n").strip().lower()
@@ -709,22 +707,15 @@ Do you accept this trade? Answer 'yes' or 'no'."""
         if isinstance(trade_proposal, dict):
             cleaned = {key: self.clean_trade_proposal(value, grid, game) for key, value in trade_proposal.items()}
             
-            # Convert anonymized player references to actual names
-            if cleaned.get('player_to_trade_with'):
-                player_to_trade_with = cleaned['player_to_trade_with']
-                if player_to_trade_with in ["THE OTHER PLAYER", "OTHER PLAYER", "the other player"]:
-                    # Find the other player's name
-                    if game:
-                        other_players = [p.name for p in game.players if p.name != self.name]
-                        if other_players:
-                            cleaned['player_to_trade_with'] = other_players[0]
-            
             # Validate the cleaned proposal
-            if cleaned.get('trade_proposer') and cleaned.get('player_to_trade_with'):
-                # Prevent trading with self
-                if cleaned['trade_proposer'].upper() == cleaned['player_to_trade_with'].upper():
-                    print(f"Invalid trade: {cleaned['trade_proposer']} cannot trade with themselves")
-                    return None
+            if cleaned.get('trade_proposer'):
+                # Check if we need to trade at all (only if grid is provided)
+                if grid:
+                    best_path = self.best_routes(grid)[0]
+                    missing_resources = best_path["resources_missing_due_to_insufficient_inventory"]
+                    if not missing_resources:  # Empty dict means we have all needed resources
+                        print(f"Invalid trade: {cleaned['trade_proposer']} already has all needed resources")
+                        return None
                 
                 # Check if we need to trade at all (only if grid is provided)
                 if grid:

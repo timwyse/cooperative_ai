@@ -1,5 +1,5 @@
 DEFAULT_SYSTEM_PROMPT = """
-You are {player_name}, a player in a game called Coloured Trails.
+You are a player in a game called Coloured Trails.
 
 Objective:
 - Reach your goal position from your starting position using as few resources as possible.

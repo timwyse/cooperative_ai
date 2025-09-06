@@ -340,20 +340,19 @@ class Game:
                     }
                 
                 # Add this player's trade if any
-                if trade_result and isinstance(trade_result, dict) and trade_result.get("is_valid", False):
-                    trade = trade_result["proposed_trade"]
+                if propose_trade:  # If a trade was proposed
+                    other_player = next(p for p in self.players if p.name != player.name)
                     trade_summary = {
                         "proposer": player.name,
-                        "target": trade_result["player_to_trade_with"].name,
-                        "offered": trade["resources_to_offer"],
-                        "requested": trade["resources_to_receive"],
-                        "success": trade_result.get("executed", False),
-                        "rejected": not trade_result.get("executed", False)
+                        "target": other_player.name,
+                        "offered": propose_trade["resources_to_offer"],
+                        "requested": propose_trade["resources_to_receive"],
+                        "success": trade_result.get("executed", False) if trade_result else False,
+                        "rejected": not trade_result.get("executed", False) if trade_result else True
                     }
                     if "trades" not in self.current_turn_summary:
                         self.current_turn_summary["trades"] = []
                     self.current_turn_summary["trades"].append(trade_summary)
-                    print(f"DEBUG: Added trade to summary: {trade_summary}")
                 
                 # Add this player's move
                 move_summary = {
@@ -439,70 +438,75 @@ class Game:
             # Validate the trade proposal
             validation_result = self.validate_trade(player, propose_trade)
             if not validation_result["is_valid"]:
-                print(f"Trade validation failed: {validation_result['message']}")
+                error_msg = f"Trade validation failed: {validation_result['message']}"
+                print(error_msg)
+                # Log validation failure to verbose log
+                self.logger.log_player_response(self.turn, player.name, player.model_name, "trade_validation_failed", 
+                    f"(AI Agent does not see this)\n{player.name}'s trade proposal was invalid: {validation_result['message']}")
                 return False
 
-            player_to_trade_with = validation_result["player_to_trade_with"]
+            # Get the other player (in 2-player game, it's always the non-proposer)
+            other_player = next(p for p in self.players if p.name != player.name)
             resources_to_offer = propose_trade['resources_to_offer']
             resources_to_receive = propose_trade['resources_to_receive']
 
-            trade_log = copy.deepcopy(propose_trade)
-
-            # Ask the target player if they accept the trade
-            if player_to_trade_with.accept_trade(self.grid, self, propose_trade):
-
+            # Ask the other player if they accept the trade
+            # Get the other player's response to the trade
+            trade_accepted = other_player.accept_trade(self.grid, self, propose_trade)
+            
+            if trade_accepted:
                 if self.pay4partner is False:
                 # Execute the trade by swapping resources
                     for resource, quantity in resources_to_offer:
                         player.resources[resource] -= quantity
-                        player_to_trade_with.resources[resource] += quantity
+                        other_player.resources[resource] += quantity
 
                     for resource, quantity in resources_to_receive:
                         player.resources[resource] += quantity
-                        player_to_trade_with.resources[resource] -= quantity
+                        other_player.resources[resource] -= quantity
                 else:
                     # In pay4partner mode, update promised resources instead of actual resources
                     for resource, quantity in resources_to_offer:
                         player.promised_resources_to_give[resource] += quantity
-                        player_to_trade_with.promised_resources_to_receive[resource] += quantity
+                        other_player.promised_resources_to_receive[resource] += quantity
 
                     for resource, quantity in resources_to_receive:
                         player.promised_resources_to_receive[resource] += quantity
-                        player_to_trade_with.promised_resources_to_give[resource] += quantity
+                        other_player.promised_resources_to_give[resource] += quantity
                     player.pay4partner_log.append({
                         "agreement_turn": self.turn,
-                        "with": player_to_trade_with.name,
+                        "with": other_player.name,
                         "offered": resources_to_offer,
                         "requested": resources_to_receive,
-                        "text_summary": f"On turn {self.turn}, {player.name} and {player_to_trade_with.name} agreed that at some stage in the future, {player.name} would pay {resources_to_offer} to {player_to_trade_with.name} in exchange for {player_to_trade_with.name} at some stage in the future paying for {resources_to_receive} to {player.name}.",
+                        "text_summary": f"On turn {self.turn}, {player.name} and {other_player.name} agreed that at some stage in the future, {player.name} would pay {resources_to_offer} to {other_player.name} in exchange for {other_player.name} at some stage in the future paying for {resources_to_receive} to {player.name}.",
                     })
-                    player_to_trade_with.pay4partner_log.append({
+                    other_player.pay4partner_log.append({
                         "agreement_turn": self.turn,
                         "with": player.name,
                         "offered": resources_to_receive,
                         "requested": resources_to_offer,
-                        "text_summary": f"On turn {self.turn}, {player.name} and {player_to_trade_with.name} agreed that at some stage in the future, {player.name} would pay {resources_to_offer} to {player_to_trade_with.name} in exchange for {player_to_trade_with.name} at some stage in the future paying for {resources_to_receive} to {player.name}.",
+                        "text_summary": f"On turn {self.turn}, {player.name} and {other_player.name} agreed that at some stage in the future, {player.name} would pay {resources_to_offer} to {other_player.name} in exchange for {other_player.name} at some stage in the future paying for {resources_to_receive} to {player.name}.",
                     })
 
                 # Update game state immediately after trade execution
                 self.game_state[player.name]["resources"] = dict(player.resources)
-                self.game_state[player_to_trade_with.name]["resources"] = dict(player_to_trade_with.resources)
+                self.game_state[other_player.name]["resources"] = dict(other_player.resources)
                 self.game_state[player.name]["promised_to_give"] = dict(player.promised_resources_to_give)
-                self.game_state[player.name]["promised_to_receive"] = dict(player.promised_resources_to_give)
+                self.game_state[player.name]["promised_to_receive"] = dict(player.promised_resources_to_receive)
 
                 proposer_label = player.get_player_label(self)
-                target_label = player_to_trade_with.get_player_label(self)
+                target_label = other_player.get_player_label(self)
                 print(f"\nTrade accepted between {proposer_label} and {target_label}")
                 print(f"- {proposer_label} now has: {dict(player.resources)}")
-                print(f"- {target_label} now has: {dict(player_to_trade_with.resources)}")
+                print(f"- {target_label} now has: {dict(other_player.resources)}")
                 if self.pay4partner:
                     print('Additionally:')
                     print(f"- {proposer_label} has promised to give: {dict(player.promised_resources_to_give)}")
-                    print(f"- {target_label} has promised to give: {dict(player_to_trade_with.promised_resources_to_give)}")
+                    print(f"- {target_label} has promised to give: {dict(other_player.promised_resources_to_give)}")
                 
                 return True
             else:
-                target_label = player_to_trade_with.get_player_label(self)
+                target_label = other_player.get_player_label(self)
                 print(f"\nTrade rejected by {target_label}")
                 return False
 
@@ -519,23 +523,16 @@ class Game:
         - player_to_trade_with: The target player if valid
         """
         validation_result = {"is_valid": False, "message": "", "proposed trade": propose_trade}
-        required_fields = ['player_to_trade_with', 'resources_to_offer', 'resources_to_receive']
+        required_fields = ['resources_to_offer', 'resources_to_receive']
         if not all(field in propose_trade for field in required_fields):
             validation_result['message'] = "Missing required fields in trade proposal."
             return validation_result
 
-        # Find the player to trade with
-        def normalize_name(name: str) -> str:
-            return name.lower().replace("player", "").strip()
-
+        # In 2-player game, the other player is always the trade partner
         player_to_trade_with = next(
-            (p for p in self.players if normalize_name(p.name) == normalize_name(propose_trade['player_to_trade_with'])),
+            (p for p in self.players if p.name != player.name),
             None
         )
-
-        if not player_to_trade_with:
-            validation_result['message'] = f"The proposed player '{propose_trade['player_to_trade_with']}' does not exist."
-            return validation_result
 
         resources_to_offer = propose_trade['resources_to_offer']  # List of tuples [(color, quantity), ...]
         resources_to_receive = propose_trade['resources_to_receive']  # List of tuples [(color, quantity), ...]
