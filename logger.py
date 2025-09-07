@@ -18,12 +18,8 @@ class Logger(BaseLogger):
     """Combined logger that handles both structured JSON events and verbose text logging."""
     
     def log(self, event: str, details: dict):
-       
-        # Only log to verbose log, keep event log clean
-        with open(self.verbose_filepath, "a") as f:
-            f.write(f"EVENT: {event}\n")
-            f.write(f"DETAILS: {json.dumps(details, indent=2)}\n")
-            f.write("-" * 80 + "\n\n")
+        """Generic logging method - not used for player actions."""
+        pass
             
     def __init__(self, game_id=None, base_log_dir: str = "logs"):
         if game_id is None:
@@ -35,9 +31,8 @@ class Logger(BaseLogger):
         self.log_dir = Path(base_log_dir) / self.game_id
         self.log_dir.mkdir(parents=True, exist_ok=True)
         
-
         self.event_filepath = self.log_dir / f"event_log_{self.game_id}.json"
-        self.verbose_filepath = self.log_dir / f"verbose_log_{self.game_id}.txt"
+        self.verbose_filepath = self.log_dir / f"verbose_log_{self.game_id}.json"
         
         # Init event log with clean structure
         self.log_data = {
@@ -51,12 +46,19 @@ class Logger(BaseLogger):
             "final_state": None  # Will be populated by log_game_end
         }
         
-        # Init verbose log 
+        # Init verbose log with clean structure
+        self.verbose_log_data = {
+            "game": {
+                "id": self.game_id,
+                "start_timestamp": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+                "end_timestamp": None,
+                "turns": {}
+            }
+        }
+        
+        # Write initial verbose log
         with open(self.verbose_filepath, "w") as f:
-            f.write(f"VERBOSE GAME LOG - {self.game_id}\n") 
-            f.write("=" * 80 + "\n")
-            f.write(f"Started: {datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')}\n")
-            f.write("=" * 80 + "\n\n")
+            json.dump(self.verbose_log_data, f, indent=2)
     
     def _generate_unique_game_id(self):
         """Game id based on timestamp."""
@@ -96,34 +98,50 @@ class Logger(BaseLogger):
     
     def log_turn_start(self, turn_number):
         """Start a new turn in both event and verbose logs."""
-
+        # Initialize turn in event log
         self.log_data["game"]["turns"][str(turn_number)] = {
             "players": {}
         }
         
-        # Write turn header to verbose log
-        with open(self.verbose_filepath, "a") as f:
-            f.write("\n")
-            f.write("="*80 + "\n")
-            f.write(f"TURN {turn_number}\n")
-            f.write("="*80 + "\n")
+        # Initialize turn in verbose log
+        self.verbose_log_data["game"]["turns"][str(turn_number)] = {}
+        self._save_verbose_log()
     
-    def log_player_prompt(self, turn_number, player_name, player_model, decision_type, full_prompt):
+    def log_player_prompt(self, turn_number, player_name, player_model, decision_type, system_prompt, user_prompt):
         """Log the complete prompt sent to a player (verbose only)."""
-        with open(self.verbose_filepath, "a") as f:
-            f.write("\n")  # Add spacing between events
-            f.write(f"PLAYER {player_name} ({player_model}) - {decision_type.upper()}\n")
-            f.write("-"*80 + "\n")
-            f.write("SYSTEM AND USER PROMPTS:\n")
-            f.write(f"{full_prompt}\n")
+        player_id = player_name.split()[-1] if "Player" in player_name else player_name
+        turn = str(turn_number)
+        
+        # Initialize player data if not exists
+        if f"player_{player_id}" not in self.verbose_log_data["game"]["turns"][turn]:
+            self.verbose_log_data["game"]["turns"][turn][f"player_{player_id}"] = {}
+        
+        # Add action entry
+        action_data = {
+            "timestamp": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+            "action": decision_type.upper(),
+            "system_prompt": system_prompt,
+            "user_prompt": user_prompt,
+            "agent_response": None  # Will be filled by log_player_response
+        }
+        
+        # Add the action entry
+        action_key = decision_type.lower()
+        self.verbose_log_data["game"]["turns"][turn][f"player_{player_id}"][action_key] = action_data
+        self._save_verbose_log()
     
     def log_player_response(self, turn_number, player_name, player_model, decision_type, response):
         """Log the complete response from a player (verbose only)."""
-        with open(self.verbose_filepath, "a") as f:
-            f.write("\nAI RESPONSE:\n")
-            f.write("-"*80 + "\n")
-            f.write(f"{response}\n")
-            f.write("-"*80 + "\n")
+        player_id = player_name.split()[-1] if "Player" in player_name else player_name
+        turn = str(turn_number)
+        
+        # Update the existing action entry with the response
+        if f"player_{player_id}" in self.verbose_log_data["game"]["turns"][turn]:
+            # Get the action entry key from the data
+            action_key = decision_type.lower()
+            if action_key in self.verbose_log_data["game"]["turns"][turn][f"player_{player_id}"]:
+                self.verbose_log_data["game"]["turns"][turn][f"player_{player_id}"][action_key]["agent_response"] = response
+                self._save_verbose_log()
     
     def log_player_turn_summary(self, turn_number, player_name, player_data):
         """Log a player's turn data in JSON format (event log only)."""
@@ -162,20 +180,21 @@ class Logger(BaseLogger):
     
     def log_turn_end(self, turn_number):
         """End the current turn in both event and verbose logs."""
-        # Save event log state
+        # Save both logs
         self._save_event_log()
-        
-        # Write turn footer to verbose log
-        with open(self.verbose_filepath, "a") as f:
-            f.write("\n")
-            f.write("="*80 + "\n")
-            f.write(f"END OF TURN {turn_number}\n")
-            f.write("="*80 + "\n")
+        self._save_verbose_log()
+    
+    def _save_verbose_log(self):
+        """Save the verbose log to file."""
+        with open(self.verbose_filepath, "w") as f:
+            json.dump(self.verbose_log_data, f, indent=2, ensure_ascii=False)
     
     def log_game_end(self, players, total_turns):
         """Log final game state and metrics."""
-        # Set end timestamp
-        self.log_data["game"]["end_timestamp"] = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+        # Set end timestamp for both logs
+        end_time = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+        self.log_data["game"]["end_timestamp"] = end_time
+        self.verbose_log_data["game"]["end_timestamp"] = end_time
 
         # TODO: move metrics related code to a separate file
         # Calculate scores and metrics

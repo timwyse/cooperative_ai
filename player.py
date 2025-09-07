@@ -365,8 +365,9 @@ Remember:
             current_messages.append({"role": "user", "content": user_message})
 
             # Log prompt to verbose logger
-            full_prompt_text = "\n".join([f"[{msg['role'].upper()}]: {msg['content']}" for msg in current_messages])
-            game.logger.log_player_prompt(game.turn, self.name, self.model_name, "move", full_prompt_text)
+            system_prompt = current_messages[0]["content"]
+            user_prompt = current_messages[-1]["content"]
+            game.logger.log_player_prompt(game.turn, self.name, self.model_name, "move", system_prompt, user_prompt)
 
             response = self.client.chat.completions.create(
                 model=self.model,
@@ -375,8 +376,8 @@ Remember:
                 max_completion_tokens=1000)
             move = response.choices[0].message.content.strip().lower()
 
-            # Log response to verbose logger
-            game.logger.log_player_response(game.turn, self.name, self.model_name, "move", move)
+            # Log response to verbose logger with full response
+            game.logger.log_player_response(game.turn, self.name, self.model_name, "move", response.choices[0].message.content)
 
             if self.with_message_history:
                 self.messages.extend([
@@ -553,8 +554,9 @@ Keep your response below 1000 characters.
             current_messages.append({"role": "user", "content": user_message})
 
             # Log prompt to verbose logger
-            full_prompt_text = "\n".join([f"[{msg['role'].upper()}]: {msg['content']}" for msg in current_messages])
-            game.logger.log_player_prompt(game.turn, self.name, self.model_name, "trade_proposal", full_prompt_text)
+            system_prompt = current_messages[0]["content"]
+            user_prompt = current_messages[-1]["content"]
+            game.logger.log_player_prompt(game.turn, self.name, self.model_name, "trade_proposal", system_prompt, user_prompt)
 
             # Make the API call
             response = self.client.chat.completions.create(
@@ -564,8 +566,8 @@ Keep your response below 1000 characters.
                 max_completion_tokens=2000)
             trade_proposal = response.choices[0].message.content.strip().lower()
 
-            # Log response to verbose logger
-            game.logger.log_player_response(game.turn, self.name, self.model_name, "trade_proposal", trade_proposal)
+            # Log response to verbose logger with full response
+            game.logger.log_player_response(game.turn, self.name, self.model_name, "trade_proposal", response.choices[0].message.content)
 
             # Save to history if enabled
             if self.with_message_history:
@@ -651,8 +653,9 @@ Do you accept this trade? Answer 'yes' or 'no'."""
             current_messages.append({"role": "user", "content": user_message})
             
             # Log prompt to verbose logger
-            full_prompt_text = "\n".join([f"[{msg['role'].upper()}]: {msg['content']}" for msg in current_messages])
-            game.logger.log_player_prompt(game.turn, self.name, self.model_name, "trade_acceptance", full_prompt_text)
+            system_prompt = current_messages[0]["content"]
+            user_prompt = current_messages[-1]["content"]
+            game.logger.log_player_prompt(game.turn, self.name, self.model_name, "trade_response", system_prompt, user_prompt)
             
             # Make the API call to get rade response
             response = self.client.chat.completions.create(
@@ -676,8 +679,8 @@ Do you accept this trade? Answer 'yes' or 'no'."""
                 decision_result = "trade_rejected_unclear_response"
                 will_accept = False
             
-            # Log response to verbose logger with decision info
-            game.logger.log_player_response(game.turn, self.name, self.model_name, f"trade_acceptance ({decision_result})", accept_trade)
+            # Log response to verbose logger with full response
+            game.logger.log_player_response(game.turn, self.name, self.model_name, "trade_response", accept_trade)
             
             # Save to history if enabled
             if self.with_message_history:
