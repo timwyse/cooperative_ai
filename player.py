@@ -328,38 +328,19 @@ In order to move onto a tile of a color you have been promised, select that move
             next_move = best_path["path"][1] if best_path["path"] else None
             resources_needed = best_path["resources_required_for_path"]
             resources_missing = best_path["resources_missing_due_to_insufficient_inventory"]
-            user_message = self.generate_player_context_message(game, grid) + f"""
-                    
-Choose your next move:
-
-1. Look at the best path from your current position {self.position} to your goal {self.goal}:
-   - Next move in best path: {next_move}
-
-   - Resources needed for path: {resources_needed}
-
-   - Your current resources: {dict(self.resources)}
-   - Required resources for entire path: {str(self.best_routes(grid)[0]["resources_required_for_path"])}
-   - Missing resources to complete the entire path: {str(self.best_routes(grid)[0]["resources_missing_due_to_insufficient_inventory"])} 
-   
-Important: You can still make individual moves if you have the required resource for that specific tile.
-   
-   {self.generate_pay4partner_mode_info()}
-
-2. For your NEXT MOVE to {next_move}:
-   - Check what color tile {next_move} is on the board
-   - Check if you have at least 1 resource of that color
-   - If YES: you can make this move now
-   - If NO: try a different adjacent move toward your goal
-
-3. Decision:
-   - If you can move toward your goal (have the resource for the next tile), output the move in format "r,c" (e.g. "1,2")
-   - If you cannot make ANY valid move toward your goal, output exactly: "n"
-
-Remember:
-- You only need 1 resource of the tile's color to move to that tile
-- Missing resources for the entire path doesn't prevent you from making individual moves
-- Try to move toward your goal even if you can't complete the entire journey yet
-"""
+            from prompts import generate_move_prompt
+            player_context = self.generate_player_context_message(game, grid)
+            user_message = generate_move_prompt(
+                player_context=player_context,
+                position=self.position,
+                goal=self.goal,
+                next_move=next_move,
+                resources_needed=resources_needed,
+                current_resources=dict(self.resources),
+                resources_required_for_path=str(self.best_routes(grid)[0]["resources_required_for_path"]),
+                resources_missing=str(self.best_routes(grid)[0]["resources_missing_due_to_insufficient_inventory"]),
+                pay4partner_info=self.generate_pay4partner_mode_info()
+            )
             # Prepare messages for this request
             current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": self.system_prompt.format(player_name="you", pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
             current_messages.append({"role": "user", "content": user_message})
@@ -499,55 +480,16 @@ Remember:
 
         # LLM Player
         else:
-            user_message = self.generate_player_context_message(game, grid) + """
-            
-IMPORTANT: First check if you need to trade at all:
-
-1. Look at your best paths above. For the shortest path:
-
-   - Required resources: """ + str(self.best_routes(grid)[0]["resources_required_for_path"]) + """
-     Your current resources: """ + str(dict(self.resources)) + """
-   - Required resources not currently in your possession: """ + str(self.best_routes(grid)[0]["resources_missing_due_to_insufficient_inventory"]) + """
-
-""" + self.generate_pay4partner_mode_info() + """
-
-2. If you have NO missing resources (empty dict {} above), respond with exactly: "n"
-
-   If you have enough resources to reach your goal, say "n"
-
-3. Only if you are missing resources, consider a trade:
-   - You can ONLY request resources you're missing
-   - You can ONLY offer resources you have in excess
-   - NEVER trade with yourself 
-   - NEVER offer 0 resources
-   - NEVER request resources you already have enough of
-   - Make the trade beneficial for both players
-
-Respond in ONE of these two formats:
-
-1. If you want to make a trade with the other player, use EXACTLY this JSON format (replace values in <>):
-{
-  "resources_to_offer": [["<color>", <number>]],
-  "resources_to_receive": [["<color>", <number>]]
-}
-
-Example of valid trade:
-{
-  "resources_to_offer": [["R", 3]],
-  "resources_to_receive": [["B", 2]]
-}
-
-2. If you don't want to trade, respond with exactly: n
-
-Remember:
-- Use EXACTLY the format shown above
-- Only ONE resource pair in each array
-- No spaces in color names
-- Numbers must be > 0
-- Don't trade with yourself
-
-Keep your response below 1000 characters.
-"""
+            from prompts import generate_trade_proposal_prompt
+            player_context = self.generate_player_context_message(game, grid)
+            best_path = self.best_routes(grid)[0]
+            user_message = generate_trade_proposal_prompt(
+                player_context=player_context,
+                resources_required_for_path=str(best_path["resources_required_for_path"]),
+                current_resources=str(dict(self.resources)),
+                resources_missing_due_to_insufficient_inventory=str(best_path["resources_missing_due_to_insufficient_inventory"]),
+                pay4partner_info=self.generate_pay4partner_mode_info()
+            )
 
             # Prepare messages for this request
             current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": self.system_prompt.format(player_name="you", pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
@@ -642,11 +584,14 @@ Keep your response below 1000 characters.
                     print(reject_message)
                     return False
         else:
-            # Simple trade acceptance prompt
-            user_message = self.generate_player_context_message(game, grid) + f"""
-You have been offered a trade:
-The other player wants to give you {resources_to_offer} in exchange for {resources_to_receive}. {self.generate_pay4partner_mode_info(short_summary=True)}
-Do you accept this trade? Answer 'yes' or 'no'."""
+            from prompts import generate_trade_response_prompt
+            player_context = self.generate_player_context_message(game, grid)
+            user_message = generate_trade_response_prompt(
+                player_context=player_context,
+                resources_to_offer=resources_to_offer,
+                resources_to_receive=resources_to_receive,
+                pay4partner_info=self.generate_pay4partner_mode_info(short_summary=True)
+            )
 
             # Prepare messages for this request
             current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": self.system_prompt.format(player_name="you", pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
@@ -740,14 +685,15 @@ Do you accept this trade? Answer 'yes' or 'no'."""
         
     
     def agree_to_pay4partner(self, other_player, color, game, grid):
-        message = self.generate_player_context_message(game, grid) + f"""
-Recall the 'pay for other' mode rules:
-{self.generate_pay4partner_mode_info(short_summary=True)}\n\n
-
-You have been asked by the other player to cover their movement cost onto a tile of color {color} as part of a previous trade agreement. Here are your past aggreements with this player:
-{[agreement['text_summary'] for agreement in self.pay4partner_log if agreement['with'] == other_player.name]}
-Do you agree to pay a {color} resource to cover the other player? Although you previously agreed to this with the other player, it is not mandatory. Remember that you are trying to maximise your points. List your options and the pros and cons of each, and finish your response with 'yes' if you agree to pay or 'no' if you want to keep those resources.
-"""
+        from prompts import generate_pay4partner_prompt
+        player_context = self.generate_player_context_message(game, grid)
+        agreements = [agreement['text_summary'] for agreement in self.pay4partner_log if agreement['with'] == other_player.name]
+        message = generate_pay4partner_prompt(
+            player_context=player_context,
+            pay4partner_info=self.generate_pay4partner_mode_info(short_summary=True),
+            color=color,
+            agreements=agreements
+        )
         if self.model_name == 'human':
             print(f"{self.name}, {other_player.name} is envoking 'pay for partner' and asking you to pay for their move onto a {color} tile.")
             while True:
