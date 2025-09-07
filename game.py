@@ -435,8 +435,10 @@ class Game:
                 error_msg = f"Trade validation failed: {validation_result['message']}"
                 print(error_msg)
                 # Log validation failure to verbose log
-                self.logger.log_player_response(self.turn, player.name, player.model_name, "trade_validation_failed", 
-                    f"(AI Agent does not see this)\n{player.name}'s trade proposal was invalid: {validation_result['message']}")
+                self.logger.log("trade_validation_failed", {
+                    "player": player.name,
+                    "message": validation_result['message']
+                })
                 return False
 
             # Get the other player (in 2-player game, it's always the non-proposer)
@@ -444,7 +446,6 @@ class Game:
             resources_to_offer = propose_trade['resources_to_offer']
             resources_to_receive = propose_trade['resources_to_receive']
 
-            # Ask the other player if they accept the trade
             # Get the other player's response to the trade
             trade_accepted = other_player.accept_trade(self.grid, self, propose_trade)
             
