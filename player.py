@@ -3,6 +3,7 @@ import copy
 import json
 import random
 import re
+import sys
 
 from openai import OpenAI
 from together import Together
@@ -566,9 +567,6 @@ Keep your response below 1000 characters.
                 max_completion_tokens=2000)
             trade_proposal = response.choices[0].message.content.strip().lower()
 
-            # Log response to verbose logger with full response
-            game.logger.log_player_response(game.turn, self.name, self.model_name, "trade_proposal", response.choices[0].message.content)
-
             # Save to history if enabled
             if self.with_message_history:
                 self.messages.extend([
@@ -580,42 +578,42 @@ Keep your response below 1000 characters.
 
             player_label = self.get_player_label(game)
             print(f"\n{player_label} proposes trade:")
+            # Parse JSON from response
             try:
                 match = re.search(r"\{.*\}", trade_proposal, re.DOTALL)
                 if match:
-                    json_str = match.group(0)
-                    try:
-                        trade_proposal = json.loads(json_str)
+                    trade_proposal = json.loads(match.group(0))
+                else:
+                    raise json.JSONDecodeError("No JSON found", "", 0)
+            except json.JSONDecodeError:
+                print("- Invalid trade proposal")
+                game.logger.log("trade_proposal_error", {
+                    "player": self.name,
+                    "error": "Invalid trade proposal"
+                })
+                return None
 
-                        # Fix common key errors
-                        if 'resources_to offer' in trade_proposal:
-                            trade_proposal['resources_to_offer'] = trade_proposal.pop('resources_to offer')
-                        if 'resources to offer' in trade_proposal:
-                            trade_proposal['resources_to_offer'] = trade_proposal.pop('resources to offer')
-                        if 'resources_to receive' in trade_proposal:
-                            trade_proposal['resources_to_receive'] = trade_proposal.pop('resources_to receive')
-                        if 'resources to receive' in trade_proposal:
-                            trade_proposal['resources_to_receive'] = trade_proposal.pop('resources to receive')
-                        
-                        cleaned = self.clean_trade_proposal(trade_proposal, grid, game)
-                        if cleaned:
-                            trade_proposal = cleaned
-                            print(f"- Offering: {trade_proposal['resources_to_offer']}")
-                            print(f"- Requesting: {trade_proposal['resources_to_receive']}")
-                        else:
-                            print("- Invalid trade proposal")
-                    except json.JSONDecodeError as e:
-                        error_msg = f"Invalid JSON format in trade proposal: {e}"
-                        print(error_msg)
-                        game.logger.log_player_response(game.turn, self.name, self.model_name, "trade_proposal_invalid_json", 
-                            f"(AI Agent does not see this)\n{error_msg}")
-                        trade_proposal = None
-            except Exception as e:
-                error_msg = f"Error parsing trade proposal: {e}"
-                print(error_msg)
-                game.logger.log_player_response(game.turn, self.name, self.model_name, "trade_proposal_error", 
-                    f"(AI Agent does not see this)\n{error_msg}")
-                trade_proposal = None
+            # Normalize keys
+            for old_key in ['resources_to offer', 'resources to offer', 'resources_to receive', 'resources to receive']:
+                new_key = old_key.replace(' ', '_')
+                if old_key in trade_proposal:
+                    trade_proposal[new_key] = trade_proposal.pop(old_key)
+
+            # Validate and clean proposal
+            cleaned = self.clean_trade_proposal(trade_proposal, grid, game)
+            if not cleaned:
+                print("- Invalid trade proposal")
+                game.logger.log("trade_proposal_error", {
+                    "player": self.name,
+                    "error": "Invalid trade proposal"
+                })
+                return None
+
+            # Log successful proposal
+            trade_proposal = cleaned
+            print(f"- Offering: {trade_proposal['resources_to_offer']}")
+            print(f"- Requesting: {trade_proposal['resources_to_receive']}")
+            game.logger.log_player_response(game.turn, self.name, self.model_name, "trade_proposal", response.choices[0].message.content)
 
             return trade_proposal
         
@@ -642,7 +640,6 @@ Keep your response below 1000 characters.
                     print(reject_message)
                     return False
         else:
-            # Simple trade acceptance prompt
             user_message = self.generate_player_context_message(game, grid) + f"""
 You have been offered a trade:
 The other player wants to give you {resources_to_offer} in exchange for {resources_to_receive}. {self.generate_pay4partner_mode_info(short_summary=True)}
@@ -652,7 +649,7 @@ Do you accept this trade? Answer 'yes' or 'no'."""
             current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": self.system_prompt.format(player_name="you", pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
             current_messages.append({"role": "user", "content": user_message})
             
-            # Log prompt to verbose logger
+            # Log prompt for response to verbose logger
             system_prompt = current_messages[0]["content"]
             user_prompt = current_messages[-1]["content"]
             game.logger.log_player_prompt(game.turn, self.name, self.model_name, "trade_response", system_prompt, user_prompt)

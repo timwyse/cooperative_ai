@@ -18,8 +18,20 @@ class Logger(BaseLogger):
     """Combined logger that handles both structured JSON events and verbose text logging."""
     
     def log(self, event: str, details: dict):
-        """Generic logging method - not used for player actions."""
-        pass
+        """Log system events (errors, validations, etc.) to the verbose log."""
+        turn = str(self.turn) if hasattr(self, 'turn') else '0'
+        
+        # Initialize events section if not exists
+        if "events" not in self.verbose_log_data["game"]["turns"][turn]:
+            self.verbose_log_data["game"]["turns"][turn]["events"] = {}
+        
+        # Add event with timestamp
+        self.verbose_log_data["game"]["turns"][turn]["events"][event] = {
+            "timestamp": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+            **details
+        }
+        
+        self._save_verbose_log()
             
     def __init__(self, game_id=None, base_log_dir: str = "logs"):
         if game_id is None:
