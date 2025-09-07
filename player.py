@@ -177,90 +177,16 @@ class Player:
 
     def format_turn_summary(self, turn_summary, turn_number):
         """Format turn summary with anonymized player names for AI prompts"""
-        summary = [f"\n=== TURN {turn_number} ==="]
-        
-        # Trades
-        if "trades" in turn_summary and turn_summary["trades"]:
-            for trade in turn_summary["trades"]:
-                proposer = "You" if trade['proposer'] == self.name else "The other player"
-                target = "you" if trade['target'] == self.name else "the other player"
-                
-                summary.append(f"{proposer} proposed trade to {target}:")
-                summary.append(f"- {proposer} offered: {trade['offered']}")
-                summary.append(f"- {proposer} requested: {trade['requested']}")
-                # Show acceptance/rejection based on who's the target
-                if trade['target'] == self.name:
-                    # You were the target, so you made the decision
-                    if trade.get("success", False):
-                        summary.append("You ACCEPTED the trade")
-                    elif trade.get("rejected", False):
-                        summary.append("You REJECTED the trade")
-                else:
-                    # The other player was the target, so they made the decision
-                    if trade.get("success", False):
-                        summary.append("The other player ACCEPTED the trade")
-                    elif trade.get("rejected", False):
-                        summary.append("The other player REJECTED the trade")
-        
-        # Moves
-        if "moves" in turn_summary and turn_summary["moves"]:
-            for move in turn_summary["moves"]:
-                player_ref = "You" if move['player'] == self.name else "The other player"
-                if move["success"]:
-                    summary.append(f"MOVE: {player_ref} moved from {move['from_pos']} to {move['to_pos']}")
-                else:
-                    if move["reason"] == "no_move":
-                        summary.append(f"MOVE: {player_ref} did not move")
-        
-        # End positions
-        if "player_states" in turn_summary:
-            summary.append("\nPOSITIONS:")
-            for player_name, state in turn_summary["player_states"].items():
-                player_ref = "You" if player_name == self.name else "The other player"
-                status = "FINISHED!" if state['has_finished'] else f"at {state['position']}"
-                summary.append(f"- {player_ref}: {status}, resources: {state['resources']}")
-                if self.pay4partner:
-                    summary.append(f"  - promised to give: {state['promised_to_give']}")
-                    summary.append(f"  - promised to receive: {state['promised_to_receive']}")
-
-        return "\n".join(summary)
+        from turn_context import format_turn_summary_for_player
+        return format_turn_summary_for_player(turn_summary, turn_number, self.name, self.pay4partner)
 
     def generate_player_context_message(self, game, grid):
         """
         Generates a reusable message about the board state, player's resources, position, and goal.
         Also includes recent turn history for context.
         """
-        # Get recent turn history (last 3 turns) if context is enabled
-        recent_history = ""
-        if game.with_context and game.turn_summaries:
-            history_entries = []
-            recent_turns = game.turn_summaries[-3:]  # Get last 3 turns TODO: decide if this is configurable
-            for turn_idx, turn in enumerate(recent_turns):
-                turn_num = game.turn - (len(recent_turns) - turn_idx)
-                history_entries.append(self.format_turn_summary(turn, turn_num))
-            
-            recent_history = "\nRecent turn history:\n" + "\n---\n".join(history_entries)
-
-        current_turn = game.turn
-        promised_resources_to_give_message = f"- Resources you have promised to give to other players (still yours, not yet given): {self.promised_resources_to_give}" if self.pay4partner else ''
-        promised_resources_to_receive_message = f"- Resources you have been promised to receive from other players (still theirs, not yet received): {self.promised_resources_to_receive}" if self.pay4partner else ''
-        
-        return f"""
-=== GAME STATUS FOR YOU - TURN {current_turn} ===
-
-- You are at position {self.position}
-- Your goal is at {self.goal}
-- Your resources: {dict(self.resources)}
-{promised_resources_to_give_message}
-{promised_resources_to_receive_message}
-- Distance to goal: {self.distance_to_goal()} steps
-
-BOARD LAYOUT:
-{grid.lm_readable}
-
-HISTORY OF EVENTS:
-{recent_history if recent_history else "This is the first turn."}
-"""
+        from turn_context import generate_turn_context
+        return generate_turn_context(game, self)
     def generate_pay4partner_mode_info(self, short_summary=False):
         if self.pay4partner:
             promised_resources_to_receive = {color: amt for color, amt in self.promised_resources_to_receive.items() if amt > 0}
