@@ -757,10 +757,7 @@ Do you agree to pay a {color} resource to cover the other player? Although you p
             # Prepare messages for this request
             current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": self.system_prompt.format(player_name="you", pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
             current_messages.append({"role": "user", "content": message})
-            
-            # Log full context to yulia logs
-            # Note: game object is not passed here, so we skip yulia logging for now
-            
+
             # Make the API call
             response = self.client.chat.completions.create(
                 model=self.model,
