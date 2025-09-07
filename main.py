@@ -25,8 +25,8 @@ CONFIG = replace(
 # #     manual_start_positions=[(0, 0), (0, 4)],
 # #     manual_goal_positions=[(4, 4), (4, 0)],
 
-     wait_for_enter=False,
-    # display_gui=False,  # Disable Pygame window, only show console output
+    wait_for_enter=False,
+    display_gui=True,  # Disable Pygame window, only show console output
     with_context=True,  # Enable turn history between players
     with_message_history=False,  # Enable conversation memory for each player
     pay4partner=False,  # Enable 'pay for partner' mode

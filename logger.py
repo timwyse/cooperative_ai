@@ -65,7 +65,7 @@ class Logger(BaseLogger):
     def log_game_config(self, config, players, grid):
         """Log initial game configuration for metrics calculation."""
 
-        player_policies = [player.model_name for player in players]
+        player_models = [player.model_name for player in players]
         
         manual_resources = []
         for player in players:
@@ -82,7 +82,7 @@ class Logger(BaseLogger):
             })
         
         self.log_data["config"] = {
-            "players": player_policies,
+            "player_models": player_models,
             "manual_resources": manual_resources,
             "with_message_history": getattr(config, 'with_message_history', True),
             "pay4partner": getattr(config, 'pay4partner', False),
