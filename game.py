@@ -219,6 +219,9 @@ class Game:
         
         # Log final game state and metrics to combined logger
         self.logger.log_game_end(self.players, self.turn)
+
+        # for player in self.players:
+        #     print(f"message history for player {player.name}: {player.messages}")
         
         if self.display_gui:
             pygame.quit()
