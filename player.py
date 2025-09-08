@@ -241,18 +241,25 @@ class Player:
         promised_resources_to_give_message = f"- Resources you have promised to give to other players (still yours, not yet given): {self.promised_resources_to_give}" if self.pay4partner else ''
         promised_resources_to_receive_message = f"- Resources you have been promised to receive from other players (still theirs, not yet received): {self.promised_resources_to_receive}" if self.pay4partner else ''
 
+        # Get other player's info
+        other_player = [p for p in game.players if p.id != self.id][0]
+
         context = f"""
-=== GAME STATUS FOR YOU - TURN {current_turn} ===
+        === GAME STATUS FOR YOU - TURN {current_turn} ===
 
-- You are at position {self.position}
-- Your goal is at {self.goal}
-- Your resources: {dict(self.resources)}
-{promised_resources_to_give_message}
-{promised_resources_to_receive_message}
-- Distance to goal: {self.distance_to_goal()} steps
+        - You are at position {self.position}
+        - Your goal is at {self.goal}
+        - Your resources: {dict(self.resources)}
+        {promised_resources_to_give_message}
+        {promised_resources_to_receive_message}
+        - Distance to goal: {self.distance_to_goal()} steps
 
-BOARD LAYOUT:
-{grid.lm_readable}"""
+        GAME STATUS FOR OTHER PLAYER 
+        - They are at position {other_player.position}
+        - Their resources: {dict(other_player.resources)}
+
+        BOARD LAYOUT:
+        {grid.lm_readable}"""
 
         # Add history section if with_context = True
         if game.with_context:
