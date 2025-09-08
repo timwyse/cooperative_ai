@@ -241,31 +241,30 @@ class Player:
         promised_resources_to_give_message = f"- Resources you have promised to give to other players (still yours, not yet given): {self.promised_resources_to_give}" if self.pay4partner else ''
         promised_resources_to_receive_message = f"- Resources you have been promised to receive from other players (still theirs, not yet received): {self.promised_resources_to_receive}" if self.pay4partner else ''
 
-        # Get other player's info
         other_player = [p for p in game.players if p.id != self.id][0]
 
         context = f"""
-        === GAME STATUS FOR YOU - TURN {current_turn} ===
+=== GAME STATUS FOR YOU - TURN {current_turn} ===
 
-        - You are at position {self.position}
-        - Your goal is at {self.goal}
-        - Your resources: {dict(self.resources)}
-        {promised_resources_to_give_message}
-        {promised_resources_to_receive_message}
-        - Distance to goal: {self.distance_to_goal()} steps
+- You are at position {self.position}
+- Your goal is at {self.goal}
+- Your resources: {dict(self.resources)}
+{promised_resources_to_give_message}
+{promised_resources_to_receive_message}
+- Distance to goal: {self.distance_to_goal()} steps
 
-        GAME STATUS FOR OTHER PLAYER 
-        - They are at position {other_player.position}
-        - Their resources: {dict(other_player.resources)}
+GAME STATUS FOR OTHER PLAYER 
+- They are at position {other_player.position}
+- Their resources: {dict(other_player.resources)}
 
-        BOARD LAYOUT:
-        {grid.lm_readable}"""
+BOARD LAYOUT:
+{grid.lm_readable}"""
 
-        # Add history section if with_context = True
+        # Get recent turn history (last 3 turns) if context is enabled
         if game.with_context:
             history_entries = []
             if game.turn_summaries:
-                recent_turns = game.turn_summaries[-3:]  # Get last 3 turns
+                recent_turns = game.turn_summaries[-3:]  # Get last 3 turns TODO: decide if this is configurable
                 for turn_idx, turn in enumerate(recent_turns):
                     turn_num = game.turn - (len(recent_turns) - turn_idx)
                     history_entries.append(self.format_turn_summary(turn, turn_num))
@@ -279,8 +278,10 @@ class Player:
 
     def generate_pay4partner_mode_info(self, short_summary=False):
         if self.pay4partner:
-            promised_resources_to_receive = {color: amt for color, amt in self.promised_resources_to_receive.items() if amt > 0}
-            promised_resources_to_give = {color: amt for color, amt in self.promised_resources_to_give.items() if amt > 0}
+            promised_resources_to_receive = {color: amt for color, amt in self.promised_resources_to_receive.items() if
+                                             amt > 0}
+            promised_resources_to_give = {color: amt for color, amt in self.promised_resources_to_give.items() if
+                                          amt > 0}
             pay4partner_mode_info = """
 Important Note: The game is in 'pay for other' mode. This means that trades are not made by directly swapping resources. Instead, when a trade agreement is reached, each player commits to covering the cost of the other’s movement on the agreed tile colors. In practice:
 	•	If the other player steps onto a tile of a color you agreed to cover, you pay the resource cost for that move.
@@ -300,7 +301,6 @@ In order to move onto a tile of a color you have been promised, select that move
             return ""
 
     ## Decision-Making
-
     def come_up_with_move(self, game, grid):
         if self.model_name == 'human':
             print(f"{self.name}, it's your turn to make a move.")
@@ -348,7 +348,7 @@ In order to move onto a tile of a color you have been promised, select that move
             resources_needed = best_path["resources_required_for_path"]
             resources_missing = best_path["resources_missing_due_to_insufficient_inventory"]
             user_message = self.generate_player_context_message(game, grid) + f"""
-                    
+
 Choose your next move:
 
 1. Look at the best path from your current position {self.position} to your goal {self.goal}:
@@ -359,9 +359,9 @@ Choose your next move:
    - Your current resources: {dict(self.resources)}
    - Required resources for entire path: {str(self.best_routes(grid)[0]["resources_required_for_path"])}
    - Missing resources to complete the entire path: {str(self.best_routes(grid)[0]["resources_missing_due_to_insufficient_inventory"])} 
-   
+
 Important: You can still make individual moves if you have the required resource for that specific tile.
-   
+
    {self.generate_pay4partner_mode_info()}
 
 2. For your NEXT MOVE to {next_move}:
@@ -526,7 +526,7 @@ Remember:
         # LLM Player
         else:
             user_message = self.generate_player_context_message(game, grid) + """
-            
+
 IMPORTANT: First check if you need to trade at all:
 
 1. Look at your best paths above. For the shortest path:
@@ -577,11 +577,11 @@ Keep your response below 1000 characters.
 """
 
             # Prepare messages for this request
-            current_messages = list(self.messages) if self.with_message_history \
-                else [{"role": "system", "content": self.system_prompt.format(
-                player_name="you", pay4partner_mode_info=self.pay4partner_mode_sys_prompt,
-                pay4partner_scoring_info=self.pay4partner_scoring_info)}]
-
+            current_messages = list(self.messages) if self.with_message_history else [{"role": "system",
+                                                                                       "content": self.system_prompt.format(
+                                                                                           player_name="you",
+                                                                                           pay4partner_mode_info=self.pay4partner_mode_sys_prompt,
+                                                                                           pay4partner_scoring_info=self.pay4partner_scoring_info)}]
             current_messages.append({"role": "user", "content": user_message})
 
             # Log prompt to verbose logger
