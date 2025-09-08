@@ -1,20 +1,3 @@
-"""
-Prompt generation for different game modes and player decisions.
-Currently supports:
-- Perfect information setup (default)
-- Selfish agent variation
-
-This module contains:
-1. System prompts that define agent behavior
-2. Decision prompts for moves, trades, etc.
-3. Helper functions for prompt generation
-"""
-
-#
-# System Prompts
-# These define the base behavior and knowledge of agents
-#
-
 DEFAULT_SYSTEM_PROMPT = """
 You are a player in a game called Coloured Trails.
 
