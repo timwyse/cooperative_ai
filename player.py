@@ -278,10 +278,8 @@ BOARD LAYOUT:
 
     def generate_pay4partner_mode_info(self, short_summary=False):
         if self.pay4partner:
-            promised_resources_to_receive = {color: amt for color, amt in self.promised_resources_to_receive.items() if
-                                             amt > 0}
-            promised_resources_to_give = {color: amt for color, amt in self.promised_resources_to_give.items() if
-                                          amt > 0}
+            promised_resources_to_receive = {color: amt for color, amt in self.promised_resources_to_receive.items() if amt > 0}
+            promised_resources_to_give = {color: amt for color, amt in self.promised_resources_to_give.items() if amt > 0}
             pay4partner_mode_info = """
 Important Note: The game is in 'pay for other' mode. This means that trades are not made by directly swapping resources. Instead, when a trade agreement is reached, each player commits to covering the cost of the other’s movement on the agreed tile colors. In practice:
 	•	If the other player steps onto a tile of a color you agreed to cover, you pay the resource cost for that move.
