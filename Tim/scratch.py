@@ -85,3 +85,42 @@ def get_last_alphabetic_word(text):
     return words[-1] if words else None
 print(get_last_alphabetic_word("**my answer:**   yes **"))  # Output: "string"
 # %%
+import math
+math.comb(23, 12)
+math.comb(23, 12)/16000
+# %%
+32382376266240000/6227020800
+# %%
+import pandas as pd
+# Read the JSONL file
+df = pd.read_json("random_boards_and_properties_6_6.jsonl", lines=True)
+print(df.shape)
+# Normalize the 'conditions' column into separate columns
+conditions_df = pd.json_normalize(df['conditions'])
+
+# Combine the original DataFrame with the normalized conditions DataFrame
+df = pd.concat([df.drop(columns=['conditions']), conditions_df], axis=1)
+
+# Inspect the updated DataFrame
+print(df.head())
+# %%
+df[(df['B_14_path'] == False ) & (df['B_10_path'] == False) & (df['B_12_path'] == True)].iloc[0]['grid']
+# %%
+df[(df['B_14_path'] == False ) & (df['B_10_path'] == False) & (df['B_12_path'] == True)].iloc[0]['grid']
+# %%
+from math import comb
+comb(23,12 )
+# %%
+comb(34,17)#/comb(23,12)
+# %%
+
+# blue lng path, red short path
+df[(df['B_10_path'] == False) & ((df['B_12_path'] == True) | (df['B_14_path'] == True)) & (df['R_10_path'] == True)].iloc[0]['grid']
+# %%
+# blue lng path, red needs trade path
+df[(df['B_10_path'] == False) & ((df['B_12_path'] == True) | (df['B_14_path'] == True)) & (df['R_10_path'] == False) & ((df['R_12_path'] == True) | (df['R_14_path'] == True))].shape
+# %%
+df[(df['B_10_path'] == False) & ((df['B_12_path'] == True) | (df['B_14_path'] == True)) & (df['R_10_path'] == False) & ((df['R_12_path'] == True) | (df['R_14_path'] == True))].iloc[0]['grid']
+# %%
+df[(df['B_10_path'] == False) & ((df['B_12_path'] == True) | (df['B_14_path'] == True)) & (df['R_10_path'] == True)].shape
+# %%
