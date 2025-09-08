@@ -48,8 +48,8 @@ class GameConfig:
 
     
     # DISPLAY PARAMETERS
-    display_gui: bool = True  # if False, only show console output (no Pygame window)
-    wait_for_enter: bool = False  # if True, wait for Enter key between turns
+    display_gui: bool = False  # if False, only show console output (no Pygame window)
+    wait_for_enter: bool = True  # if True, wait for Enter key between turns
 
     def __post_init__(self):
         import agents as a 

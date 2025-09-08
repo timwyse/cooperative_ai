@@ -3,6 +3,7 @@ import copy
 import json
 import random
 import re
+import sys
 
 from openai import OpenAI
 from together import Together
@@ -55,7 +56,7 @@ class Player:
 
         # Init message history settings
         self.with_message_history = config.with_message_history
-        self.messages = [{"role": "system", "content": self.system_prompt.format(player_name=self.name, pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}] if self.with_message_history else []
+        self.messages = [{"role": "system", "content": self.system_prompt.format(player_name="you", pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}] if self.with_message_history else []
 
     ## Core Gameplay
     def distance_to_goal(self):
@@ -81,6 +82,13 @@ class Player:
     def has_finished(self):
         return self.position == self.goal
 
+    ## Player Anonymization Methods
+    
+    def get_player_label(self, game):
+        """Get display label for this player for user/console output"""
+        # Just use the standard player name (Player 0, Player 1, etc.)
+        return self.name
+    
 
     ## Pathfinding and Strategy
 
@@ -169,38 +177,53 @@ class Player:
 
 
     def format_turn_summary(self, turn_summary, turn_number):
-        """Format turn summary focusing only on trades, moves, and positions"""
+        """Format turn summary with anonymized player names for AI prompts"""
         summary = [f"\n=== TURN {turn_number} ==="]
         
         # Trades
-        if turn_summary["trades"]:
+        if "trades" in turn_summary and turn_summary["trades"]:
             for trade in turn_summary["trades"]:
-                summary.append(f"{trade['proposer']} proposed trade to {trade['target']}:")
-                summary.append(f"- {trade['proposer']} offered: {trade['offered']}")
-                summary.append(f"- {trade['proposer']} requested: {trade['requested']}")
-                if trade.get("success", False):
-                    summary.append(f"{trade['target']} ACCEPTED the trade")
-                elif trade.get("rejected", False):
-                    summary.append(f"{trade['target']} REJECTED the trade")
+                proposer = "You" if trade['proposer'] == self.name else "The other player"
+                target = "you" if trade['target'] == self.name else "the other player"
+                
+                summary.append(f"{proposer} proposed trade to {target}:")
+                summary.append(f"- {proposer} offered: {trade['offered']}")
+                summary.append(f"- {proposer} requested: {trade['requested']}")
+                # Show acceptance/rejection based on who's the target
+                if trade['target'] == self.name:
+                    # You were the target, so you made the decision
+                    if trade.get("success", False):
+                        summary.append("You ACCEPTED the trade")
+                    elif trade.get("rejected", False):
+                        summary.append("You REJECTED the trade")
+                else:
+                    # The other player was the target, so they made the decision
+                    if trade.get("success", False):
+                        summary.append("The other player ACCEPTED the trade")
+                    elif trade.get("rejected", False):
+                        summary.append("The other player REJECTED the trade")
         
         # Moves
-        for move in turn_summary["moves"]:
-            if move["success"]:
-                summary.append(f"MOVE: {move['player']} moved from {move['from_pos']} to {move['to_pos']}")
-            else:
-                if move["reason"] == "no_move":
-                    summary.append(f"MOVE: {move['player']} did not move")
+        if "moves" in turn_summary and turn_summary["moves"]:
+            for move in turn_summary["moves"]:
+                player_ref = "You" if move['player'] == self.name else "The other player"
+                if move["success"]:
+                    summary.append(f"MOVE: {player_ref} moved from {move['from_pos']} to {move['to_pos']}")
+                else:
+                    if move["reason"] == "no_move":
+                        summary.append(f"MOVE: {player_ref} did not move")
         
         # End positions
-        summary.append("\nPOSITIONS:")
-        for player_name, state in turn_summary["player_states"].items():
-            status = "FINISHED!" if state['has_finished'] else f"at {state['position']}"
-            summary.append(f"- {player_name}: {status}, resources: {state['resources']}")
-            if self.pay4partner:
-                summary.append(f"  - promised to give: {state['promised_to_give']}")
-                summary.append(f"  - promised to receive: {state['promised_to_receive']}")
+        if "player_states" in turn_summary:
+            summary.append("\nPOSITIONS:")
+            for player_name, state in turn_summary["player_states"].items():
+                player_ref = "You" if player_name == self.name else "The other player"
+                status = "FINISHED!" if state['has_finished'] else f"at {state['position']}"
+                summary.append(f"- {player_ref}: {status}, resources: {state['resources']}")
+                if self.pay4partner:
+                    summary.append(f"  - promised to give: {state['promised_to_give']}")
+                    summary.append(f"  - promised to receive: {state['promised_to_receive']}")
 
-        
         return "\n".join(summary)
 
     def generate_player_context_message(self, game, grid):
@@ -220,13 +243,12 @@ class Player:
             recent_history = "\nRecent turn history:\n" + "\n---\n".join(history_entries)
 
         current_turn = game.turn
-        promised_resources_to_give_message = f"- Resources you have promised to give to other players (note they're still yours, you haven't yet given them away): {self.promised_resources_to_give}" if self.pay4partner else ''
-        promised_resources_to_receive_message = f"- Resources you have been promised to receive from other players (note they're still theirs, you haven't received them yet): {self.promised_resources_to_receive}" if self.pay4partner else ''
+        promised_resources_to_give_message = f"- Resources you have promised to give to other players (still yours, not yet given): {self.promised_resources_to_give}" if self.pay4partner else ''
+        promised_resources_to_receive_message = f"- Resources you have been promised to receive from other players (still theirs, not yet received): {self.promised_resources_to_receive}" if self.pay4partner else ''
         
         return f"""
-=== GAME STATUS FOR {self.name} - TURN {current_turn} ===
+=== GAME STATUS FOR YOU - TURN {current_turn} ===
 
-YOUR CURRENT STATUS:
 - You are at position {self.position}
 - Your goal is at {self.goal}
 - Your resources: {dict(self.resources)}
@@ -239,9 +261,6 @@ BOARD LAYOUT:
 
 HISTORY OF EVENTS:
 {recent_history if recent_history else "This is the first turn."}
-
-OTHER PLAYERS' STATUS:
-{chr(10).join(f"- {name}: at {state['position']}, has {state['resources']}" for name, state in game.game_state.items() if name != self.name)}
 """
     def generate_pay4partner_mode_info(self, short_summary=False):
         if self.pay4partner:
@@ -256,7 +275,7 @@ This applies only to the tile colors and number of moves specified in the agreem
                 return pay4partner_mode_info
             else:
                 pay4partner_mode_info += f"""
-In addition to the information above, consider any promises you're already involved in:
+In addition to the information above, please consider any promises you're already involved in:
 \n- So far you have promised to give these resources to other players: {promised_resources_to_give if promised_resources_to_give else '{}'}"
 \n- So far you have been promised to receive these resources from other players: {promised_resources_to_receive if promised_resources_to_receive else '{}'}
 In order to move onto a tile of a color you have been promised, select that move as normal and the other player will be asked to cover the cost for you.
@@ -264,7 +283,7 @@ In order to move onto a tile of a color you have been promised, select that move
             return pay4partner_mode_info
         else:
             return ""
-    
+
     ## Decision-Making
 
     def come_up_with_move(self, game, grid):
@@ -343,40 +362,32 @@ Remember:
 - Try to move toward your goal even if you can't complete the entire journey yet
 """
             # Prepare messages for this request
-            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": self.system_prompt.format(player_name=self.name, pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
+            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": self.system_prompt.format(player_name="you", pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
             current_messages.append({"role": "user", "content": user_message})
-            
-            # Log full context to yulia logs
-            game.yulia_logger.log("player_context", {
-                "player": self.name,
-                "turn": game.turn,
-                "decision_type": "move",
-                "full_context": current_messages,
-                "context_summary": {
-                    "total_messages": len(current_messages),
-                    "system_messages": len([m for m in current_messages if m["role"] == "system"]),
-                    "user_messages": len([m for m in current_messages if m["role"] == "user"]),
-                    "assistant_messages": len([m for m in current_messages if m["role"] == "assistant"])
-                }
-            })
-            
-            self.logger.log("move_prompt", {"player": self.name, "message": user_message})
-            
+
+            # Log prompt to verbose logger
+            system_prompt = current_messages[0]["content"]
+            user_prompt = current_messages[-1]["content"]
+            game.logger.log_player_prompt(game.turn, self.name, self.model_name, "move", system_prompt, user_prompt)
+
             response = self.client.chat.completions.create(
                 model=self.model,
                 temperature=self.temperature,
                 messages=current_messages,
                 max_completion_tokens=1000)
             move = response.choices[0].message.content.strip().lower()
-            
+
+            # Log response to verbose logger with full response
+            game.logger.log_player_response(game.turn, self.name, self.model_name, "move", response.choices[0].message.content)
+
             if self.with_message_history:
                 self.messages.extend([
                     {"role": "user", "content": user_message},
                     {"role": "assistant", "content": move}
                 ])
-            self.logger.log("move_proposal", {"player": self.name, "message": move})
-            print(f"{self.name} proposed a move: {move}")
-            
+            player_label = self.get_player_label(game)
+            print(f"{player_label} proposed a move: {move}")
+
 
             def ends_with_n(text: str) -> bool:
                 """
@@ -418,7 +429,7 @@ Remember:
 
 
     def propose_trade(self, grid, game):
-        
+
         if self.model_name == 'human':
             trade_message_for_human = f"{self.name}, it's your turn to propose a trade."
             if self.pay4partner:
@@ -447,7 +458,7 @@ Remember:
                 resources = []
                 i = 1
                 while True:
-                    message = f"{i}st resource:" if i == 1 else "next resource:" 
+                    message = f"{i}st resource:" if i == 1 else "next resource:"
                     print(message)
                     resource = input(prompt).strip()
                     if resource == '.':
@@ -465,12 +476,8 @@ Remember:
                             print("Invalid quantity. Please enter a valid integer.")
                     else:
                         print(f"Invalid resource. Available resources: {self.colors}.")
-                    
-                return resources
 
-            player_to_trade_with = get_valid_player("Trade with Player: ")
-            if player_to_trade_with.strip().lower() == 'n':
-                return None
+                return resources
 
             print("Enter the resources you want to offer (type '.' if you have finished):")
             resources_to_offer = get_resource_list("Resource to offer (color): ")
@@ -484,14 +491,12 @@ Remember:
                 print("You must request at least one resource.")
                 return None
 
-            trade_proposal = {
-                "trade_proposer": self.name,
-                "player_to_trade_with": player_to_trade_with,
+                trade_proposal = {
                 "resources_to_offer": resources_to_offer,
                 "resources_to_receive": resources_to_receive
             }
 
-            return self.clean_trade_proposal(trade_proposal, grid)
+            return self.clean_trade_proposal(trade_proposal, grid, game)
 
         # LLM Player
         else:
@@ -502,7 +507,7 @@ IMPORTANT: First check if you need to trade at all:
 1. Look at your best paths above. For the shortest path:
 
    - Required resources: """ + str(self.best_routes(grid)[0]["resources_required_for_path"]) + """
-   YOUR CURRENT RESOURCES: """ + str(dict(self.resources)) + """
+     Your current resources: """ + str(dict(self.resources)) + """
    - Required resources not currently in your possession: """ + str(self.best_routes(grid)[0]["resources_missing_due_to_insufficient_inventory"]) + """
 
 """ + self.generate_pay4partner_mode_info() + """
@@ -514,23 +519,21 @@ IMPORTANT: First check if you need to trade at all:
 3. Only if you are missing resources, consider a trade:
    - You can ONLY request resources you're missing
    - You can ONLY offer resources you have in excess
-   - NEVER trade with yourself """ + str(self.name) + """
+   - NEVER trade with yourself 
    - NEVER offer 0 resources
    - NEVER request resources you already have enough of
    - Make the trade beneficial for both players
 
 Respond in ONE of these two formats:
 
-1. If you want to make a trade, use EXACTLY this JSON format (replace values in <>):
+1. If you want to make a trade with the other player, use EXACTLY this JSON format (replace values in <>):
 {
-  "player_to_trade_with": "<other player's name>",
   "resources_to_offer": [["<color>", <number>]],
   "resources_to_receive": [["<color>", <number>]]
 }
 
 Example of valid trade:
 {
-  "player_to_trade_with": "Player 1",
   "resources_to_offer": [["R", 3]],
   "resources_to_receive": [["B", 2]]
 }
@@ -542,31 +545,20 @@ Remember:
 - Only ONE resource pair in each array
 - No spaces in color names
 - Numbers must be > 0
-- Don't trade with yourself """ + str(self.name) + """
+- Don't trade with yourself
 
 Keep your response below 1000 characters.
 """
 
             # Prepare messages for this request
-            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": self.system_prompt.format(player_name=self.name, pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
+            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": self.system_prompt.format(player_name="you", pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
             current_messages.append({"role": "user", "content": user_message})
-            
-            # Log full context to yulia logs
-            game.yulia_logger.log("player_context", {
-                "player": self.name,
-                "turn": game.turn,
-                "decision_type": "trade_proposal",
-                "full_context": current_messages,
-                "context_summary": {
-                    "total_messages": len(current_messages),
-                    "system_messages": len([m for m in current_messages if m["role"] == "system"]),
-                    "user_messages": len([m for m in current_messages if m["role"] == "user"]),
-                    "assistant_messages": len([m for m in current_messages if m["role"] == "assistant"])
-                }
-            })
-            
-            self.logger.log("trade_prompt", {"player": self.name, "message": user_message})
-            
+
+            # Log prompt to verbose logger
+            system_prompt = current_messages[0]["content"]
+            user_prompt = current_messages[-1]["content"]
+            game.logger.log_player_prompt(game.turn, self.name, self.model_name, "trade_proposal", system_prompt, user_prompt)
+
             # Make the API call
             response = self.client.chat.completions.create(
                 model=self.model,
@@ -574,56 +566,58 @@ Keep your response below 1000 characters.
                 messages=current_messages,
                 max_completion_tokens=2000)
             trade_proposal = response.choices[0].message.content.strip().lower()
-            
+
             # Save to history if enabled
             if self.with_message_history:
                 self.messages.extend([
                     {"role": "user", "content": user_message},
                     {"role": "assistant", "content": trade_proposal}
                 ])
-            self.logger.log("trade_proposal", {"player": self.name, "message": trade_proposal})
             if trade_proposal == 'n':
                 return None
-            
-            print(f"\n{self.name} proposes trade:")
+
+            player_label = self.get_player_label(game)
+            print(f"\n{player_label} proposes trade:")
+            # Parse JSON from response
             try:
                 match = re.search(r"\{.*\}", trade_proposal, re.DOTALL)
                 if match:
-                    json_str = match.group(0)
-                    try:
-                        trade_proposal = json.loads(json_str)
-                        
-                        # Fix common key errors
-                        if 'resources_to offer' in trade_proposal:
-                            trade_proposal['resources_to_offer'] = trade_proposal.pop('resources_to offer')
-                        if 'resources to offer' in trade_proposal:
-                            trade_proposal['resources_to_offer'] = trade_proposal.pop('resources to offer')
-                        if 'resources_to receive' in trade_proposal:
-                            trade_proposal['resources_to_receive'] = trade_proposal.pop('resources_to receive')
-                        if 'resources to receive' in trade_proposal:
-                            trade_proposal['resources_to_receive'] = trade_proposal.pop('resources to receive')
-                        
-                        trade_proposal['trade_proposer'] = self.name
-                        cleaned = self.clean_trade_proposal(trade_proposal, grid)
-                        if cleaned:
-                            trade_proposal = cleaned
-                            print(f"- To: {trade_proposal['player_to_trade_with']}")
-                            print(f"- Offering: {trade_proposal['resources_to_offer']}")
-                            print(f"- Requesting: {trade_proposal['resources_to_receive']}")
-                        else:
-                            print("- Invalid trade proposal")
-                    except json.JSONDecodeError as e:
-                        print("Invalid JSON:", e)
-                        trade_proposal = None
-            except Exception as e:
-                print(f"Error parsing trade proposal: {e}")
-                trade_proposal = None
+                    trade_proposal = json.loads(match.group(0))
+                else:
+                    raise json.JSONDecodeError("No JSON found", "", 0)
+            except json.JSONDecodeError:
+                print("- Invalid trade proposal")
+                game.logger.log("trade_proposal_error", {
+                    "player": self.name,
+                    "error": "Invalid trade proposal"
+                })
+                return None
+
+            # Normalize keys
+            for old_key in ['resources_to offer', 'resources to offer', 'resources_to receive', 'resources to receive']:
+                new_key = old_key.replace(' ', '_')
+                if old_key in trade_proposal:
+                    trade_proposal[new_key] = trade_proposal.pop(old_key)
+
+            # Validate and clean proposal
+            cleaned = self.clean_trade_proposal(trade_proposal, grid, game)
+            if not cleaned:
+                print("- Invalid trade proposal")
+                game.logger.log("trade_proposal_error", {
+                    "player": self.name,
+                    "error": "Invalid trade proposal"
+                })
+                return None
+
+            # Log successful proposal
+            trade_proposal = cleaned
+            print(f"- Offering: {trade_proposal['resources_to_offer']}")
+            print(f"- Requesting: {trade_proposal['resources_to_receive']}")
+            game.logger.log_player_response(game.turn, self.name, self.model_name, "trade_proposal", response.choices[0].message.content)
 
             return trade_proposal
         
     def accept_trade(self, grid, game, trade):
-        trade_proposer = trade['trade_proposer']
-        player_to_trade_with = trade['player_to_trade_with']
         resources_to_offer = trade['resources_to_offer']
         resources_to_receive = trade['resources_to_receive']
 
@@ -631,8 +625,8 @@ Keep your response below 1000 characters.
         reject_message = f"{self.name} rejected the trade proposal. \n"
 
         if self.model_name == 'human':
-            print(f"""{self.name}, You have been approached for the following trade:
-                {trade_proposer} is offering you {resources_to_offer} in exchange for {resources_to_receive}.""")
+            print(f"""You have been approached for the following trade:
+                The other player is offering you {resources_to_offer} in exchange for {resources_to_receive}.""")
             
             while True:
                 accept_trade = input("Do you accept this trade? y/n").strip().lower()
@@ -646,17 +640,21 @@ Keep your response below 1000 characters.
                     print(reject_message)
                     return False
         else:
-            # Simple trade acceptance prompt
             user_message = self.generate_player_context_message(game, grid) + f"""
 You have been offered a trade:
-{trade_proposer} wants to give you {resources_to_offer} in exchange for {resources_to_receive}. {self.generate_pay4partner_mode_info(short_summary=True)}
-Do you accept this trade? Think about your options and then answer 'yes' or 'no'. Make sure the last word of your response is exactly 'yes' or 'no'."""
+The other player wants to give you {resources_to_offer} in exchange for {resources_to_receive}. {self.generate_pay4partner_mode_info(short_summary=True)}
+Do you accept this trade? Answer 'yes' or 'no'."""
 
             # Prepare messages for this request
-            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": self.system_prompt.format(player_name=self.name, pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
+            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": self.system_prompt.format(player_name="you", pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
             current_messages.append({"role": "user", "content": user_message})
             
-            # Make the API call
+            # Log prompt for response to verbose logger
+            system_prompt = current_messages[0]["content"]
+            user_prompt = current_messages[-1]["content"]
+            game.logger.log_player_prompt(game.turn, self.name, self.model_name, "trade_response", system_prompt, user_prompt)
+            
+            # Make the API call to get rade response
             response = self.client.chat.completions.create(
                 model=self.model,
                 temperature=self.temperature,
@@ -678,20 +676,8 @@ Do you accept this trade? Think about your options and then answer 'yes' or 'no'
                 decision_result = "trade_rejected_unclear_response"
                 will_accept = False
             
-            # Log full context with actual decision made
-            game.yulia_logger.log("player_context", {
-                "player": self.name,
-                "turn": game.turn,
-                "decision_type": decision_result,
-                "full_context": current_messages,
-                "ai_response": accept_trade,
-                "context_summary": {
-                    "total_messages": len(current_messages),
-                    "system_messages": len([m for m in current_messages if m["role"] == "system"]),
-                    "user_messages": len([m for m in current_messages if m["role"] == "user"]),
-                    "assistant_messages": len([m for m in current_messages if m["role"] == "assistant"])
-                }
-            })
+            # Log response to verbose logger with full response
+            game.logger.log_player_response(game.turn, self.name, self.model_name, "trade_response", accept_trade)
             
             # Save to history if enabled
             if self.with_message_history:
@@ -699,8 +685,6 @@ Do you accept this trade? Think about your options and then answer 'yes' or 'no'
                     {"role": "user", "content": user_message},
                     {"role": "assistant", "content": accept_trade}
                 ])
-            
-            self.logger.log("accept_trade_response", {"player": self.name, "message": accept_trade})
             
             # Return the decision we already determined
             if not will_accept and decision_result == "trade_rejected_unclear_response":
@@ -710,24 +694,28 @@ Do you accept this trade? Think about your options and then answer 'yes' or 'no'
 
     
     ## Utility Functions
-    def clean_trade_proposal(self, trade_proposal, grid=None):
+    def clean_trade_proposal(self, trade_proposal, grid=None, game=None):
         """
         Clean and validate a trade proposal:
         1. Make all strings uppercase and stripped
-        2. Prevent trading with self
-        3. Check if trade is needed (have enough resources)
-        4. Return None for invalid trades
+        2. Convert anonymized player references to actual names
+        3. Prevent trading with self
+        4. Check if trade is needed (have enough resources)
+        5. Return None for invalid trades
         """
         # First clean the strings
         if isinstance(trade_proposal, dict):
-            cleaned = {key: self.clean_trade_proposal(value, grid) for key, value in trade_proposal.items()}
+            cleaned = {key: self.clean_trade_proposal(value, grid, game) for key, value in trade_proposal.items()}
             
             # Validate the cleaned proposal
-            if cleaned.get('trade_proposer') and cleaned.get('player_to_trade_with'):
-                # Prevent trading with self
-                if cleaned['trade_proposer'].upper() == cleaned['player_to_trade_with'].upper():
-                    print(f"Invalid trade: {cleaned['trade_proposer']} cannot trade with themselves")
-                    return None
+            if cleaned.get('trade_proposer'):
+                # Check if we need to trade at all (only if grid is provided)
+                if grid:
+                    best_path = self.best_routes(grid)[0]
+                    missing_resources = best_path["resources_missing_due_to_insufficient_inventory"]
+                    if not missing_resources:  # Empty dict means we have all needed resources
+                        print(f"Invalid trade: {cleaned['trade_proposer']} already has all needed resources")
+                        return None
                 
                 # Check if we need to trade at all (only if grid is provided)
                 if grid:
@@ -753,10 +741,10 @@ Do you accept this trade? Think about your options and then answer 'yes' or 'no'
 Recall the 'pay for other' mode rules:
 {self.generate_pay4partner_mode_info(short_summary=True)}\n\n
 
-You have been asked by {other_player.name} to cover their movement cost onto a tile of color {color} as part of a previous trade agreement. Here are your past aggreements with this player:
+You have been asked by the other player to cover their movement cost onto a tile of color {color} as part of a previous trade agreement. Here are your past aggreements with this player:
 {[agreement['text_summary'] for agreement in self.pay4partner_log if agreement['with'] == other_player.name]}
-Do you agree to pay a {color} resource to cover the other player? Although you previously agreed to this with the other player, it is not mandatory. Remember that you are trying to maximise your points. List your options and the pros and cons of each, and finish your response with 'yes' if you agree to pay (and lose the resource) or 'no' if you want to keep the resource. Make sure the last word of your response is exactly 'yes' or 'no'.
-""" 
+Do you agree to pay a {color} resource to cover the other player? Although you previously agreed to this with the other player, it is not mandatory. Remember that you are trying to maximise your points. List your options and the pros and cons of each, and finish your response with 'yes' if you agree to pay or 'no' if you want to keep those resources.
+"""
         if self.model_name == 'human':
             print(f"{self.name}, {other_player.name} is envoking 'pay for partner' and asking you to pay for their move onto a {color} tile.")
             while True:
@@ -767,12 +755,9 @@ Do you agree to pay a {color} resource to cover the other player? Although you p
                 return agree == 'y'
         else:
             # Prepare messages for this request
-            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": self.system_prompt.format(player_name=self.name, pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
+            current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": self.system_prompt.format(player_name="you", pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
             current_messages.append({"role": "user", "content": message})
-            
-            # Log full context to yulia logs
-            # Note: game object is not passed here, so we skip yulia logging for now
-            
+
             # Make the API call
             response = self.client.chat.completions.create(
                 model=self.model,
@@ -781,6 +766,9 @@ Do you agree to pay a {color} resource to cover the other player? Although you p
                 max_completion_tokens=1000)
             agree = response.choices[0].message.content.strip().lower()
             
+            # Log response to verbose logger
+            game.logger.log_player_response(game.turn, self.name, self.model_name, "pay4partner", agree)
+            
             # Save to history if enabled
             if self.with_message_history:
                 self.messages.extend([
@@ -788,10 +776,8 @@ Do you agree to pay a {color} resource to cover the other player? Although you p
                     {"role": "assistant", "content": agree}
                 ])
             
-            self.logger.log("pay4partner_response", {"player": self.name, "message": agree})
-            
-            final_respones  = get_last_alphabetic_word(agree)
-            if "yes" in final_respones:
+            final_response = get_last_alphabetic_word(agree)
+            if "yes" in final_response:
                 return True
             else:
                 return False

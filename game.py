@@ -8,21 +8,19 @@ from tabulate import tabulate
 
 from constants import AVAILABLE_COLORS, COLOR_MAP, TILE_SIZE, FPS
 from grid import Grid
-from logger import GameLogger, NullLogger
+from logger import Logger
 from player import Player
 from utils import freeze
 
 
 class Game:
    
-    def __init__(self, config, logger=None):
+    def __init__(self, config):
         # Configuration and Logging
         self.config = config
-        self.logger = logger if logger is not None else NullLogger()
-        # Create a separate logger for yulia's logs
         from datetime import datetime
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.yulia_logger = GameLogger(filepath=f"logs/yulia_agent_prompt_logs/yulia_logs_{timestamp}.jsonl")
+        self.logger = Logger(game_id=timestamp)
 
         # Grid Setup
         self.grid_size = self.config.grid_size
@@ -36,7 +34,9 @@ class Game:
 
         # Resource Distribution
         self.distribute_resources()
-
+        
+        # Store initial resources for player labeling
+        self.initial_resources = {player.name: dict(player.resources) for player in self.players}
         # trade version
         self.pay4partner = self.config.pay4partner
 
@@ -59,9 +59,7 @@ class Game:
         self.running = True
 
         # Logging Initial State
-        self.logger.log("game_config", {"config": self.config})
-        self.logger.log("initial_game_state", {"initial_game_state": copy.deepcopy(self.game_state)})
-        self.logger.log("grid", {"grid": self.grid.tile_colors})
+        self.logger.log_game_config(self.config, self.players, self.grid)
 
     
     # 1. Initialization and Setup
@@ -209,44 +207,19 @@ class Game:
 
         print("Game over!")
         self.print_game_state()
-        scores = self.get_scores()
-        total_scores = self.get_total_scores(scores)
-        total_accuracy = self.get_total_accuracy(scores)
-        gini_coefficient = self.calculate_gini_coefficient(scores)
         
-        # Consolidate all final game information in one log
-        final_log = {
-            "game_config": {
-                "total_turns": self.turn,
-                "context_enabled": self.with_context,
-                "grid_size": self.grid_size,
-                "colors": self.colors
-            },
-            "scores": scores,
-            "metrics": {
-                "total_scores": total_scores,
-                "total_accuracy": total_accuracy,
-                "gini_coefficient": gini_coefficient,
-                "max_possible_score": self.max_possible_score
-            },
-            "final_turn_summary": self.turn_summaries[-1] if self.turn_summaries else None,
-            "player_histories": {}
-        }
+        # Calculate final scores
+        scores = {p.name: (100 + 5 * sum(dict(p.resources).values())) if p.has_finished() else 0 
+                 for p in self.players}
         
-        # Add each player's final message history
-        for player in self.players:
-            if player.model_name != 'human':
-                final_log["player_histories"][player.name] = {
-                    "model": player.model_name,
-                    "with_message_history": player.with_message_history,
-                    "messages": player.messages if player.with_message_history else "Message history disabled"
-                }
+        # Print final scores
+        print("\nFinal Scores:")
+        for player_name, score in scores.items():
+            print(f"{player_name}: {score} points")
         
-        # Log to both loggers to maintain compatibility
-        self.logger.log("final_game_state", final_log)
-        self.yulia_logger.log("final_game_state", final_log)
+        # Log final game state and metrics to combined logger
+        self.logger.log_game_end(self.players, self.turn)
         
-        print(f"Final scores: {scores}")
         if self.display_gui:
             pygame.quit()
 
@@ -258,88 +231,126 @@ class Game:
         - If the player has not finished, let them propose a trade and/or make a move.
         - Validate trades and moves before executing them.
         """
-        if self.turn > 0 and self.turn_summaries:
-            print("\nTURN", self.turn-1, "SUMMARY:")
-            print("-"*20)
-            formatted_summary = players[0].format_turn_summary(self.turn_summaries[-1], self.turn-1)
-            print(formatted_summary)
+        print("\n" + "="*60)
+        print(f"=== USER VIEW - TURN {self.turn} STARTS ===")
+        print("="*60)
         
-        print("\n" + "="*50)
-        print(f"TURN {self.turn} STARTS")
-        print("="*50)
+        # Initialize logging for this turn (and config on first turn)
+        if self.turn == 0:
+            self.logger.log_game_config(self.config, self.players, self.grid)
+        self.logger.log_turn_start(self.turn)
+        
+        # Track player data for event logging
+        player_turn_data = {}
 
         #TODO: consider either remove for loop (diplomacy-style simultaneous turns), or shuffle players each turn to be fair
         for player in players:
+            player_label = player.get_player_label(self)
             if player.has_finished():
-                print(f"{player.name} has already finished the game.")
+                print(f"{player_label} ({player.model_name}) has already finished the game.")
                 continue
 
-            print(f"\n{player.name}'s turn:")
+            print(f"\n{player_label} ({player.model_name})'s turn:")
             
+            # For first player of the turn, initialize both players' data
+            if not player_turn_data:
+                # Record both players' resources at the start of the turn
+                for p in self.players:
+                    player_turn_data[p.name] = {
+                        'resources_start': dict(p.resources),  # Resources at start of turn before any trades
+                        'position_start': p.position,
+                        'trade_proposed': None,
+                        'trade_proposal_outcome': 'none',
+                        'trade_received': None,
+                        'trade_response': 'none',
+                        'resources_after_trades': None,
+                        'move_made': None,
+                        'position_end': None,
+                        'resources_end': None
+                    }
+
             trade_result = None
             move_result = None
 
             # Handle trade proposal
             propose_trade = player.propose_trade(self.grid, self)
             if propose_trade and propose_trade is not None:
+                # Record the trade proposal
+                player_turn_data[player.name]['trade_proposed'] = propose_trade
+                
                 trade_result = self.validate_trade(player, propose_trade)
                 if trade_result["is_valid"]:
-                    # Handle the trade
-                    trade_executed = self.handle_trade(player, propose_trade)
-                    # Mark whether this trade was actually executed
+                    trade_executed = self.handle_trade(player, propose_trade, player_turn_data)
                     trade_result["executed"] = trade_executed
+                    player_turn_data[player.name]['trade_proposal_outcome'] = 'accepted' if trade_executed else 'rejected'
+                    
+                    # Add trade to turn summary immediately
+                    if self.with_context:
+                        if not hasattr(self, 'current_turn_summary'):
+                            self.current_turn_summary = {
+                                "trades": [],
+                                "moves": [],
+                                "player_states": {}
+                            }
+                        other_player = next(p for p in self.players if p.name != player.name)
+                        trade_summary = {
+                            "proposer": player.name,
+                            "target": other_player.name,
+                            "offered": propose_trade["resources_to_offer"],
+                            "requested": propose_trade["resources_to_receive"],
+                            "success": trade_executed,
+                            "rejected": not trade_executed
+                        }
+                        self.current_turn_summary["trades"].append(trade_summary)
                 else:
-                    print(f"{player.name}'s trade proposal was invalid: {trade_result['message']}")
+                    print(f"{player_label}'s trade proposal was invalid: {trade_result['message']}")
+                    player_turn_data[player.name]['trade_proposal_outcome'] = 'invalid'
             else:
-                print(f"{player.name} chose not to trade")
+                print(f"{player_label} chose not to trade")
 
-            # Handle movement
-            old_position = player.position  # Capture position before move
+            # Record resources after trades (before moves)
+            player_turn_data[player.name]['resources_after_trades'] = dict(player.resources)
+            
+        # Handle moves after all trades are done
+        for player in players:
+            if player.has_finished():
+                continue
+                
+            player_label = player.get_player_label(self)
+            old_position = player.position
             move = player.come_up_with_move(self, self.grid)
             if move is None:
-                print(f"{player.name} did not move.")
+                print(f"{player_label} did not move.")
                 move_result = "no_move"
             else:
                 if player.can_move_to(move, self.grid):
-                    self.logger.log("move", {
-                        "player": player.name,
-                        "move_from": old_position,
-                        "move_to": move,})
                     player.move(move, self.grid)
                     move_result = move
-                    print(f"{player.name} moved to {move}.")
+                    player_turn_data[player.name]['move_made'] = move
+                    print(f"{player_label} moved to {move}.")
                 elif player.can_move_to_with_promised(move, self.grid):
                     partner_agrees_to_pay = self.handle_pay4partner_move(player, move)
                     if partner_agrees_to_pay:
                         player.move(move, self.grid)
                         move_result = move
-                        print(f"{player.name} moved to {move} via pay4partner.")
+                        player_turn_data[player.name]['move_made'] = move
+                        print(f"{player_label} moved to {move} via pay4partner.")
                 else:
                     move_result = "invalid_move"
+            
+            # Record final state
+            player_turn_data[player.name]['position_end'] = player.position
+            player_turn_data[player.name]['resources_end'] = dict(player.resources)
             
             # Collect actions for turn summary
             if self.with_context:
                 if not hasattr(self, 'current_turn_summary'):
-                    # Initialize empty summary for this turn
+                    # Initialize empty summary for this turn if not initialized before (if no trades happened)
                     self.current_turn_summary = {
                         "trades": [],
                         "moves": [],
                         "player_states": {}
                     }
-                
-                # Add this player's trade if any
-                if trade_result and isinstance(trade_result, dict) and trade_result.get("is_valid", False):
-                    trade = trade_result["proposed_trade"]
-                    trade_summary = {
-                        "proposer": player.name,
-                        "target": trade_result["player_to_trade_with"].name,
-                        "offered": trade["resources_to_offer"],
-                        "requested": trade["resources_to_receive"],
-                        "success": trade_result.get("executed", False),
-                        "rejected": not trade_result.get("executed", False)
-                    }
-                    self.current_turn_summary["trades"].append(trade_summary)
-                    # print(f"DEBUG: Added trade to summary: {trade_summary}")
                 
                 # Add this player's move
                 move_summary = {
@@ -365,23 +376,30 @@ class Game:
                 
                 # If this is the last player, finalize and distribute the turn summary
                 if player == players[-1]:
-                    print("\n=== ADDING TURN SUMMARY TO ALL PLAYERS' CONTEXT ===")
-                    formatted_summary = None
+                    print("\n" + "="*60)
+                    print("=== END USER VIEW ===")
+                    print("="*60)
+                    
+                    # Log structured event data for each player
+                    for p in self.players:
+                        if p.name in player_turn_data:
+                            self.logger.log_player_turn_summary(self.turn, p.name, player_turn_data[p.name])
+                    
+                    self.logger.log_turn_end(self.turn)
+                    
                     for p in self.players:
                         if p.model_name != 'human':
-                            if not formatted_summary:  # Only format once
-                                formatted_summary = p.format_turn_summary(self.current_turn_summary, self.turn)
-                                print(f"\nTurn Summary being added:\n{formatted_summary}")
-                            print(f"\nAdding to {p.name}'s context")
+                            # Each player gets their own personalized turn summary
+                            player_specific_summary = p.format_turn_summary(self.current_turn_summary, self.turn)
                             p.messages.append({
                                 "role": "system",
-                                "content": formatted_summary
+                                "content": player_specific_summary
                             })
                     # Store the complete turn summary
                     self.turn_summaries.append(self.current_turn_summary)
                     # Clear for next turn
                     delattr(self, 'current_turn_summary')
-                    print("=============================================\n")
+                    print("="*60 + "\n")
                     
 
     def handle_pay4partner_move(self, player, move):
@@ -402,88 +420,99 @@ class Game:
             return False
             
     
-    def handle_trade(self, player, propose_trade):
+    def handle_trade(self, player, propose_trade, player_turn_data):
         """
         Handle a trade proposal from a player.
         - Validate the trade proposal.
         - Execute the trade if the target player accepts.
+        - Update player_turn_data with new resources after trade.
         Returns True if trade was executed, False otherwise.
         """
         try:
             # Validate the trade proposal
             validation_result = self.validate_trade(player, propose_trade)
             if not validation_result["is_valid"]:
-                print(f"Trade validation failed: {validation_result['message']}")
+                error_msg = f"Trade validation failed: {validation_result['message']}"
+                print(error_msg)
+                # Log validation failure to verbose log
+                self.logger.log("trade_validation_failed", {
+                    "player": player.name,
+                    "message": validation_result['message']
+                })
                 return False
 
-            player_to_trade_with = validation_result["player_to_trade_with"]
+            # Get the other player (in 2-player game, it's always the non-proposer)
+            other_player = next(p for p in self.players if p.name != player.name)
             resources_to_offer = propose_trade['resources_to_offer']
             resources_to_receive = propose_trade['resources_to_receive']
 
-            trade_log = copy.deepcopy(propose_trade)
-
-            # Ask the target player if they accept the trade
-            if player_to_trade_with.accept_trade(self.grid, self, propose_trade):
-
+            # Get the other player's response to the trade
+            trade_accepted = other_player.accept_trade(self.grid, self, propose_trade)
+            
+            if trade_accepted:
+                # Execute the trade immediately
                 if self.pay4partner is False:
-                # Execute the trade by swapping resources
+                    # Execute the trade by swapping resources
                     for resource, quantity in resources_to_offer:
                         player.resources[resource] -= quantity
-                        player_to_trade_with.resources[resource] += quantity
+                        other_player.resources[resource] += quantity
 
                     for resource, quantity in resources_to_receive:
                         player.resources[resource] += quantity
-                        player_to_trade_with.resources[resource] -= quantity
+                        other_player.resources[resource] -= quantity
                 else:
                     # In pay4partner mode, update promised resources instead of actual resources
                     for resource, quantity in resources_to_offer:
                         player.promised_resources_to_give[resource] += quantity
-                        player_to_trade_with.promised_resources_to_receive[resource] += quantity
+                        other_player.promised_resources_to_receive[resource] += quantity
 
                     for resource, quantity in resources_to_receive:
                         player.promised_resources_to_receive[resource] += quantity
-                        player_to_trade_with.promised_resources_to_give[resource] += quantity
+                        other_player.promised_resources_to_give[resource] += quantity
                     player.pay4partner_log.append({
                         "agreement_turn": self.turn,
-                        "with": player_to_trade_with.name,
+                        "with": other_player.name,
                         "offered": resources_to_offer,
                         "requested": resources_to_receive,
-                        "text_summary": f"On turn {self.turn}, {player.name} and {player_to_trade_with.name} agreed that at some stage in the future, {player.name} would pay {resources_to_offer} to {player_to_trade_with.name} in exchange for {player_to_trade_with.name} at some stage in the future paying for {resources_to_receive} to {player.name}.",
+                        "text_summary": f"On turn {self.turn}, {player.name} and {other_player.name} agreed that at some stage in the future, {player.name} would pay {resources_to_offer} to {other_player.name} in exchange for {other_player.name} at some stage in the future paying for {resources_to_receive} to {player.name}.",
                     })
-                    player_to_trade_with.pay4partner_log.append({
+                    other_player.pay4partner_log.append({
                         "agreement_turn": self.turn,
                         "with": player.name,
                         "offered": resources_to_receive,
                         "requested": resources_to_offer,
-                        "text_summary": f"On turn {self.turn}, {player.name} and {player_to_trade_with.name} agreed that at some stage in the future, {player.name} would pay {resources_to_offer} to {player_to_trade_with.name} in exchange for {player_to_trade_with.name} at some stage in the future paying for {resources_to_receive} to {player.name}.",
+                        "text_summary": f"On turn {self.turn}, {player.name} and {other_player.name} agreed that at some stage in the future, {player.name} would pay {resources_to_offer} to {other_player.name} in exchange for {other_player.name} at some stage in the future paying for {resources_to_receive} to {player.name}.",
                     })
 
                 # Update game state immediately after trade execution
                 self.game_state[player.name]["resources"] = dict(player.resources)
-                self.game_state[player_to_trade_with.name]["resources"] = dict(player_to_trade_with.resources)
+                self.game_state[other_player.name]["resources"] = dict(other_player.resources)
                 self.game_state[player.name]["promised_to_give"] = dict(player.promised_resources_to_give)
-                self.game_state[player.name]["promised_to_receive"] = dict(player.promised_resources_to_give)
+                self.game_state[player.name]["promised_to_receive"] = dict(player.promised_resources_to_receive)
 
-                print(f"\nTRADE ACCEPTED between {player.name} and {player_to_trade_with.name}")
-                print(f"- {player.name} now has: {dict(player.resources)}")
-                print(f"- {player_to_trade_with.name} now has: {dict(player_to_trade_with.resources)}")
+                # Print trade outcome
+                proposer_label = player.get_player_label(self)
+                target_label = other_player.get_player_label(self)
+                print(f"\nTrade accepted between {proposer_label} and {target_label}")
+                print(f"- {proposer_label} now has: {dict(player.resources)}")
+                print(f"- {target_label} now has: {dict(other_player.resources)}")
                 if self.pay4partner:
                     print('Additionally:')
-                    print(f"- {player.name} has promised to give: {dict(player.promised_resources_to_give)}")
-                    print(f"- {player_to_trade_with.name} has promised to give: {dict(player_to_trade_with.promised_resources_to_give)}")
+                    print(f"- {proposer_label} has promised to give: {dict(player.promised_resources_to_give)}")
+                    print(f"- {target_label} has promised to give: {dict(other_player.promised_resources_to_give)}")
+
+                # Update both players' resources_after_trades
+                player_turn_data[player.name]['resources_after_trades'] = dict(player.resources)
+                player_turn_data[other_player.name]['resources_after_trades'] = dict(other_player.resources)
                 
-                trade_log['result'] = 'accepted'
-                self.logger.log("trade", trade_log)
                 return True
             else:
-                print(f"\nTRADE REJECTED by {player_to_trade_with.name}")
-                trade_log['result'] = 'declined'
-                self.logger.log("trade", trade_log)
+                target_label = other_player.get_player_label(self)
+                print(f"\nTrade rejected by {target_label}")
                 return False
 
         except Exception as e:
             print(f"An error occurred while handling the trade: {e}")
-            self.logger.log("trade_error", {"error": str(e), "propose_trade": propose_trade})
             return False
 
     def validate_trade(self, player, propose_trade):
@@ -495,23 +524,16 @@ class Game:
         - player_to_trade_with: The target player if valid
         """
         validation_result = {"is_valid": False, "message": "", "proposed trade": propose_trade}
-        required_fields = ['player_to_trade_with', 'resources_to_offer', 'resources_to_receive']
+        required_fields = ['resources_to_offer', 'resources_to_receive']
         if not all(field in propose_trade for field in required_fields):
             validation_result['message'] = "Missing required fields in trade proposal."
             return validation_result
 
-        # Find the player to trade with
-        def normalize_name(name: str) -> str:
-            return name.lower().replace("player", "").strip()
-
+        # In 2-player game, the other player is always the trade partner
         player_to_trade_with = next(
-            (p for p in self.players if normalize_name(p.name) == normalize_name(propose_trade['player_to_trade_with'])),
+            (p for p in self.players if p.name != player.name),
             None
         )
-
-        if not player_to_trade_with:
-            validation_result['message'] = f"The proposed player '{propose_trade['player_to_trade_with']}' does not exist."
-            return validation_result
 
         resources_to_offer = propose_trade['resources_to_offer']  # List of tuples [(color, quantity), ...]
         resources_to_receive = propose_trade['resources_to_receive']  # List of tuples [(color, quantity), ...]
@@ -551,44 +573,6 @@ class Game:
 
 
     # 3. Game State and Metrics
-    def get_scores(self):
-        """Calculate and return the scores for each player."""
-        scores = {}
-        for player in self.players:
-            if player.has_finished():
-                # Player reached goal: get 100 points + 5 points per remaining resource
-                scores[player.name] = 100 +  5 * (sum(player.resources.values()))
-            else:
-                # Player did not reach goal: get 0 points regardless of remaining resources
-                scores[player.name] = 0
-        return scores
-    
-
-    def get_total_scores(self, scores):
-        return sum(scores.values())
-
-
-    def get_total_accuracy(self, scores):
-        """Defined as the total score divided by the maximum possible score."""
-        return sum(scores.values())/ self.max_possible_score
-
-
-    def calculate_gini_coefficient(self, scores):
-        """
-        Calculate the Gini coefficient for the final scores.
-        """
-        scores = list(scores.values())
-        scores.sort()  
-        n = len(scores)
-
-        cumulative_sum = sum((i + 1) * score for i, score in enumerate(scores))
-        total_sum = sum(scores)
-
-        if total_sum == 0:
-            return 0  
-
-        gini = (2 * cumulative_sum) / (n * total_sum) - (n + 1) / n
-        return gini
 
 
     def check_for_repeated_states(self, n_repeats=3):
@@ -599,7 +583,6 @@ class Game:
         count = state_counter[freeze(self.game_state)]
         if count == n_repeats:
             print(f"The position has repeated {n_repeats} times, finishing the game.")
-            self.logger.log("repeated_states_break", {"n_repeats": n_repeats})
             return True
         elif count == n_repeats - 1:
             print(f"Current position has repeated {count} times, game will stop if this occurs again.")
