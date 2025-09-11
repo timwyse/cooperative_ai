@@ -282,7 +282,6 @@ class Game:
             trade_result = None
             move_result = None
             
-
             # create a contract if in contract mode
             if self.contract_type is not None:
                 propose_trade = None
@@ -290,17 +289,18 @@ class Game:
                     
                     contracts = self.come_up_with_contract(self.players)
                     if contracts:
-                        print(f"contract made! {contracts}")
-                        self.contract = contracts['contract']
+                        contract = contracts['contract']
+                        print(f"contract made! {contract}")
+                        self.contract = contract
                         for player in self.players:
                             if player.id == '0':
                                 player.contract = contracts['contract_for_0']
                             elif player.id == '1':
                                 player.contract = contracts['contract_for_1']
-                                print(f"player {player.id} contract: {player.contract}")
                         break
                     else:
                         print("contract not made, trying again.")
+
             # otherwise Handle trade proposal
             else:
                 propose_trade = player.propose_trade(self.grid, self)
@@ -344,7 +344,7 @@ class Game:
             
         # Handle moves after all trades are done
         for player in players:
-            print(f"player id: {player.id}")
+
             if player.has_finished():
                 continue
                 
@@ -367,9 +367,10 @@ class Game:
                         move_result = move
                         player_turn_data[player.name]['move_made'] = move
                         print(f"{player_label} moved to {move} via pay4partner.")
+                    else:
+                        move_result = "other player rejected pay4other"
                 elif self.contract is not None:
                     if move in (tuple(map(int, key.strip("()").split(","))) for key in self.contract.keys() if re.match(r"^\(\d+,\s*\d+\)$", key)):
-                        print(f"{player_label} is attempting to move to {move} under contract terms.")
                         self.handle_contract_move(player, move)
                         player.move(move, self.grid)
                         move_result = move
@@ -569,8 +570,6 @@ class Game:
         Facilitates a contract negotiation between two players, formats the contract using a judge,
         and ensures both players agree to the final contract.
         """
-        for player in players:
-            print(player.id)
         def message_starts_or_ends_with_agree(text):
     
             # Find all alphabetic words in the text
@@ -585,7 +584,6 @@ class Game:
         player_1 = players[1]
         history_0 = [{"role": "system", "content": player_0.generate_contract_prompt(player_0.generate_player_context_message(self, self.grid))}]
         history_1 = [{"role": "system", "content": player_1.generate_contract_prompt(player_1.generate_player_context_message(self, self.grid))}]
-        print(f"history 0  starting off: \n {history_0}")
         n_exchanges = 5
 
         # Seed the conversation
@@ -597,11 +595,9 @@ class Game:
         agree = False
         for turn in range(n_exchanges):  # Number of exchanges
             turn_message = f"Turn: {turn + 1}" if turn < n_exchanges - 1 else "Turn: {turn + 1} (final turn)"
-            print(turn_message)
 
             response_1 = ""
             response_0 = player_0.get_completion(history_0)
-            # print(f"Player 0: {response_0}")
             history_0.append({"role": "assistant", "content": response_0})
             history_1.append({"role": "user", "content": response_0})
             if message_starts_or_ends_with_agree(response_0.lower()) and message_starts_or_ends_with_agree(response_1.lower()):
@@ -610,7 +606,6 @@ class Game:
 
             # Player 1 replies
             response_1 = player_1.get_completion(history_1)
-            # print(f"Player 1: {response_1}")
             history_1.append({"role": "assistant", "content": f"{turn_message}: {response_1}"})
             history_0.append({"role": "user", "content": f"{turn_message}: {response_1}"})
 
@@ -618,17 +613,15 @@ class Game:
                 agree = True
                 break
         if agree == True:
-            print("Agreement reached!!")
-            print(f"0: {history_0}")
-            print(f"1: {history_1}")
+            print("Agreement reached! Consulting judge to formalize contract.")
             
             conversation_formatted = JUDGE.format_conversation_for_contract(history_0, players, history_pov=0)
             judge_contract = JUDGE.create_contract(conversation_formatted)
             print(f"Raw judge contract: {judge_contract}")
             contract_for_0 = JUDGE.format_contract_for_player(judge_contract, player_0)
-            print(f"contract for 0 {contract_for_0}")
+            
             contract_for_1 = JUDGE.format_contract_for_player(judge_contract, player_1)
-            print(f"contract for 1 {contract_for_1}")
+            
 
             history_0.append({"role": "user", "content": prompts.generate_agree_to_final_contract_prompt(contract_for_0)})
             
@@ -636,15 +629,19 @@ class Game:
 
             agree_0 = player_0.get_completion(history_0)
             agree_1 = player_1.get_completion(history_1)
-            print(f"0: {history_0}")
-            print(agree_0)
-            
-            print(f"1: {history_1}")
-            print(agree_1)
 
             if message_starts_or_ends_with_agree(agree_0) and message_starts_or_ends_with_agree(agree_1):
+                print("Both players agreed to the final contract.")
                 
                 return {'contract': judge_contract, 'contract_for_0': contract_for_0, 'contract_for_1': contract_for_1}
+            elif not message_starts_or_ends_with_agree(agree_0):
+                print(f"{player_0.name} did not agree to the final contract.")
+                print(f"{player_0.name}'s response: {agree_0}")
+                return None
+            elif not message_starts_or_ends_with_agree(agree_1):
+                print(f"{player_1.name} did not agree to the final contract.")
+                print(f"{player_1.name}'s response: {agree_1}")
+                return None
 
     
     
