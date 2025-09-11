@@ -10,6 +10,7 @@ from together import Together
 from config import GameConfig
 from constants import OPENAI_API_KEY, TOGETHER_API_KEY, AVAILABLE_COLORS
 from grid import Grid
+import prompts
 
 class Player:
     def __init__(self, id, agent, logger, config:GameConfig):
@@ -46,12 +47,13 @@ class Player:
         self.resources = {color: 0 for color in self.colors}
         self.promised_resources_to_give = {color: 0 for color in self.colors}
         self.promised_resources_to_receive = {color: 0 for color in self.colors}
+        self.contract = None
 
         # init pay4partner settings
         self.pay4partner = config.pay4partner
         self.pay4partner_log = []
         self.pay4partner_scoring_info = "In 'pay for other' mode, any resources you have promised to give to other players as part of trade agreements are still counted as your resources (and hence potential contributors to your final score) until you actually give them away." if self.pay4partner else ""
-        self.pay4partner_mode_sys_prompt = self.generate_pay4partner_mode_info(short_summary=True) if self.pay4partner else ""
+        self.pay4partner_mode_sys_prompt = prompts.generate_pay4partner_mode_info(self, short_summary=True) 
 
         # Init message history settings
         self.with_message_history = config.with_message_history
@@ -180,6 +182,7 @@ class Player:
         from turn_context import format_turn_summary_for_player
         return format_turn_summary_for_player(turn_summary, turn_number, self.name, self.pay4partner)
 
+
     def generate_player_context_message(self, game, grid):
         """
         Generates a reusable message about the board state, player's resources, position, and goal.
@@ -187,27 +190,7 @@ class Player:
         """
         from turn_context import generate_turn_context
         return generate_turn_context(game, self)
-    def generate_pay4partner_mode_info(self, short_summary=False):
-        if self.pay4partner:
-            promised_resources_to_receive = {color: amt for color, amt in self.promised_resources_to_receive.items() if amt > 0}
-            promised_resources_to_give = {color: amt for color, amt in self.promised_resources_to_give.items() if amt > 0}
-            pay4partner_mode_info = """
-Important Note: The game is in 'pay for other' mode. This means that trades are not made by directly swapping resources. Instead, when a trade agreement is reached, each player commits to covering the cost of the other’s movement on the agreed tile colors. In practice:
-	•	If the other player steps onto a tile of a color you agreed to cover, you pay the resource cost for that move.
-	•	If you step onto a tile of a color the other player agreed to cover, they pay the resource cost for you.
-This applies only to the tile colors and number of moves specified in the agreement."""
-            if short_summary:
-                return pay4partner_mode_info
-            else:
-                pay4partner_mode_info += f"""
-In addition to the information above, please consider any promises you're already involved in:
-\n- So far you have promised to give these resources to other players: {promised_resources_to_give if promised_resources_to_give else '{}'}"
-\n- So far you have been promised to receive these resources from other players: {promised_resources_to_receive if promised_resources_to_receive else '{}'}
-In order to move onto a tile of a color you have been promised, select that move as normal and the other player will be asked to cover the cost for you.
-"""
-            return pay4partner_mode_info
-        else:
-            return ""
+    
 
     ## Decision-Making
 
@@ -241,10 +224,10 @@ In order to move onto a tile of a color you have been promised, select that move
                     if new_pos not in grid.get_adjacent(self.position):
                         print("Invalid move: You can only move to an adjacent tile. Try again.")
                         continue
-                    tile_color = grid.get_color(r, c)
-                    if (tile_color not in self.resources.keys() or self.resources[tile_color] <= 0) and (tile_color not in self.promised_resources_to_receive.keys() or self.promised_resources_to_receive[tile_color]) <= 0:
-                        print(f"Invalid move: You don't have enough resources for a {tile_color} tile. Try again.")
-                        continue
+                    # tile_color = grid.get_color(r, c)
+                    # if (tile_color not in self.resources.keys() or self.resources[tile_color] <= 0) and (tile_color not in self.promised_resources_to_receive.keys() or self.promised_resources_to_receive[tile_color]) <= 0:
+                    #     print(f"Invalid move: You don't have enough resources for a {tile_color} tile. Try again.")
+                    #     continue
                     return new_pos
                 except (ValueError, IndexError):
                     print("Invalid input: Please enter the new tile in r,c format. Try again.")
@@ -254,19 +237,15 @@ In order to move onto a tile of a color you have been promised, select that move
             next_move = best_path["path"][1] if best_path["path"] else None
             resources_needed = best_path["resources_required_for_path"]
             resources_missing = best_path["resources_missing_due_to_insufficient_inventory"]
-            from prompts import generate_move_prompt
             player_context = self.generate_player_context_message(game, grid)
-            user_message = generate_move_prompt(
+            user_message = prompts.generate_move_prompt(self,
                 player_context=player_context,
-                position=self.position,
-                goal=self.goal,
                 next_move=next_move,
                 resources_needed=resources_needed,
-                current_resources=dict(self.resources),
                 resources_required_for_path=str(self.best_routes(grid)[0]["resources_required_for_path"]),
                 resources_missing=str(self.best_routes(grid)[0]["resources_missing_due_to_insufficient_inventory"]),
-                pay4partner_info=self.generate_pay4partner_mode_info()
             )
+            print(f"move prompt:\n{user_message}\n")
             # Prepare messages for this request
             current_messages = list(self.messages) if self.with_message_history else [{"role": "system", "content": self.system_prompt.format(player_name="you", pay4partner_mode_info=self.pay4partner_mode_sys_prompt, pay4partner_scoring_info=self.pay4partner_scoring_info)}]
             current_messages.append({"role": "user", "content": user_message})
@@ -276,15 +255,10 @@ In order to move onto a tile of a color you have been promised, select that move
             user_prompt = current_messages[-1]["content"]
             game.logger.log_player_prompt(game.turn, self.name, self.model_name, "move", system_prompt, user_prompt)
 
-            response = self.client.chat.completions.create(
-                model=self.model,
-                temperature=self.temperature,
-                messages=current_messages,
-                max_completion_tokens=1000)
-            move = response.choices[0].message.content.strip().lower()
+            move = self.get_completion(current_messages)
 
             # Log response to verbose logger with full response
-            game.logger.log_player_response(game.turn, self.name, self.model_name, "move", response.choices[0].message.content)
+            game.logger.log_player_response(game.turn, self.name, self.model_name, "move", move)
 
             if self.with_message_history:
                 self.messages.extend([
@@ -326,9 +300,9 @@ In order to move onto a tile of a color you have been promised, select that move
                     print("Invalid move: You can only move to an adjacent tile.")
                     return None
                 tile_color = grid.get_color(r, c)
-                if (tile_color not in self.resources.keys() or self.resources[tile_color] <= 0) and (tile_color not in self.promised_resources_to_receive.keys() or self.promised_resources_to_receive[tile_color]) <= 0:
-                    print(f"Invalid move: You don't have enough resources for a {tile_color} tile.")
-                    return None
+                # if (tile_color not in self.resources.keys() or self.resources[tile_color] <= 0) and (tile_color not in self.promised_resources_to_receive.keys() or self.promised_resources_to_receive[tile_color]) <= 0:
+                #     print(f"Invalid move: You don't have enough resources for a {tile_color} tile.")
+                #     return None
                 return new_pos
             except (ValueError, IndexError):
                 return None
@@ -406,15 +380,13 @@ In order to move onto a tile of a color you have been promised, select that move
 
         # LLM Player
         else:
-            from prompts import generate_trade_proposal_prompt
             player_context = self.generate_player_context_message(game, grid)
             best_path = self.best_routes(grid)[0]
-            user_message = generate_trade_proposal_prompt(
+            user_message = prompts.generate_trade_proposal_prompt(self,
                 player_context=player_context,
                 resources_required_for_path=str(best_path["resources_required_for_path"]),
                 current_resources=str(dict(self.resources)),
-                resources_missing_due_to_insufficient_inventory=str(best_path["resources_missing_due_to_insufficient_inventory"]),
-                pay4partner_info=self.generate_pay4partner_mode_info()
+                resources_missing_due_to_insufficient_inventory=str(best_path["resources_missing_due_to_insufficient_inventory"])
             )
 
             # Prepare messages for this request
@@ -427,15 +399,10 @@ In order to move onto a tile of a color you have been promised, select that move
             game.logger.log_player_prompt(game.turn, self.name, self.model_name, "trade_proposal", system_prompt, user_prompt)
 
             # Make the API call
-            response = self.client.chat.completions.create(
-                model=self.model,
-                temperature=self.temperature,
-                messages=current_messages,
-                max_completion_tokens=2000)
-            trade_proposal = response.choices[0].message.content.strip().lower()
+            trade_proposal = self.get_completion(current_messages, max_completion_tokens=2000)
 
             # Log response to verbose logger with full response
-            game.logger.log_player_response(game.turn, self.name, self.model_name, "trade_proposal", response.choices[0].message.content)
+            game.logger.log_player_response(game.turn, self.name, self.model_name, "trade_proposal", trade_proposal)
 
             # Save to history if enabled
             if self.with_message_history:
@@ -510,13 +477,12 @@ In order to move onto a tile of a color you have been promised, select that move
                     print(reject_message)
                     return False
         else:
-            from prompts import generate_trade_response_prompt
             player_context = self.generate_player_context_message(game, grid)
-            user_message = generate_trade_response_prompt(
+            user_message = prompts.generate_trade_response_prompt(
+                self,
                 player_context=player_context,
                 resources_to_offer=resources_to_offer,
-                resources_to_receive=resources_to_receive,
-                pay4partner_info=self.generate_pay4partner_mode_info(short_summary=True)
+                resources_to_receive=resources_to_receive
             )
 
             # Prepare messages for this request
@@ -529,12 +495,7 @@ In order to move onto a tile of a color you have been promised, select that move
             game.logger.log_player_prompt(game.turn, self.name, self.model_name, "trade_response", system_prompt, user_prompt)
             
             # Make the API call to get rade response
-            response = self.client.chat.completions.create(
-                model=self.model,
-                temperature=self.temperature,
-                messages=current_messages,
-                max_completion_tokens=1000)
-            accept_trade = response.choices[0].message.content.strip().lower()
+            accept_trade = self.get_completion(current_messages)
             
             # Determine the actual decision made
             first_word = accept_trade.split()[0] if accept_trade.split() else ""
@@ -611,12 +572,12 @@ In order to move onto a tile of a color you have been promised, select that move
         
     
     def agree_to_pay4partner(self, other_player, color, game, grid):
-        from prompts import generate_pay4partner_prompt
+        
         player_context = self.generate_player_context_message(game, grid)
         agreements = [agreement['text_summary'] for agreement in self.pay4partner_log if agreement['with'] == other_player.name]
-        message = generate_pay4partner_prompt(
+        message = prompts.generate_pay4partner_prompt(
+            self, 
             player_context=player_context,
-            pay4partner_info=self.generate_pay4partner_mode_info(short_summary=True),
             color=color,
             agreements=agreements
         )
@@ -634,12 +595,7 @@ In order to move onto a tile of a color you have been promised, select that move
             current_messages.append({"role": "user", "content": message})
 
             # Make the API call
-            response = self.client.chat.completions.create(
-                model=self.model,
-                temperature=self.temperature,
-                messages=current_messages,
-                max_completion_tokens=1000)
-            agree = response.choices[0].message.content.strip().lower()
+            agree = self.get_completion(current_messages)
             
             # Log response to verbose logger
             game.logger.log_player_response(game.turn, self.name, self.model_name, "pay4partner", agree)
@@ -656,6 +612,19 @@ In order to move onto a tile of a color you have been promised, select that move
                 return True
             else:
                 return False
+    
+    
+    def generate_contract_prompt(self, player_context):
+        
+        return prompts.generate_contract_prompt(player_context)
+    
+    def get_completion(self, messages, max_completion_tokens=1000):
+        response = self.client.chat.completions.create(
+                model=self.model,
+                temperature=self.temperature,
+                messages=messages,
+                max_completion_tokens=max_completion_tokens)
+        return response.choices[0].message.content.strip().lower()
 
 def get_last_alphabetic_word(text):
                 # Find all alphabetic words in the text
