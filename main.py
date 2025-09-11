@@ -30,6 +30,7 @@ CONFIG = replace(
     with_context=True,  # Enable turn history between players
     with_message_history=False,  # Enable conversation memory for each player
     pay4partner=False,  # Enable 'pay for partner' mode
+    contract_type='strict'
 )
 
 

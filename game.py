@@ -1,6 +1,8 @@
 from collections import Counter, defaultdict
 import copy
+import json
 import random
+import re
 from time import sleep
 
 import pygame
@@ -8,8 +10,10 @@ from tabulate import tabulate
 
 from constants import AVAILABLE_COLORS, COLOR_MAP, TILE_SIZE, FPS
 from grid import Grid
+from judge import JUDGE
 from logger import Logger
 from player import Player
+import prompts
 from utils import freeze
 
 
@@ -39,6 +43,8 @@ class Game:
         self.initial_resources = {player.name: dict(player.resources) for player in self.players}
         # trade version
         self.pay4partner = self.config.pay4partner
+        self.contract_type = self.config.contract_type
+        self.contract = None
 
         # Game State Initialization
         self.initialize_player_positions()
@@ -239,6 +245,7 @@ class Game:
         print("="*60)
         
         # Initialize logging for this turn (and config on first turn)
+        
         if self.turn == 0:
             self.logger.log_game_config(self.config, self.players, self.grid)
         self.logger.log_turn_start(self.turn)
@@ -274,9 +281,30 @@ class Game:
 
             trade_result = None
             move_result = None
+            
 
-            # Handle trade proposal
-            propose_trade = player.propose_trade(self.grid, self)
+            # create a contract if in contract mode
+            if self.contract_type is not None:
+                propose_trade = None
+                if self.turn == 0:
+                    
+                    contracts = self.come_up_with_contract(self.players)
+                    if contracts:
+                        print(f"contract made! {contracts}")
+                        self.contract = contracts['contract']
+                        for player in self.players:
+                            if player.id == '0':
+                                player.contract = contracts['contract_for_0']
+                            elif player.id == '1':
+                                player.contract = contracts['contract_for_1']
+                                print(f"player {player.id} contract: {player.contract}")
+                        break
+                    else:
+                        print("contract not made, trying again.")
+            # otherwise Handle trade proposal
+            else:
+                propose_trade = player.propose_trade(self.grid, self)
+            
             if propose_trade and propose_trade is not None:
                 # Record the trade proposal
                 player_turn_data[player.name]['trade_proposed'] = propose_trade
@@ -308,7 +336,7 @@ class Game:
                 else:
                     print(f"{player_label}'s trade proposal was invalid: {trade_result['message']}")
                     player_turn_data[player.name]['trade_proposal_outcome'] = 'invalid'
-            else:
+            elif self.contract_type is None:
                 print(f"{player_label} chose not to trade")
 
             # Record resources after trades (before moves)
@@ -316,6 +344,7 @@ class Game:
             
         # Handle moves after all trades are done
         for player in players:
+            print(f"player id: {player.id}")
             if player.has_finished():
                 continue
                 
@@ -338,6 +367,14 @@ class Game:
                         move_result = move
                         player_turn_data[player.name]['move_made'] = move
                         print(f"{player_label} moved to {move} via pay4partner.")
+                elif self.contract is not None:
+                    if move in (tuple(map(int, key.strip("()").split(","))) for key in self.contract.keys() if re.match(r"^\(\d+,\s*\d+\)$", key)):
+                        print(f"{player_label} is attempting to move to {move} under contract terms.")
+                        self.handle_contract_move(player, move)
+                        player.move(move, self.grid)
+                        move_result = move
+                        player_turn_data[player.name]['move_made'] = move
+                        print(f"{player_label} moved to {move} under contract terms.")
                 else:
                     move_result = "invalid_move"
             
@@ -403,6 +440,7 @@ class Game:
                     # Clear for next turn
                     delattr(self, 'current_turn_summary')
                     print("="*60 + "\n")
+
                     
 
     def handle_pay4partner_move(self, player, move):
@@ -421,7 +459,14 @@ class Game:
         else:
             print(f"{partner.name} declined pay4partner, move not executed.")
             return False
-            
+    
+    def handle_contract_move(self, player, move):
+        partner = next((p for p in self.players if p.name != player.name), None)
+        r, c = move
+        color = self.grid.get_color(r, c)
+        partner.resources[color] -= 1
+        player.resources[color] += 1
+        
     
     def handle_trade(self, player, propose_trade, player_turn_data):
         """
@@ -518,6 +563,91 @@ class Game:
             print(f"An error occurred while handling the trade: {e}")
             return False
 
+    
+    def come_up_with_contract(self, players):
+        """
+        Facilitates a contract negotiation between two players, formats the contract using a judge,
+        and ensures both players agree to the final contract.
+        """
+        for player in players:
+            print(player.id)
+        def message_starts_or_ends_with_agree(text):
+    
+            # Find all alphabetic words in the text
+            words = re.findall(r"[a-zA-Z]+", text)
+            # Return the last word if the list is not empty
+            if words:
+                return words[0] == 'agree' or words[-1] == "agree"
+            return False
+        print("attempting to create a contract")
+        # Initialize conversation history for both players
+        player_0 = players[0]
+        player_1 = players[1]
+        history_0 = [{"role": "system", "content": player_0.generate_contract_prompt(player_0.generate_player_context_message(self, self.grid))}]
+        history_1 = [{"role": "system", "content": player_1.generate_contract_prompt(player_1.generate_player_context_message(self, self.grid))}]
+        print(f"history 0  starting off: \n {history_0}")
+        n_exchanges = 5
+
+        # Seed the conversation
+        initial_message = "Let's begin negotiation to come up with a contract. What would you like to propose?"
+        history_0.append({"role": "user", "content": initial_message})
+        history_1.append({"role": "assistant", "content": initial_message})
+
+        # Alternating dialogue
+        agree = False
+        for turn in range(n_exchanges):  # Number of exchanges
+            turn_message = f"Turn: {turn + 1}" if turn < n_exchanges - 1 else "Turn: {turn + 1} (final turn)"
+            print(turn_message)
+
+            response_1 = ""
+            response_0 = player_0.get_completion(history_0)
+            # print(f"Player 0: {response_0}")
+            history_0.append({"role": "assistant", "content": response_0})
+            history_1.append({"role": "user", "content": response_0})
+            if message_starts_or_ends_with_agree(response_0.lower()) and message_starts_or_ends_with_agree(response_1.lower()):
+                agree = True
+                break
+
+            # Player 1 replies
+            response_1 = player_1.get_completion(history_1)
+            # print(f"Player 1: {response_1}")
+            history_1.append({"role": "assistant", "content": f"{turn_message}: {response_1}"})
+            history_0.append({"role": "user", "content": f"{turn_message}: {response_1}"})
+
+            if message_starts_or_ends_with_agree(response_0.lower()) and message_starts_or_ends_with_agree(response_1.lower()):
+                agree = True
+                break
+        if agree == True:
+            print("Agreement reached!!")
+            print(f"0: {history_0}")
+            print(f"1: {history_1}")
+            
+            conversation_formatted = JUDGE.format_conversation_for_contract(history_0, players, history_pov=0)
+            judge_contract = JUDGE.create_contract(conversation_formatted)
+            print(f"Raw judge contract: {judge_contract}")
+            contract_for_0 = JUDGE.format_contract_for_player(judge_contract, player_0)
+            print(f"contract for 0 {contract_for_0}")
+            contract_for_1 = JUDGE.format_contract_for_player(judge_contract, player_1)
+            print(f"contract for 1 {contract_for_1}")
+
+            history_0.append({"role": "user", "content": prompts.generate_agree_to_final_contract_prompt(contract_for_0)})
+            
+            history_1.append({"role": "user", "content": prompts.generate_agree_to_final_contract_prompt(contract_for_1)})
+
+            agree_0 = player_0.get_completion(history_0)
+            agree_1 = player_1.get_completion(history_1)
+            print(f"0: {history_0}")
+            print(agree_0)
+            
+            print(f"1: {history_1}")
+            print(agree_1)
+
+            if message_starts_or_ends_with_agree(agree_0) and message_starts_or_ends_with_agree(agree_1):
+                
+                return {'contract': judge_contract, 'contract_for_0': contract_for_0, 'contract_for_1': contract_for_1}
+
+    
+    
     def validate_trade(self, player, propose_trade):
         """
         Validate a trade proposal.
