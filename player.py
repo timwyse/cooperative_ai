@@ -250,7 +250,7 @@ class Player:
                 resources_required_for_path=str(self.best_routes(grid)[0]["resources_required_for_path"]),
                 resources_missing=str(self.best_routes(grid)[0]["resources_missing_due_to_insufficient_inventory"]),
             )
-            print(f"move prompt:\n{user_message}\n")
+            
             # Prepare messages for this request
             current_messages = list(self.messages) if self.with_message_history else [{"role": "system",
                                                                                        "content": self.system_prompt.format(
@@ -276,7 +276,8 @@ class Player:
                     {"role": "assistant", "content": move}
                 ])
             player_label = self.get_player_label(game)
-            print(f"{player_label} proposed a move: {move}")
+            print(f"""{player_label} proposed a move:
+                    {move}""")
 
             def ends_with_n(text: str) -> bool:
                 """
