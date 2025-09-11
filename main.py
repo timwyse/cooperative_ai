@@ -29,8 +29,8 @@ CONFIG = replace(
     display_gui=True,  # Disable Pygame window, only show console output
     with_context=True,  # Enable turn history between players
     with_message_history=False,  # Enable conversation memory for each player
-    pay4partner=False,  # Enable 'pay for partner' mode
-    contract_type='strict'
+    pay4partner=True,  # Enable 'pay for partner' mode
+    # contract_type='strict'
 )
 
 
