@@ -10,21 +10,22 @@ Generates N_SAMPLES random paths for a 6 by 6 grid with all blue and red tiles e
 7-12: Equivalent paths from red POV
 
 Writes them to a jsonl.
-Note that 37_C_17 > 2B so we generate random grids instead of all grids. 
+Note that 37_C_17 > 2B so we generate random grids instead of all grids.
 """
 
 import random
 import json
+import os
 from concurrent.futures import ProcessPoolExecutor
 from tqdm import tqdm
 
 # === CONFIG ===
-N_SAMPLES = 1_000_000   # number of random grids 
+N_SAMPLES = 1_000_000   # number of random grids
 N = 6
 rows, cols = 6 , 6
 num_B = 17
 MAX_LEN = 15
-
+OUTPUT_FILE = f"random_boards_classification_{rows}x{cols}.jsonl"
 # fixed greens
 fixed = {(0, 0): 'G', (rows-1, cols-1): 'G'}
 
@@ -127,6 +128,101 @@ def check_path_conditions(grid):
         }
 
 
+def classify_board(conditions):
+    """Analyzes boolean conditions to calculate metrics and classify the board."""
+    # Minimum and Maximum trades for the most efficient (10-step) path
+    b_min_trades = -1
+    if conditions['B_10_path']:
+        b_min_trades = 0
+    elif conditions['B_1_trade']:
+        b_min_trades = 1
+    elif conditions['B_2_trade']:
+        b_min_trades = 2
+    elif conditions['B_3_trade']:
+        b_min_trades = 3
+
+    r_min_trades = -1
+    if conditions['R_10_path']:
+        r_min_trades = 0
+    elif conditions['R_1_trade']:
+        r_min_trades = 1
+    elif conditions['R_2_trade']:
+        r_min_trades = 2
+    elif conditions['R_3_trade']:
+        r_min_trades = 3
+
+    b_max_trades = -1
+    if conditions['B_3_trade']:
+        b_max_trades = 3
+    elif conditions['B_2_trade']:
+        b_max_trades = 2
+    elif conditions['B_1_trade']:
+        b_max_trades = 1
+    elif conditions['B_10_path']:
+        b_max_trades = 0
+
+    r_max_trades = -1
+    if conditions['R_3_trade']:
+        r_max_trades = 3
+    elif conditions['R_2_trade']:
+        r_max_trades = 2
+    elif conditions['R_1_trade']:
+        r_max_trades = 1
+    elif conditions['R_10_path']:
+        r_max_trades = 0
+
+    # Efficiency Choice Score
+    b_efficiency_choice_score = -1
+    if b_min_trades != -1 and b_max_trades != -1:
+        b_efficiency_choice_score = b_max_trades - b_min_trades
+
+    r_efficiency_choice_score = -1
+    if r_min_trades != -1 and r_max_trades != -1:
+        r_efficiency_choice_score = r_max_trades - r_min_trades
+
+    # Asymmetry Metric
+    trade_asymmetry = -1
+    if b_min_trades != -1 and r_min_trades != -1:
+        trade_asymmetry = abs(b_min_trades - r_min_trades)
+
+    # CLASSIFY BOARD INTO BUCKETS
+    bucket = "Uncategorized"
+
+    # This checks if a long, pure path exists
+    b_has_long_pure_path = conditions['B_12_path'] or conditions['B_14_path']
+    r_has_long_pure_path = conditions['R_12_path'] or conditions['R_14_path']
+
+    if b_min_trades > 0 and r_min_trades > 0:
+        bucket = "Mutual Dependency"
+    elif b_min_trades > 0 and r_min_trades == 0:
+        bucket = "Needy Player (Blue)"
+    elif r_min_trades > 0 and b_min_trades == 0:
+        bucket = "Needy Player (Red)"
+
+    # This captures the dilemma between a short/traded path and a long/pure path.
+    elif b_min_trades > 0 and b_has_long_pure_path:
+        bucket = "Path vs. Purity Dilemma (Blue)"
+    elif r_min_trades > 0 and r_has_long_pure_path:
+        bucket = "Path vs. Purity Dilemma (Red)"
+
+    elif b_min_trades > 0 and b_efficiency_choice_score > 0:
+        bucket = "Efficiency Trade-Off (Blue)"
+    elif r_min_trades > 0 and r_efficiency_choice_score > 0:
+        bucket = "Efficiency Trade-Off (Red)"
+    elif b_min_trades == 0 and r_min_trades == 0:
+        bucket = "Independent (Both have optimal paths)"
+
+    metrics = {
+        'b_min_trades_efficient_path': b_min_trades,
+        'b_max_trades_efficient_path': b_max_trades,
+        'b_efficiency_choice_score': b_efficiency_choice_score,
+        'r_min_trades_efficient_path': r_min_trades,
+        'r_max_trades_efficient_path': r_max_trades,
+        'r_efficiency_choice_score': r_efficiency_choice_score,
+        'trade_asymmetry': trade_asymmetry
+    }
+    return {"bucket": bucket, "metrics": metrics}
+
 def build_random_grid(_):
     """Generate one random grid and check its conditions."""
     # sample positions for B
@@ -143,15 +239,37 @@ def build_random_grid(_):
             if grid[r][c] is None:
                 grid[r][c] = 'R'
 
-    # evaluate conditions (adapt to your real function)
     conds = check_path_conditions(grid)
-
-    # return in a readable dict format
-    return {"grid": grid, "conditions": conds}
+    analysis = classify_board(conds)
+    return {"grid": grid, "conditions": conds, "analysis": analysis}
 
 # === MAIN EXECUTION ===
 if __name__ == "__main__":
-    with ProcessPoolExecutor() as executor, open(f"random_boards_and_properties_{rows}_{cols}.jsonl", "w") as f:
-        for result in tqdm(executor.map(build_random_grid, range(N_SAMPLES), chunksize=1000), total=N_SAMPLES):
-            json.dump(result, f)
-            f.write("\n")
+    num_existing = 0
+    try:
+        with open(OUTPUT_FILE, 'r') as f:
+            num_existing = sum(1 for _ in f)
+    except FileNotFoundError:
+        print(f"Output file '{OUTPUT_FILE}' not found. Starting from scratch.")
+        num_existing = 0
+
+    samples_to_generate = N_SAMPLES - num_existing
+
+    if samples_to_generate <= 0:
+        print(f"Goal of {N_SAMPLES} samples already met. Found {num_existing} existing samples.")
+        print("To generate more, increase N_SAMPLES or delete the output file.")
+    else:
+        print(f"Found {num_existing} existing samples. Generating {samples_to_generate} new samples...")
+
+        # Open file in append mode 'a' to add new results without overwriting
+        with ProcessPoolExecutor() as executor, open(OUTPUT_FILE, "a") as f:
+            # Use chunksize for efficiency, sending work to processors in batches
+            chunksize = max(1, min(1000, samples_to_generate // (os.cpu_count() or 1)))
+
+            job = executor.map(build_random_grid, range(samples_to_generate), chunksize=chunksize)
+
+            for result in tqdm(job, total=samples_to_generate, desc="Generating Boards"):
+                json.dump(result, f)
+                f.write("\n")
+
+        print(f"Done. Total samples in file: {N_SAMPLES}")
