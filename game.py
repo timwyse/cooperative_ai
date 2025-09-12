@@ -54,7 +54,6 @@ class Game:
         self.with_context = config.with_context
         self.turn_summaries = [] if self.with_context else None  # List to store summaries of each turn's events
         self.max_possible_score = self.max_possible_score()
-        
         # Pygame Initialization (only if display_gui is True)
         self.display_gui = config.display_gui
         if self.display_gui:
@@ -149,7 +148,7 @@ class Game:
             for player in self.players:
                 player.goal = (random.randint(self.grid_size - self.config.random_goal_block_size, self.grid_size - 1), random.randint(self.grid_size - self.config.random_goal_block_size, self.grid_size - 1))
     
-    
+
     def initialize_game_state(self):
         """Initialize the game state with player positions and resources."""
         state = {}
@@ -217,7 +216,7 @@ class Game:
         # Calculate final scores
         scores = {p.name: (100 + 5 * sum(dict(p.resources).values())) if p.has_finished() else 0 
                  for p in self.players}
-        
+
         # Print final scores
         print("\nFinal Scores:")
         for player_name, score in scores.items():
@@ -330,7 +329,9 @@ class Game:
                             "offered": propose_trade["resources_to_offer"],
                             "requested": propose_trade["resources_to_receive"],
                             "success": trade_executed,
-                            "rejected": not trade_executed
+                            "rejected": not trade_executed,
+                            "proposer_response": player.messages[-1]["content"] if player.with_message_history and len(player.messages) > 0 else "",
+                            "target_response": other_player.messages[-1]["content"] if other_player.with_message_history and len(other_player.messages) > 0 else ""
                         }
                         self.current_turn_summary["trades"].append(trade_summary)
                 else:
@@ -399,7 +400,8 @@ class Game:
                     "from_pos": old_position,
                     "to_pos": move_result if isinstance(move_result, tuple) else None,
                     "success": isinstance(move_result, tuple),
-                    "reason": "successful" if isinstance(move_result, tuple) else move_result
+                    "reason": "successful" if isinstance(move_result, tuple) else move_result,
+                    "response": player.messages[-1]["content"] if player.with_message_history and len(player.messages) > 0 else ""
                 }
                 self.current_turn_summary["moves"].append(move_summary)
                 
@@ -644,7 +646,7 @@ class Game:
                 return None
 
     
-    
+
     def validate_trade(self, player, propose_trade):
         """
         Validate a trade proposal.
@@ -796,7 +798,7 @@ class Game:
                 offset_y = i * offset
                 text = font.render(f"G_{color}", True, COLOR_MAP['BK'])
                 self.screen.blit(text, (gc * TILE_SIZE + 5 + label_space, gr * TILE_SIZE + 5 + offset_y + label_space))
-        
+
         # Draw players and handle multiple players on the same tile
         player_positions = defaultdict(list)
         for player in self.players:

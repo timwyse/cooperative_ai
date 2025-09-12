@@ -16,13 +16,20 @@ def format_turn_summary_for_player(turn_summary, turn_number, player_name, pay4p
             summary.append(f"{proposer} proposed trade to {target}:")
             summary.append(f"- {proposer} offered: {trade['offered']}")
             summary.append(f"- {proposer} requested: {trade['requested']}")
+            
+            # Show proposer's response if it's the current player
+            if trade['proposer'] == player_name:
+                summary.append(f"You said: {trade.get('proposer_response', '')}")
+            
             # Show acceptance/rejection based on who's the target
             if trade['target'] == player_name:
                 # You were the target, so you made the decision
                 if trade.get("success", False):
                     summary.append("You ACCEPTED the trade")
+                    summary.append(f"You said: {trade.get('target_response', '')}")
                 elif trade.get("rejected", False):
                     summary.append("You REJECTED the trade")
+                    summary.append(f"You said: {trade.get('target_response', '')}")
             else:
                 # The other player was the target, so they made the decision
                 if trade.get("success", False):
@@ -36,9 +43,13 @@ def format_turn_summary_for_player(turn_summary, turn_number, player_name, pay4p
             player_ref = "You" if move['player'] == player_name else "The other player"
             if move["success"]:
                 summary.append(f"MOVE: {player_ref} moved from {move['from_pos']} to {move['to_pos']}")
+                if move['player'] == player_name:
+                    summary.append(f"You said: {move.get('response', '')}")
             else:
                 if move["reason"] == "no_move":
                     summary.append(f"MOVE: {player_ref} did not move")
+                    if move['player'] == player_name:
+                        summary.append(f"You said: {move.get('response', '')}")
     
     # End positions
     if "player_states" in turn_summary:
@@ -68,7 +79,7 @@ def generate_turn_context(game, player):
             turn_num = game.turn - (len(recent_turns) - turn_idx)
             history_entries.append(format_turn_summary_for_player(turn, turn_num, player.name, player.pay4partner))
         
-        recent_history = "\nRecent turn history:\n" + "\n---\n".join(history_entries)
+        recent_history = "\nHISTORY OF EVENTS:" + "\n".join(history_entries)
 
     current_turn = game.turn
     promised_resources_to_give_message = f"- Resources you have promised to give to other players (still yours, not yet given): {player.promised_resources_to_give}" if player.pay4partner else ''
@@ -88,7 +99,5 @@ def generate_turn_context(game, player):
 
 BOARD LAYOUT:
 {game.grid.lm_readable}
-
-HISTORY OF EVENTS:
 {recent_history if recent_history else "This is the first turn."}
 """
