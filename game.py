@@ -35,7 +35,8 @@ class Game:
         # Player Initialization
         self.players = [Player(i, player, self.logger, self.config) for i, player in enumerate(self.config.players)]
         self.n_players = len(self.players)
-
+        self.initialize_fog_of_war()
+        
         # Resource Distribution
         self.distribute_resources()
         
@@ -148,6 +149,20 @@ class Game:
         else:
             for player in self.players:
                 player.goal = (random.randint(self.grid_size - self.config.random_goal_block_size, self.grid_size - 1), random.randint(self.grid_size - self.config.random_goal_block_size, self.grid_size - 1))
+    
+    
+    def initialize_fog_of_war(self):
+        fog_of_war_settings = self.config.fog_of_war
+        if isinstance(fog_of_war_settings, bool):
+            for player in self.players:
+                player.fog_of_war = fog_of_war_settings
+        elif isinstance(fog_of_war_settings, list):
+            if len(fog_of_war_settings) != self.n_players:
+                raise ValueError(f"fog_of_war list must be the same length as number of players. There are {self.n_players} players but fog_of_war is of length {len(fog_of_war_settings)}.")
+            for player, fog in zip(self.players, fog_of_war_settings):
+                if not isinstance(fog, bool):
+                    raise ValueError("fog_of_war list must contain only boolean values (True/False).")
+                player.fog_of_war = fog
     
     
     def initialize_game_state(self):
