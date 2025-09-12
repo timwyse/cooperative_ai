@@ -281,3 +281,26 @@ df[(df['B_10_path'] == False) & ((df['B_12_path'] == True) | (df['B_14_path'] ==
 # %%
 df[(df['B_10_path'] == False) & ((df['B_12_path'] == True) | (df['B_14_path'] == True)) & (df['R_10_path'] == True)].shape
 # %%
+
+
+import pandas as pd
+
+# Path to the JSONL file
+jsonl_file = "board_finder/random_boards_and_properties_6_6.jsonl"
+
+# Load the JSONL file into a pandas DataFrame
+df = pd.read_json(jsonl_file, lines=True)
+
+# Expand the 'conditions' column into separate columns
+conditions_df = pd.json_normalize(df['conditions'])
+
+# Combine the original DataFrame with the expanded conditions DataFrame
+df = pd.concat([df.drop(columns=['conditions']), conditions_df], axis=1)
+
+# Display the formatted DataFrame
+print(df.head())
+# %%
+df.columns
+# %%
+df[(df['B_10_path'] == False) & ((df['B_12_path'] == True) | (df['B_14_path'] == True)) & (df['R_10_path'] == False) & ((df['R_12_path'] == True) | (df['R_14_path'] == True))].iloc[0]['grid']
+# %%
