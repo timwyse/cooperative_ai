@@ -640,7 +640,7 @@ class Player:
     
     def generate_contract_prompt(self, player_context):
         
-        return prompts.generate_contract_prompt(player_context)
+        return prompts.generate_contract_prompt(self.system_prompt, player_context)
     
     def get_completion(self, messages, max_completion_tokens=1000):
         response = self.client.chat.completions.create(

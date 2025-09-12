@@ -167,13 +167,13 @@ Do you agree to pay a {color} resource to cover the other player? Although you p
 """
 
 
-def generate_contract_prompt(player_context):
+def generate_contract_prompt(system_prompt, player_context):
    """
    Generates a system prompt for the players to start coming up with a contract.
    """
    return f"""
 
-{DEFAULT_SYSTEM_PROMPT} 
+{system_prompt} 
 
 
 {player_context}
@@ -181,7 +181,8 @@ def generate_contract_prompt(player_context):
 Think step by step about your possible routes and the resources you will need at each specific tile along your path. 
 Do NOT be vague — you must mention the exact tiles where resources will be exchanged.
 
-Your goal now is to negotiate a contract with the other player. 
+Your are now going to have a conversation with another player (the user you're chatting with) who has different resources and goals to you. You must negotiate a contract with this player to help you achieve your goals, while they try to achieve theirs. 
+
 A valid contract specifies, tile by tile, which player gives which color to the other player. 
 You may propose, counter, or modify the terms set out by the other player. 
 You each have up to 5 turns to speak in order to come to an agreement.

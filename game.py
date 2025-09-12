@@ -589,14 +589,14 @@ class Game:
         # Seed the conversation
         initial_message = "Let's begin negotiation to come up with a contract. What would you like to propose?"
         history_0.append({"role": "user", "content": initial_message})
-        history_1.append({"role": "assistant", "content": initial_message})
+        response_1 = ""
+        # history_1.append({"role": "assistant", "content": initial_message})
 
         # Alternating dialogue
         agree = False
         for turn in range(n_exchanges):  # Number of exchanges
             turn_message = f"Turn: {turn + 1}" if turn < n_exchanges - 1 else "Turn: {turn + 1} (final turn)"
 
-            response_1 = ""
             response_0 = player_0.get_completion(history_0)
             history_0.append({"role": "assistant", "content": response_0})
             history_1.append({"role": "user", "content": response_0})
