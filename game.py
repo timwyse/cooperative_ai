@@ -615,12 +615,20 @@ class Game:
         if agree == True:
             print("Agreement reached! Consulting judge to formalize contract.")
             
+            print(f"Player 0's resources: {player_0.resources}")
+            print(f"Player 0's messages: {history_0}")
+            print(f"Player 1's messages: {history_1}")
+            
             conversation_formatted = JUDGE.format_conversation_for_contract(history_0, players, history_pov=0)
+            print(f"Formatted conversation for judge based off player 0:\n{conversation_formatted}")
+
             judge_contract = JUDGE.create_contract(conversation_formatted)
             print(f"Raw judge contract: {judge_contract}")
             contract_for_0 = JUDGE.format_contract_for_player(judge_contract, player_0)
+            print(f"Contract for player 0:\n{contract_for_0}")
             
             contract_for_1 = JUDGE.format_contract_for_player(judge_contract, player_1)
+            print(f"Contract for player 1:\n{contract_for_1}")
             
 
             history_0.append({"role": "user", "content": prompts.generate_agree_to_final_contract_prompt(contract_for_0)})

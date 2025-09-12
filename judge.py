@@ -14,12 +14,12 @@ class Judge:
     def format_conversation_for_contract(self, conversation, players, history_pov=0):
 
         conversation_formatted = conversation[1:]
-        conversation_formatted = ", \n".join([f"{entry['role']}. {entry['content']} \n" for entry in conversation_formatted])
+        conversation_formatted = ", \n".join([f"{entry['role']}: {entry['content']} \n" for entry in conversation_formatted])
 
         if history_pov == 0:
-            conversation_formatted = conversation_formatted.replace("user:", "player 0:").replace("assistant:", "player 1:")
-        elif history_pov == 1:
             conversation_formatted = conversation_formatted.replace("user:", "player 1:").replace("assistant:", "player 0:")
+        elif history_pov == 1:
+            conversation_formatted = conversation_formatted.replace("user:", "player 0:").replace("assistant:", "player 1:")
         
         return conversation_formatted
         
@@ -36,11 +36,11 @@ Discussion:
 
 Your task:
 1. If no agreement has been reached, reply with exactly:
-"N"
-(no quotes).  
+"N".  
 
-2. Otherwise, output a summary of the contract as valid JSON only, with no extra explanation or text.  
+2. Otherwise, read the discussion and output a summary of the contract as valid JSON only, with no extra explanation or text.  
 Each entry should specify the tile coordinate, the giving player, the receiving player, and the resource color.  
+Make sure to read the entire discussion, and determine for each player which tiles they are asking for resources for, and what the other player is asking for in return.
 
 The JSON format must be:  
 {{
@@ -86,7 +86,6 @@ Example:
 
         try:
             contract = json.loads(contract)
-            print(contract)
             return contract
         except json.JSONDecodeError as e:
             print("⚠️ Failed to parse JSON:", e)
@@ -99,12 +98,6 @@ Example:
                 messages=messages,
                 max_completion_tokens=max_completion_tokens)
         return response.choices[0].message.content.strip().lower()    
-
-    def format_contract_for_player(self, contract, player):
-        if player.id == '0':
-            return contract.lower().replace("player 0", "you").replace("player 1", "the other player")
-        elif player.id == '1':
-            return contract.lower().replace("player 1", "you").replace("player 0", "the other player")
     
     def format_contract_for_player(self, contract, player):
         if not isinstance(contract, dict):
