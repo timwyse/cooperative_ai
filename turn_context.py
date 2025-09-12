@@ -74,6 +74,7 @@ def generate_turn_context(game, player):
     promised_resources_to_give_message = f"- Resources you have promised to give to other players (still yours, not yet given): {player.promised_resources_to_give}" if player.pay4partner else ''
     promised_resources_to_receive_message = f"- Resources you have been promised to receive from other players (still theirs, not yet received): {player.promised_resources_to_receive}" if player.pay4partner else ''
     best_path = player.best_routes(game.grid)[0]['path']
+    fog_of_war_context = "You are in fog of war mode. You can only see the colors of tiles adjacent to your current position. As you move to other tiles you will be able to see the colors of new adjacent tiles" if player.fog_of_war else ""
     
     return f"""
 === GAME STATUS FOR YOU - TURN {current_turn} ===
@@ -86,8 +87,8 @@ def generate_turn_context(game, player):
 - Distance to goal: {player.distance_to_goal()} steps
 - Your estimated best path to your goal (although other paths are possible): {best_path}
 
-BOARD LAYOUT:
-{game.grid.lm_readable}
+BOARD LAYOUT: {fog_of_war_context}
+{player.get_readable_board()}
 
 HISTORY OF EVENTS:
 {recent_history if recent_history else "This is the first turn."}

@@ -24,7 +24,6 @@ class Grid:
             
             self.tiles = [[Tile(color) for color in row] for row in grid]
         self.tile_colors = [[tile.color for tile in row] for row in self.tiles]
-        self.lm_readable = '\n'.join([f'Row {i}: ' + ' '.join(row) for i, row in enumerate(self.tile_colors)])
 
 
     def generate_tiles(self, size, colors):

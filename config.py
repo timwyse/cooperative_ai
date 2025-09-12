@@ -21,6 +21,7 @@ class GameConfig:
     players: Optional[List[str]] = None  # list of Agent namedtuples (see agents.py)
     pay4partner: bool = False # if True, rather than direct trading, players pay their partner to move onto tiles of their color
     contract_type: str = None # if not none, must be one of 'strict', 
+    fog_of_war: Optional[List[bool]] = None  # if True, players can only see the colors of tiles adjacent to their current position; if list, must be same length as players and specifies fog_of_war for each player
 
     # RESOURCE SETTINGS
     surplus: float = 1.5 # Multiplier of the minimum steps required to complete the game. Used to determine how many resources each player starts with.
