@@ -3,7 +3,7 @@
 - generate_turn_context: Generate complete game state and history for a player
 """
 
-def format_turn_summary_for_player(turn_summary, turn_number, player_name, pay4partner=False):
+def format_turn_summary_for_player(turn_summary, turn_number, player_name, pay4partner=False, with_message_history=False):
     """Format turn summary with anonymized player names"""
     summary = [f"\n=== TURN {turn_number} ==="]
     
@@ -19,17 +19,20 @@ def format_turn_summary_for_player(turn_summary, turn_number, player_name, pay4p
             
             # Show proposer's response if it's the current player
             if trade['proposer'] == player_name:
-                summary.append(f"You said: {trade.get('proposer_response', '')}")
+                if with_message_history:
+                    summary.append(f"You said: {trade.get('proposer_response', '')}")
             
             # Show acceptance/rejection based on who's the target
             if trade['target'] == player_name:
                 # You were the target, so you made the decision
                 if trade.get("success", False):
                     summary.append("You ACCEPTED the trade")
-                    summary.append(f"You said: {trade.get('target_response', '')}")
+                    if with_message_history:
+                        summary.append(f"You said: {trade.get('target_response', '')}")
                 elif trade.get("rejected", False):
                     summary.append("You REJECTED the trade")
-                    summary.append(f"You said: {trade.get('target_response', '')}")
+                    if with_message_history:
+                        summary.append(f"You said: {trade.get('target_response', '')}")
             else:
                 # The other player was the target, so they made the decision
                 if trade.get("success", False):
@@ -43,12 +46,12 @@ def format_turn_summary_for_player(turn_summary, turn_number, player_name, pay4p
             player_ref = "You" if move['player'] == player_name else "The other player"
             if move["success"]:
                 summary.append(f"MOVE: {player_ref} moved from {move['from_pos']} to {move['to_pos']}")
-                if move['player'] == player_name:
+                if move['player'] == player_name and with_message_history:
                     summary.append(f"You said: {move.get('response', '')}")
             else:
                 if move["reason"] == "no_move":
                     summary.append(f"MOVE: {player_ref} did not move")
-                    if move['player'] == player_name:
+                    if move['player'] == player_name and with_message_history:
                         summary.append(f"You said: {move.get('response', '')}")
     
     # End positions
@@ -78,7 +81,7 @@ def generate_turn_context(game, player):
         recent_turns = game.turn_summaries[-3:]  # Get last 3 turns
         for turn_idx, turn in enumerate(recent_turns):
             turn_num = game.turn - (len(recent_turns) - turn_idx)
-            history_entries.append(format_turn_summary_for_player(turn, turn_num, player.name, player.pay4partner))
+            history_entries.append(format_turn_summary_for_player(turn, turn_num, player.name, player.pay4partner, player.with_message_history))
 
         recent_history = "\nRecent turn history:\n" + "\n---\n".join(history_entries)
 

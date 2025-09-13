@@ -161,7 +161,7 @@ def generate_pay4partner_prompt(player, player_context, color, agreements):
 Recall the 'pay for other' mode rules:
 {pay4partner_info}
 
-You have been asked by the other player to cover their movement cost onto a tile of color {color} as part of a previous trade agreement. Here are your past aggreements with this player:
+You have been asked by the other player to cover their movement cost onto a tile of color {color} as part of a previous trade agreement. Here are your past agreements with this player:
 {agreements}
 Do you agree to pay a {color} resource to cover the other player? Although you previously agreed to this with the other player, it is not mandatory. Remember that you are trying to maximise your points. List your options and the pros and cons of each, and finish your response with 'yes' if you agree to pay or 'no' if you want to keep those resources.
 """
@@ -229,8 +229,8 @@ This applies only to the tile colors and number of moves specified in the agreem
             else:
                 pay4partner_mode_info += f"""
 In addition to the information above, please consider any promises you're already involved in:
-\n- So far you have promised to give these resources to other players: {promised_resources_to_give if promised_resources_to_give else '{}'}"
-\n- So far you have been promised to receive these resources from other players: {promised_resources_to_receive if promised_resources_to_receive else '{}'}
+\n- So far you have promised to cover these resources for the other player: {promised_resources_to_give if promised_resources_to_give else '{}'}"
+\n- So far you have been promised to be covered for these resources by the other player: {promised_resources_to_receive if promised_resources_to_receive else '{}'}
 In order to move onto a tile of a color you have been promised, select that move as normal and the other player will be asked to cover the cost for you.
 """
             return pay4partner_mode_info

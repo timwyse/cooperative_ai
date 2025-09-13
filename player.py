@@ -201,11 +201,11 @@ class Player:
 
         return best
 
-    def format_turn_summary(self, turn_summary, turn_number):
+    def format_turn_summary(self, turn_summary, turn_number, with_message_history=False):
         """Format turn summary with anonymized player names for AI prompts"""
 
         from turn_context import format_turn_summary_for_player
-        return format_turn_summary_for_player(turn_summary, turn_number, self.name, self.pay4partner)
+        return format_turn_summary_for_player(turn_summary, turn_number, self.name, self.pay4partner, with_message_history)
 
     def generate_player_context_message(self, game, grid):
         """

@@ -339,13 +339,19 @@ class Game:
                                 "player_states": {}
                             }
                         other_player = next(p for p in self.players if p.name != player.name)
+                        # Get the full responses from the players' message history
+                        proposer_response = player.messages[-1]["content"] if player.with_message_history else ""
+                        target_response = other_player.messages[-1]["content"] if other_player.with_message_history else ""
+                        
                         trade_summary = {
                             "proposer": player.name,
                             "target": other_player.name,
                             "offered": propose_trade["resources_to_offer"],
                             "requested": propose_trade["resources_to_receive"],
                             "success": trade_executed,
-                            "rejected": not trade_executed
+                            "rejected": not trade_executed,
+                            "proposer_response": proposer_response,
+                            "target_response": target_response
                         }
                         self.current_turn_summary["trades"].append(trade_summary)
                 else:
@@ -409,12 +415,16 @@ class Game:
                     }
                 
                 # Add this player's move
+                # Get the full response from the player's message history
+                response = player.messages[-1]["content"] if player.with_message_history else ""
+                
                 move_summary = {
                     "player": player.name,
                     "from_pos": old_position,
                     "to_pos": move_result if isinstance(move_result, tuple) else None,
                     "success": isinstance(move_result, tuple),
-                    "reason": "successful" if isinstance(move_result, tuple) else move_result
+                    "reason": "successful" if isinstance(move_result, tuple) else move_result,
+                    "response": response
                 }
                 self.current_turn_summary["moves"].append(move_summary)
                 
@@ -446,7 +456,7 @@ class Game:
                     for p in self.players:
                         if p.model_name != 'human':
                             # Each player gets their own personalized turn summary
-                            player_specific_summary = p.format_turn_summary(self.current_turn_summary, self.turn)
+                            player_specific_summary = p.format_turn_summary(self.current_turn_summary, self.turn, with_message_history=p.with_message_history)
                             p.messages.append({
                                 "role": "system",
                                 "content": player_specific_summary
