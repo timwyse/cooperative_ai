@@ -51,6 +51,8 @@ class Player:
         self.promised_resources_to_give = {color: 0 for color in self.colors}
         self.promised_resources_to_receive = {color: 0 for color in self.colors}
         self.contract = None
+        self.grid = Grid(self.grid_size, self.colors, grid=self.config.grid)
+        self.fog_of_war = False # set in game.py based on config.fog_of_war
 
         # init pay4partner settings
         self.pay4partner = config.pay4partner
@@ -65,6 +67,21 @@ class Player:
         self.messages = [{"role": "system", "content": self.system_prompt.format(player_name="you",
                                                                                  pay4partner_mode_info=self.pay4partner_mode_sys_prompt,
                                                                                  pay4partner_scoring_info=self.pay4partner_scoring_info)}] if self.with_message_history else []
+
+    def get_readable_board(self):
+        print(f"fog of war set to: {self.fog_of_war}")
+        if self.fog_of_war is None or not self.fog_of_war:
+            readable_board = '\n'.join([f'Row {i}: ' + ' '.join(row) for i, row in enumerate(self.grid.tile_colors)])
+            return readable_board
+        else:
+            size = self.grid.size
+            board = [['?' for _ in range(size)] for _ in range(size)]
+            r, c = self.position
+            board[r][c] = self.grid.get_color(r, c)
+            for nr, nc in self.grid.get_adjacent(self.position):
+                board[nr][nc] = self.grid.get_color(nr, nc)
+            readable_board = '\n'.join([f'Row {i}: ' + ' '.join(row) for i, row in enumerate(board)])
+            return readable_board
 
     ## Core Gameplay
     def distance_to_goal(self):
@@ -243,6 +260,7 @@ class Player:
             resources_missing = best_path["resources_missing_due_to_insufficient_inventory"]
 
             player_context = self.generate_player_context_message(game, grid)
+            print(player_context)
             user_message = prompts.generate_move_prompt(self,
                 player_context=player_context,
                 next_move=next_move,
@@ -640,7 +658,7 @@ class Player:
     
     def generate_contract_prompt(self, player_context):
         
-        return prompts.generate_contract_prompt(player_context)
+        return prompts.generate_contract_prompt(self.system_prompt, player_context)
     
     def get_completion(self, messages, max_completion_tokens=1000):
         response = self.client.chat.completions.create(

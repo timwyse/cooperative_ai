@@ -167,25 +167,39 @@ Do you agree to pay a {color} resource to cover the other player? Although you p
 """
 
 
-def generate_contract_prompt(player_context):
+def generate_contract_prompt(system_prompt, player_context):
    """
    Generates a system prompt for the players to start coming up with a contract.
    """
    return f"""
 
-{DEFAULT_SYSTEM_PROMPT} 
+{system_prompt} 
 
 
 {player_context}
 
-Think about your route and the resources you will need at each step.
+Think step by step about your possible routes and the resources you will need at each specific tile along your path. 
+Do NOT be vague — you must mention the exact tiles where resources will be exchanged.
 
-Your goal now is to come up with a contract with the other player in which you state at what tiles you will need a resource from them, and what you offer in return to the other player. They will negotiate the terms of the trade with you and agree or accept. You have 5 turns each to speak in order to come up with a contract with the other player. The agreed contract must follow exactly the form below:
-For each tile, whether either player gives a color to the other player in order for them to access that tile. 
- 
-IMPORTANT: when you agree to a contract, make sure the last word you say is 'agree'!
- 
-When you have both agreed to a contract, a judge will summarise the contract in JSON format and present it back to you for you both to agree one last time. 
+Your are now going to have a conversation with another player (the user you're chatting with) who has different resources and goals to you. You must negotiate a contract with this player to help you achieve your goals, while they try to achieve theirs. 
+
+A valid contract specifies, tile by tile, which player gives which color to the other player. 
+You may propose, counter, or modify the terms set out by the other player. 
+You each have up to 5 turns to speak in order to come to an agreement.
+
+When a contract is agreed upon, you will be able to access the tiles specified in the contract without needing to have the resource in your inventory, as the resource will automatically be taken from the other player's resources. The same is true for the other player. Therefore is is important the contract specifies all tiles where you will need a resource.
+
+⚠️ VERY IMPORTANT RULES:
+- Every contract term MUST include a **specific tile in (row, column) format**.  
+- Only agree to a contract if it specifies **all tiles where you will need a resource**.  
+- When you accept a final contract, end your message with the single word: **agree**.  
+
+Example of a snippet of a valid contract:
+
+(row, col): I give You a <Color>
+(row, col): You give me a <Color>
+
+When you have both agreed to a contract, a judge will summarise the contract in JSON format and present it back to you for you both to agree one last time.
 """
 
 

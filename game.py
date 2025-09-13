@@ -35,7 +35,8 @@ class Game:
         # Player Initialization
         self.players = [Player(i, player, self.logger, self.config) for i, player in enumerate(self.config.players)]
         self.n_players = len(self.players)
-
+        self.initialize_fog_of_war()
+        
         # Resource Distribution
         self.distribute_resources()
         
@@ -54,6 +55,7 @@ class Game:
         self.with_context = config.with_context
         self.turn_summaries = [] if self.with_context else None  # List to store summaries of each turn's events
         self.max_possible_score = self.max_possible_score()
+        
         # Pygame Initialization (only if display_gui is True)
         self.display_gui = config.display_gui
         if self.display_gui:
@@ -148,7 +150,21 @@ class Game:
             for player in self.players:
                 player.goal = (random.randint(self.grid_size - self.config.random_goal_block_size, self.grid_size - 1), random.randint(self.grid_size - self.config.random_goal_block_size, self.grid_size - 1))
     
-
+    
+    def initialize_fog_of_war(self):
+        fog_of_war_settings = self.config.fog_of_war
+        if isinstance(fog_of_war_settings, bool):
+            for player in self.players:
+                player.fog_of_war = fog_of_war_settings
+        elif isinstance(fog_of_war_settings, list):
+            if len(fog_of_war_settings) != self.n_players:
+                raise ValueError(f"fog_of_war list must be the same length as number of players. There are {self.n_players} players but fog_of_war is of length {len(fog_of_war_settings)}.")
+            for player, fog in zip(self.players, fog_of_war_settings):
+                if not isinstance(fog, bool):
+                    raise ValueError("fog_of_war list must contain only boolean values (True/False).")
+                player.fog_of_war = fog
+    
+    
     def initialize_game_state(self):
         """Initialize the game state with player positions and resources."""
         state = {}
@@ -216,7 +232,7 @@ class Game:
         # Calculate final scores
         scores = {p.name: (100 + 5 * sum(dict(p.resources).values())) if p.has_finished() else 0 
                  for p in self.players}
-
+        
         # Print final scores
         print("\nFinal Scores:")
         for player_name, score in scores.items():
@@ -329,9 +345,7 @@ class Game:
                             "offered": propose_trade["resources_to_offer"],
                             "requested": propose_trade["resources_to_receive"],
                             "success": trade_executed,
-                            "rejected": not trade_executed,
-                            "proposer_response": player.messages[-1]["content"] if player.with_message_history and len(player.messages) > 0 else "",
-                            "target_response": other_player.messages[-1]["content"] if other_player.with_message_history and len(other_player.messages) > 0 else ""
+                            "rejected": not trade_executed
                         }
                         self.current_turn_summary["trades"].append(trade_summary)
                 else:
@@ -400,8 +414,7 @@ class Game:
                     "from_pos": old_position,
                     "to_pos": move_result if isinstance(move_result, tuple) else None,
                     "success": isinstance(move_result, tuple),
-                    "reason": "successful" if isinstance(move_result, tuple) else move_result,
-                    "response": player.messages[-1]["content"] if player.with_message_history and len(player.messages) > 0 else ""
+                    "reason": "successful" if isinstance(move_result, tuple) else move_result
                 }
                 self.current_turn_summary["moves"].append(move_summary)
                 
@@ -591,14 +604,14 @@ class Game:
         # Seed the conversation
         initial_message = "Let's begin negotiation to come up with a contract. What would you like to propose?"
         history_0.append({"role": "user", "content": initial_message})
-        history_1.append({"role": "assistant", "content": initial_message})
+        response_1 = ""
+        # history_1.append({"role": "assistant", "content": initial_message})
 
         # Alternating dialogue
         agree = False
         for turn in range(n_exchanges):  # Number of exchanges
             turn_message = f"Turn: {turn + 1}" if turn < n_exchanges - 1 else "Turn: {turn + 1} (final turn)"
 
-            response_1 = ""
             response_0 = player_0.get_completion(history_0)
             history_0.append({"role": "assistant", "content": response_0})
             history_1.append({"role": "user", "content": response_0})
@@ -617,12 +630,20 @@ class Game:
         if agree == True:
             print("Agreement reached! Consulting judge to formalize contract.")
             
+            print(f"Player 0's resources: {player_0.resources}")
+            print(f"Player 0's messages: {history_0}")
+            print(f"Player 1's messages: {history_1}")
+            
             conversation_formatted = JUDGE.format_conversation_for_contract(history_0, players, history_pov=0)
+            print(f"Formatted conversation for judge based off player 0:\n{conversation_formatted}")
+
             judge_contract = JUDGE.create_contract(conversation_formatted)
             print(f"Raw judge contract: {judge_contract}")
             contract_for_0 = JUDGE.format_contract_for_player(judge_contract, player_0)
+            print(f"Contract for player 0:\n{contract_for_0}")
             
             contract_for_1 = JUDGE.format_contract_for_player(judge_contract, player_1)
+            print(f"Contract for player 1:\n{contract_for_1}")
             
 
             history_0.append({"role": "user", "content": prompts.generate_agree_to_final_contract_prompt(contract_for_0)})
@@ -646,7 +667,7 @@ class Game:
                 return None
 
     
-
+    
     def validate_trade(self, player, propose_trade):
         """
         Validate a trade proposal.
@@ -798,7 +819,7 @@ class Game:
                 offset_y = i * offset
                 text = font.render(f"G_{color}", True, COLOR_MAP['BK'])
                 self.screen.blit(text, (gc * TILE_SIZE + 5 + label_space, gr * TILE_SIZE + 5 + offset_y + label_space))
-
+        
         # Draw players and handle multiple players on the same tile
         player_positions = defaultdict(list)
         for player in self.players:
