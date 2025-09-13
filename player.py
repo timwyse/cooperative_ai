@@ -447,7 +447,10 @@ class Player:
                 return None
 
             player_label = self.get_player_label(game)
-            print(f"\n{player_label} proposes trade:")
+            if self.pay4partner:
+                print(f"\n{player_label} proposes Pay for Partner trade:")
+            else:
+                print(f"\n{player_label} proposes trade:")
             try:
                 match = re.search(r"\{.*\}", trade_proposal, re.DOTALL)
                 if match:
@@ -469,8 +472,12 @@ class Player:
                         cleaned = self.clean_trade_proposal(trade_proposal, grid, game)
                         if cleaned:
                             trade_proposal = cleaned
-                            print(f"- Offering: {trade_proposal['resources_to_offer']}")
-                            print(f"- Requesting: {trade_proposal['resources_to_receive']}")
+                            if self.pay4partner:
+                                print(f"- Offering to cover: {trade_proposal['resources_to_offer']}")
+                                print(f"- Requesting to be covered for: {trade_proposal['resources_to_receive']}")
+                            else:
+                                print(f"- Offering: {trade_proposal['resources_to_offer']}")
+                                print(f"- Requesting: {trade_proposal['resources_to_receive']}")
                         else:
                             print("- Invalid trade proposal")
                     except json.JSONDecodeError as e:

@@ -272,8 +272,10 @@ class Game:
         for player in players:
             player_label = player.get_player_label(self)
             if player.has_finished():
-                print(f"{player_label} ({player.model_name}) has already finished the game.")
-                continue
+                if not self.pay4partner or not any(v > 0 for v in player.promised_resources_to_give.values()):
+                    print(f"{player_label} ({player.model_name}) has already finished the game.")
+                    continue
+                print(f"{player_label} ({player.model_name}) has finished but has promised to cover some moves for their partner.")
 
             print(f"\n{player_label} ({player.model_name})'s turn:")
             
@@ -366,12 +368,18 @@ class Game:
         # Handle moves after all trades are done
         for player in players:
 
-            if player.has_finished():
-                continue
-                
             player_label = player.get_player_label(self)
             old_position = player.position
-            move = player.come_up_with_move(self, self.grid)
+            
+            # For finished players in pay4partner mode
+            if player.has_finished():
+                if not self.pay4partner or not any(v > 0 for v in player.promised_resources_to_give.values()):
+                    continue
+                # Skip their own moves but stay in the loop to potentially cover partner's moves
+                move = None
+            else:
+                # Only try to move if not finished
+                move = player.come_up_with_move(self, self.grid)
             if move is None:
                 print(f"{player_label} did not move.")
                 move_result = "no_move"
@@ -567,13 +575,16 @@ class Game:
                 # Print trade outcome
                 proposer_label = player.get_player_label(self)
                 target_label = other_player.get_player_label(self)
-                print(f"\nTrade accepted between {proposer_label} and {target_label}")
+                if self.pay4partner:
+                    print(f"\nPay for partner trade accepted between {proposer_label} and {target_label}")
+                else:
+                    print(f"\nTrade accepted between {proposer_label} and {target_label}")
                 print(f"- {proposer_label} now has: {dict(player.resources)}")
                 print(f"- {target_label} now has: {dict(other_player.resources)}")
                 if self.pay4partner:
                     print('Additionally:')
-                    print(f"- {proposer_label} has promised to give: {dict(player.promised_resources_to_give)}")
-                    print(f"- {target_label} has promised to give: {dict(other_player.promised_resources_to_give)}")
+                    print(f"- {proposer_label} has promised to cover: {dict(player.promised_resources_to_give)}")
+                    print(f"- {target_label} has promised to cover: {dict(other_player.promised_resources_to_give)}")
 
                 # Update both players' resources_after_trades
                 player_turn_data[player.name]['resources_after_trades'] = dict(player.resources)
@@ -871,8 +882,8 @@ class Game:
             print(f"""{player_name} ({state['model']}):
                   Resources: {state['resources']}""")
             if self.pay4partner:
-                print(f"Promised to give: {state['promised_to_give']}")
-                print(f"Promised to receive: {state['promised_to_receive']}")
+                print(f"Promised to cover for: {state['promised_to_give']}")
+                print(f"Promised to be covered for: {state['promised_to_receive']}")
         
 
 def draw_player_circle(screen, player, position, radius, offset=(0, 0)):
