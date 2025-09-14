@@ -125,12 +125,17 @@ def generate_turn_context(game, player):
     best_path = player.best_routes(game.grid)[0]['path']
     fog_of_war_context = "You are in fog of war mode. You can only see the colors of tiles adjacent to your current position. As you move to other tiles you will be able to see the colors of new adjacent tiles" if player.fog_of_war else ""
 
+    # Get the other player's resources
+    other_player = [p for p in game.players if p != player][0]
+    other_resources = dict(other_player.resources)
+
     return f"""
 === GAME STATUS FOR YOU - TURN {current_turn} ===
 
 - You are at position {player.position}
 - Your goal is at {player.goal}
 - Your resources: {dict(player.resources)}
+- The other player's resources: {other_resources}
 {promised_resources_to_give_message}
 {promised_resources_to_receive_message}
 - Distance to goal: {player.distance_to_goal()} steps
