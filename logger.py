@@ -178,14 +178,52 @@ class Logger(BaseLogger):
             }
         }
         
-        # Add trade data if exists
+        # Add pay4partner actions if any
+        if player_data.get('broke_promise_for'):
+            # This player broke their promise to someone else
+            player_turn_data["pay4partner"] = {
+                "action": "broke_promise",
+                "promised_color": player_data.get('promised_color'),
+                "broke_promise_for": player_data.get('broke_promise_for')
+            }
+        elif player_data.get('move_type') == 'pay4partner':
+            player_turn_data["pay4partner"] = {
+                "action": "promise_fulfilled",
+                "covered_color": player_data.get('covered_color'),
+                "covered_by": player_data.get('covered_by')
+            }
+        
+        # Add move data if exists
+        if player_data.get('move_made') is not None:
+            move_info = {
+                "move_made": list(player_data['move_made']),
+                "move_type": player_data.get('move_type', 'regular')
+            }
+            # Add coverage info for pay4partner moves
+            if player_data.get('move_type') == 'pay4partner':
+                move_info.update({
+                    "covered_by": player_data.get('covered_by'),
+                    "covered_color": player_data.get('covered_color')
+                })
+            player_turn_data.update(move_info)
+        
+        # Add trade/arrangement data if exists
         trade_proposed = player_data.get('trade_proposed')
         if trade_proposed and trade_proposed.get('resources_to_offer'):
-            player_turn_data["trade"] = {
-                "offer": trade_proposed.get('resources_to_offer', []),
-                "request": trade_proposed.get('resources_to_receive', []),
-                "outcome": player_data.get('trade_proposal_outcome', 'none')
-            }
+            if player_data.get('is_pay4partner', False):
+                # Pay4partner arrangement
+                player_turn_data["arrangement"] = {
+                    "promised_to_cover": trade_proposed.get('resources_to_offer', []),
+                    "requested_coverage": trade_proposed.get('resources_to_receive', []),
+                    "outcome": player_data.get('trade_proposal_outcome', 'none')
+                }
+            else:
+                # Regular trade
+                player_turn_data["trade"] = {
+                    "offer": trade_proposed.get('resources_to_offer', []),
+                    "request": trade_proposed.get('resources_to_receive', []),
+                    "outcome": player_data.get('trade_proposal_outcome', 'none')
+                }
         
         # Add to turn data
         self.log_data["game"]["turns"][str(turn_number)]["players"][player_id] = player_turn_data

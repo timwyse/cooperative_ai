@@ -108,14 +108,12 @@ class Player:
         return self.position == self.goal
 
     ## Player Anonymization Methods
-
     def get_player_label(self, game):
         """Get display label for this player for user/console output"""
         # Just use the standard player name (Player 0, Player 1, etc.)
         return self.name
 
     ## Pathfinding and Strategy
-
     def best_routes(self, grid, top_n=3):
         """
         Runs a BFS to find the top n paths to the player's goal, given their current resources.
@@ -200,6 +198,7 @@ class Player:
         best = top_n_paths(grid, self.position, self.goal, self.resources, n=top_n)
 
         return best
+
 
     def format_turn_summary(self, turn_summary, turn_number, with_message_history=False):
         """Format turn summary with anonymized player names for AI prompts"""
@@ -398,10 +397,10 @@ class Player:
                 print("You must request at least one resource.")
                 return None
 
-                trade_proposal = {
-                    "resources_to_offer": resources_to_offer,
-                    "resources_to_receive": resources_to_receive
-                }
+            trade_proposal = {
+                "resources_to_offer": resources_to_offer,
+                "resources_to_receive": resources_to_receive
+            }
 
             return self.clean_trade_proposal(trade_proposal, grid, game)
 
@@ -447,11 +446,13 @@ class Player:
                 return None
 
             player_label = self.get_player_label(game)
-            print(f"\n{player_label} proposes trade:")
+            if self.pay4partner:
+                print(f"\n{player_label} proposes Pay for Partner trade:")
+            else:
+                print(f"\n{player_label} proposes trade:")
             try:
                 match = re.search(r"\{.*\}", trade_proposal, re.DOTALL)
                 if match:
-
                     json_str = match.group(0)
                     try:
                         trade_proposal = json.loads(json_str)
@@ -469,8 +470,12 @@ class Player:
                         cleaned = self.clean_trade_proposal(trade_proposal, grid, game)
                         if cleaned:
                             trade_proposal = cleaned
-                            print(f"- Offering: {trade_proposal['resources_to_offer']}")
-                            print(f"- Requesting: {trade_proposal['resources_to_receive']}")
+                            if self.pay4partner:
+                                print(f"- Offering to cover: {trade_proposal['resources_to_offer']}")
+                                print(f"- Requesting to be covered for: {trade_proposal['resources_to_receive']}")
+                            else:
+                                print(f"- Offering: {trade_proposal['resources_to_offer']}")
+                                print(f"- Requesting: {trade_proposal['resources_to_receive']}")
                         else:
                             print("- Invalid trade proposal")
                     except json.JSONDecodeError as e:
@@ -619,7 +624,7 @@ class Player:
         )
         if self.model_name == 'human':
             print(
-                f"{self.name}, {other_player.name} is envoking 'pay for partner' and asking you to pay for their move onto a {color} tile.")
+                f"{self.name}, {other_player.name} is invoking 'pay for partner' and asking you to pay for their move onto a {color} tile.")
             while True:
                 agree = input("Do you agree to this? y/n ").strip().lower()
                 if agree not in ('y', 'n'):
@@ -635,8 +640,12 @@ class Player:
                                                                                            pay4partner_scoring_info=self.pay4partner_scoring_info)}]
             current_messages.append({"role": "user", "content": message})
 
-            # Make the API call
+            # Log prompt to verbose logger
+            system_prompt = current_messages[0]["content"]
+            user_prompt = message
+            game.logger.log_player_prompt(game.turn, self.name, self.model_name, "pay4partner", system_prompt, user_prompt)
 
+            # Make the API call
             agree = self.get_completion(current_messages)
             
             # Log response to verbose logger
@@ -650,7 +659,7 @@ class Player:
                 ])
 
             final_response = get_last_alphabetic_word(agree)
-            if "yes" in final_response:
+            if "yes" in final_response or "accept" in final_response or "agree" in final_response:
                 return True
             else:
                 return False
