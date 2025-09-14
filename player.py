@@ -48,6 +48,7 @@ class Player:
         self.resource_mode = config.resource_mode
         self.colors = config.colors
         self.resources = {color: 0 for color in self.colors}
+        self.starting_resources = {color: 0 for color in self.colors}
         self.promised_resources_to_give = {color: 0 for color in self.colors}
         self.promised_resources_to_receive = {color: 0 for color in self.colors}
         self.contract = None

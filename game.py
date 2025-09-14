@@ -90,6 +90,7 @@ class Game:
             print(f"Each player will receive {default_total_num_resources} resources of their assigned color.")
             for player, color in zip(self.players, self.colors):
                 player.resources[color] = default_total_num_resources
+                player.starting_resources = copy.deepcopy(player.resources)
 
         elif self.config.resource_mode == 'random':
             if self.n_players != len(self.colors):
@@ -107,6 +108,7 @@ class Game:
                         resource = resource_pool.pop()
                         player.resources[resource] += 1
                 player.resources = dict(sorted(player.resources.items()))
+                player.starting_resources = copy.deepcopy(player.resources)
         
         elif self.config.resource_mode == 'manual':
             if self.config.manual_resources is None:
@@ -123,7 +125,8 @@ class Game:
                     if color not in AVAILABLE_COLORS:
                         raise ValueError(f"Invalid color '{color}' in manual resources. Available colors are: {AVAILABLE_COLORS}")
                     player.resources[color] += quantity
-                player.resources = dict(sorted(player.resources.items()))    
+                player.resources = dict(sorted(player.resources.items())) 
+                player.starting_resources = copy.deepcopy(player.resources)   
     
     def initialize_player_positions(self):
         if self.config.manual_start_positions:
@@ -178,22 +181,6 @@ class Game:
                 "promised_to_receive": dict(player.promised_resources_to_receive) if self.pay4partner else None,
             }
         return state
-    
-    def max_possible_score(self):
-        """
-        Calculate the maximum possible score for the game.
-        # Each player can score a maximum of 100 points (for reaching their destionation), plus 5 points for each resource remaining
-        Assumes the players start at top-left and have to reach bottom-right.
-        TODO should be based on actual player positions and goals, as well as the scoring logic.
-        """
-        total_resources = 0
-        for player in self.players:
-            total_resources += sum(player.resources.values())
-        min_steps_total = (2 * (self.grid_size - 1)) * self.n_players  
-        max_resources_remaining = total_resources - min_steps_total
-        max_possible_score = 100 * self.n_players + (5 * max_resources_remaining)
-        
-        return max_possible_score
 
     
     # 2. Core Game Loop
