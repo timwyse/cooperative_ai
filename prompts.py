@@ -235,6 +235,7 @@ Do you accept this arrangement?
 IMPORTANT: Respond with EXACTLY one of these words:
 - 'yes' to accept the arrangement
 - 'no' to reject the arrangement
+Don't write anything after your final answer.
 """
 
 def generate_pay4partner_prompt(player, player_context, color, agreements):
@@ -250,6 +251,7 @@ You have been asked by the other player to cover their movement cost onto a tile
 {agreements}
 Do you agree to pay a {color} resource to cover the other player? Although you previously agreed to this with the other player, it is not mandatory. Remember that you are trying to maximise your points. List your options and the pros and cons of each, and finish your response with 'yes' if you agree to pay or 'no' if you want to keep those resources. 
 Do you accept this arrangement? Answer 'yes' or 'no'
+Don't write anything after your final answer.
 """
 
 

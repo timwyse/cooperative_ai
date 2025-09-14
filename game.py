@@ -265,6 +265,15 @@ class Game:
             self.logger.log_game_config(self.config, self.players, self.grid)
         self.logger.log_turn_start(self.turn)
         
+        # Initialize turn summary and player data
+        if self.with_context:
+            self.current_turn_summary = {
+                "trades": [],
+                "moves": [],
+                "pay4partner_actions": [],
+                "player_states": {}
+            }
+        
         # Track player data for event logging
         player_turn_data = {}
 
@@ -321,7 +330,10 @@ class Game:
 
             # otherwise Handle trade proposal
             else:
-                propose_trade = player.propose_trade(self.grid, self)
+                # Skip trade proposals for finished players (they can only fulfill promises, not make new ones)
+                propose_trade = None
+                if not player.has_finished():
+                    propose_trade = player.propose_trade(self.grid, self)
             
             if propose_trade and propose_trade is not None:
                 # Record the trade proposal
@@ -410,17 +422,62 @@ class Game:
                             r, c = move
                             color = self.grid.get_color(r, c)
                             player_turn_data[player.name]['covered_color'] = color
+                            # Add pay4partner action to turn summary
+                            if self.with_context:
+                                self.current_turn_summary["pay4partner_actions"].append({
+                                    "type": "promise_fulfilled",
+                                    "requester": player.name,
+                                    "fulfiller": partner.name,
+                                    "color": color,
+                                    "response": partner.messages[-1]["content"] if partner.with_message_history else ""
+                                })
                         print(f"{player_label} moved to {move} via pay4partner.")
                     else:
                         move_result = "partner declined to fulfill p4p promise"
-                        player_turn_data[player.name]['move_type'] = 'pay4partner_promise_broken'
-                        # Record which partner broke their promise and for what color
+                        # Get partner and color info
                         partner = next((p for p in self.players if p.name != player.name), None)
+                        r, c = move
+                        color = self.grid.get_color(r, c)
+                        
+                        # Record under the player who broke their promise
                         if partner:
-                            player_turn_data[player.name]['promise_broken_by'] = partner.name
-                            r, c = move
-                            color = self.grid.get_color(r, c)
-                            player_turn_data[player.name]['promised_color'] = color
+                            if partner.name not in player_turn_data:
+                                player_turn_data[partner.name] = {
+                                    'position_start': partner.position,
+                                    'position_end': partner.position,
+                                    'resources_start': dict(partner.resources),
+                                    'resources_end': dict(partner.resources),
+                                    'is_pay4partner': self.pay4partner
+                                }
+                            # Record the broken promise but don't affect the move_type
+                            player_turn_data[partner.name]['broke_promise_for'] = player.name
+                            player_turn_data[partner.name]['promised_color'] = color
+                        
+                        # Record in turn summary
+                        if self.with_context:
+                            self.current_turn_summary["pay4partner_actions"].append({
+                                "type": "promise_broken",
+                                "requester": player.name,
+                                "breaker": partner.name if partner else None,
+                                "color": color,
+                                "response": partner.messages[-1]["content"] if partner and partner.with_message_history else ""
+                            })
+                            # Also record the broken promise in the breaker's turn data
+                            if partner:
+                                if not hasattr(self, 'current_turn_summary'):
+                                    self.current_turn_summary = {
+                                        "trades": [],
+                                        "moves": [],
+                                        "pay4partner_actions": [],
+                                        "player_states": {}
+                                    }
+                                self.current_turn_summary["pay4partner_actions"].append({
+                                    "type": "broke_promise",
+                                    "breaker": partner.name,
+                                    "broke_for": player.name,
+                                    "color": color,
+                                    "response": partner.messages[-1]["content"] if partner and partner.with_message_history else ""
+                                })
                 elif self.contract is not None:
                     if move in (tuple(map(int, key.strip("()").split(","))) for key in self.contract.keys() if re.match(r"^\(\d+,\s*\d+\)$", key)):
                         self.handle_contract_move(player, move)
@@ -437,25 +494,23 @@ class Game:
             
             # Collect actions for turn summary
             if self.with_context:
-                if not hasattr(self, 'current_turn_summary'):
-                    # Initialize empty summary for this turn if not initialized before (if no trades happened)
-                    self.current_turn_summary = {
-                        "trades": [],
-                        "moves": [],
-                        "player_states": {}
-                    }
-                
-                # Add this player's move
                 # Get the full response from the player's message history
                 response = player.messages[-1]["content"] if player.with_message_history else ""
                 
+                # Add the move summary
                 move_summary = {
                     "player": player.name,
                     "from_pos": old_position,
                     "to_pos": move_result if isinstance(move_result, tuple) else None,
                     "success": isinstance(move_result, tuple),
                     "reason": "successful" if isinstance(move_result, tuple) else move_result,
-                    "response": response
+                    "response": response,
+                    # Add pay4partner info if relevant
+                    "move_type": player_turn_data[player.name].get('move_type', 'regular'),
+                    "covered_by": player_turn_data[player.name].get('covered_by'),
+                    "covered_color": player_turn_data[player.name].get('covered_color'),
+                    "promise_broken_by": player_turn_data[player.name].get('promise_broken_by'),
+                    "promised_color": player_turn_data[player.name].get('promised_color')
                 }
                 self.current_turn_summary["moves"].append(move_summary)
                 

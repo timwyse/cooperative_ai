@@ -40,19 +40,47 @@ def format_turn_summary_for_player(turn_summary, turn_number, player_name, pay4p
                 elif trade.get("rejected", False):
                     summary.append("The other player REJECTED the trade")
     
+    # Pay4Partner Actions
+    if "pay4partner_actions" in turn_summary and turn_summary["pay4partner_actions"]:
+        for action in turn_summary["pay4partner_actions"]:
+            if action["type"] == "promise_fulfilled":
+                fulfiller = "You" if action["fulfiller"] == player_name else "The other player"
+                requester = "you" if action["requester"] == player_name else "the other player"
+                summary.append(f"PAY4PARTNER: {fulfiller} covered a {action['color']} move for {requester}")
+                if action["fulfiller"] == player_name and with_message_history:
+                    summary.append(f"You said: {action.get('response', '')}")
+            elif action["type"] == "promise_broken":
+                breaker = "You" if action["breaker"] == player_name else "The other player"
+                requester = "you" if action["requester"] == player_name else "the other player"
+                summary.append(f"PAY4PARTNER: {breaker} declined to cover a {action['color']} move for {requester}")
+                if action["breaker"] == player_name and with_message_history:
+                    summary.append(f"You said: {action.get('response', '')}")
+
     # Moves
     if "moves" in turn_summary and turn_summary["moves"]:
         for move in turn_summary["moves"]:
             player_ref = "You" if move['player'] == player_name else "The other player"
             if move["success"]:
-                summary.append(f"MOVE: {player_ref} moved from {move['from_pos']} to {move['to_pos']}")
+                # Base move text
+                move_text = f"MOVE: {player_ref} moved from {move['from_pos']} to {move['to_pos']}"
+                
+                # Add pay4partner details if relevant
+                if move.get('move_type') == 'pay4partner':
+                    other = "You" if move.get('covered_by') == player_name else "The other player"
+                    move_text += f" ({other} covered the {move.get('covered_color')} resource)"
+                
+                summary.append(move_text)
                 if move['player'] == player_name and with_message_history:
                     summary.append(f"You said: {move.get('response', '')}")
             else:
                 if move["reason"] == "no_move":
                     summary.append(f"MOVE: {player_ref} did not move")
-                    if move['player'] == player_name and with_message_history:
-                        summary.append(f"You said: {move.get('response', '')}")
+                elif move.get('move_type') == 'pay4partner_promise_broken':
+                    breaker = "You" if move.get('promise_broken_by') == player_name else "The other player"
+                    summary.append(f"MOVE FAILED: {breaker} declined to cover the promised {move.get('promised_color')} resource")
+                
+                if move['player'] == player_name and with_message_history:
+                    summary.append(f"You said: {move.get('response', '')}")
     
     # End positions
     if "player_states" in turn_summary:

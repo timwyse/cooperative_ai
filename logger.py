@@ -178,6 +178,21 @@ class Logger(BaseLogger):
             }
         }
         
+        # Add pay4partner actions if any
+        if player_data.get('broke_promise_for'):
+            # This player broke their promise to someone else
+            player_turn_data["pay4partner"] = {
+                "action": "broke_promise",
+                "promised_color": player_data.get('promised_color'),
+                "broke_promise_for": player_data.get('broke_promise_for')
+            }
+        elif player_data.get('move_type') == 'pay4partner':
+            player_turn_data["pay4partner"] = {
+                "action": "promise_fulfilled",
+                "covered_color": player_data.get('covered_color'),
+                "covered_by": player_data.get('covered_by')
+            }
+        
         # Add move data if exists
         if player_data.get('move_made') is not None:
             move_info = {
