@@ -54,7 +54,6 @@ class Game:
         self.turn = 0
         self.with_context = config.with_context
         self.turn_summaries = [] if self.with_context else None  # List to store summaries of each turn's events
-        self.max_possible_score = self.max_possible_score()
         
         # Pygame Initialization (only if display_gui is True)
         self.display_gui = config.display_gui
@@ -649,8 +648,20 @@ class Game:
 
             agree_0 = player_0.get_completion(history_0)
             agree_1 = player_1.get_completion(history_1)
+            
+            contract_status = message_starts_or_ends_with_agree(agree_0) and message_starts_or_ends_with_agree(agree_1)
+            # Log the negotiation details
+            self.logger.log_contract_negotiation(
+                turn_number=self.turn,
+                history_0=history_0,
+                history_1=history_1,
+                agree_0=agree_0,
+                agree_1=agree_1,    
+                judge_contract=judge_contract,
+                agreement_status=contract_status
+            )
 
-            if message_starts_or_ends_with_agree(agree_0) and message_starts_or_ends_with_agree(agree_1):
+            if contract_status: 
                 print("Both players agreed to the final contract.")
                 
                 return {'contract': judge_contract, 'contract_for_0': contract_for_0, 'contract_for_1': contract_for_1}
