@@ -251,7 +251,7 @@ class Logger(BaseLogger):
         scores = {str(i): (100 + 5 * sum(dict(p.resources).values())) if p.has_finished() else 0 
                  for i, p in enumerate(players)}
         total_scores = sum(scores.values())
-        max_possible_score = 100 * len(players) + (5 * sum(sum(dict(p.resources).values()) for p in players))
+        max_possible_score = sum(max_possible_score(p) for p in players)
         total_accuracy = total_scores / max_possible_score if max_possible_score > 0 else 0
         
         # Calculate Gini
@@ -303,3 +303,14 @@ def preprocess_details(details):
         return str(obj)  # Fallback to string representation for non-serializable objects
 
     return {key: serialize(value) for key, value in details.items()}
+
+
+def max_possible_score(player):
+    """
+    Calculate the maximum possible score for a player based on their starting resources and grid size.
+    """
+    starting_resources = sum(player.starting_resources.values())
+    min_steps = abs(player.goal[0] - player.start[0]) + abs(player.goal[1] - player.start[1])
+    max_possible_score = 100 + (5 * (starting_resources - min_steps)) if starting_resources >= min_steps else 0
+    
+    return max_possible_score

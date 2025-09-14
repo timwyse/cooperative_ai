@@ -48,6 +48,7 @@ class Player:
         self.resource_mode = config.resource_mode
         self.colors = config.colors
         self.resources = {color: 0 for color in self.colors}
+        self.starting_resources = {color: 0 for color in self.colors}
         self.promised_resources_to_give = {color: 0 for color in self.colors}
         self.promised_resources_to_receive = {color: 0 for color in self.colors}
         self.contract = None
@@ -69,7 +70,6 @@ class Player:
                                                                                  pay4partner_scoring_info=self.pay4partner_scoring_info)}] if self.with_message_history else []
 
     def get_readable_board(self):
-        print(f"fog of war set to: {self.fog_of_war}")
         if self.fog_of_war is None or not self.fog_of_war:
             readable_board = '\n'.join([f'Row {i}: ' + ' '.join(row) for i, row in enumerate(self.grid.tile_colors)])
             return readable_board
