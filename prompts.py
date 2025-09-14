@@ -10,8 +10,8 @@ Movement rules:
 3. You do not pay to remain on your current tile.
 
 Trading rules:
-- You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
-- You may propose trades to other players, or accept trades proposed by others.
+- In regular mode: You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
+- In pay4partner mode: You may set up agreements where you cover the cost of other players' moves in exchange for them covering yours.
 {pay4partner_mode_info}
 
 CRITICAL SCORING RULES - READ CAREFULLY:
@@ -89,8 +89,15 @@ Remember:
 """
 
 def generate_trade_proposal_prompt(player, player_context, resources_required_for_path, current_resources, resources_missing_due_to_insufficient_inventory):
-    pay4partner_info = generate_pay4partner_mode_info(player)
     """Generate prompt for trade proposal decisions."""
+    if player.pay4partner:
+        return generate_pay4partner_proposal_prompt(player, player_context, resources_required_for_path, current_resources, resources_missing_due_to_insufficient_inventory)
+    else:
+        return generate_regular_trade_proposal_prompt(player, player_context, resources_required_for_path, current_resources, resources_missing_due_to_insufficient_inventory)
+
+
+def generate_regular_trade_proposal_prompt(player, player_context, resources_required_for_path, current_resources, resources_missing_due_to_insufficient_inventory):
+    """Generate prompt for regular trade proposal decisions."""
     return f"""
 {player_context}
             
@@ -101,8 +108,6 @@ IMPORTANT: First check if you need to trade at all:
    - Required resources: {resources_required_for_path}
      Your current resources: {current_resources}
    - Required resources not currently in your possession: {resources_missing_due_to_insufficient_inventory}
-
-{pay4partner_info}
 
 2. If you have NO missing resources (empty dict {{}} above), respond with exactly: "n"
 
@@ -142,28 +147,109 @@ Remember:
 Keep your response below 1000 characters.
 """
 
+
+def generate_pay4partner_proposal_prompt(player, player_context, resources_required_for_path, current_resources, resources_missing_due_to_insufficient_inventory):
+    """Generate prompt for pay4partner proposal decisions."""
+    pay4partner_info = generate_pay4partner_mode_info(player)
+    return f"""
+{player_context}
+            
+IMPORTANT: First check if you need any moves covered and arrange any Pay for Partner agreements:
+
+1. Look at your best paths above. For the shortest path:
+
+   - Required resources: {resources_required_for_path}
+     Your current resources: {current_resources}
+   - Required resources not currently in your possession: {resources_missing_due_to_insufficient_inventory}
+
+{pay4partner_info}
+
+2. If you have NO missing resources (empty dict {{}} above), respond with exactly: "n"
+
+   If you have enough resources to reach your goal, say "n"
+
+3. Only if you are missing resources, consider a pay4partner arrangement:
+   - You can only ask them to cover moves onto tiles whose color you're missing
+   - You can only offer to cover moves onto tiles whose color you have
+   - NEVER propose arrangements with yourself
+   - NEVER offer to cover 0 moves
+   - NEVER ask them to cover moves you can already make
+   - Make the arrangement beneficial for both players
+
+Respond in ONE of these two formats:
+
+1. If you want to propose a pay4partner arrangement, use EXACTLY this JSON format (replace values in <>):
+{{
+  "resources_to_offer": [["<color>", <number>]],  # moves you will pay for when the other player makes them
+  "resources_to_receive": [["<color>", <number>]]  # moves you want the other player to pay for when you make them
+}}
+
+Example of valid arrangement:
+{{
+  "resources_to_offer": [["R", 3]],  # you will pay for 3 moves onto Red tiles for them
+  "resources_to_receive": [["B", 2]]  # they will pay for 2 moves onto Blue tiles for you
+}}
+
+2. If you don't want to propose an arrangement, respond with exactly: n
+
+Remember:
+- Use EXACTLY the format shown above
+- Only ONE resource pair in each array
+- No spaces in color names
+- Numbers must be > 0
+- Don't propose arrangements with yourself
+
+Keep your response below 1000 characters.
+"""
+
+
 def generate_trade_response_prompt(player, player_context, resources_to_offer, resources_to_receive):
     """Generate prompt for trade response decisions."""
-    pay4partner_info = generate_pay4partner_mode_info(player, short_summary=True)
+    if player.pay4partner:
+        return generate_pay4partner_response_prompt(player, player_context, resources_to_offer, resources_to_receive)
+    else:
+        return generate_regular_trade_response_prompt(player, player_context, resources_to_offer, resources_to_receive)
+
+
+def generate_regular_trade_response_prompt(player, player_context, resources_to_offer, resources_to_receive):
+    """Generate prompt for regular trade response decisions."""
     return f"""
 {player_context}
 You have been offered a trade:
-The other player wants to give you {resources_to_offer} in exchange for {resources_to_receive}. {pay4partner_info}
-Do you accept this trade? Answer 'yes' or 'no'.
+The other player wants to give you {resources_to_offer} in exchange for {resources_to_receive}.
+Do you accept this trade? 
+IMPORTANT: Respond with EXACTLY with:
+- 'yes'to accept the trade
+- 'no' to reject the trade
+"""
+
+def generate_pay4partner_response_prompt(player, player_context, resources_to_offer, resources_to_receive):
+    """Generate prompt for pay4partner response decisions."""
+    pay4partner_info = generate_pay4partner_mode_info(player, short_summary=True)
+    return f"""
+{player_context}
+You have been offered a pay4partner arrangement:
+The other player offers to cover {resources_to_offer} moves for you, and asks you to cover {resources_to_receive} moves for them.
+{pay4partner_info}
+Do you accept this arrangement?
+IMPORTANT: Respond with EXACTLY one of these words:
+- 'yes' to accept the arrangement
+- 'no' to reject the arrangement
 """
 
 def generate_pay4partner_prompt(player, player_context, color, agreements):
     """Generate prompt for pay4partner decisions."""
     pay4partner_info = generate_pay4partner_mode_info(player, short_summary=True)
 
-    return f"""
+    return f""" s
 {player_context}
 Recall the 'pay for other' mode rules:
 {pay4partner_info}
 
 You have been asked by the other player to cover their movement cost onto a tile of color {color} as part of a previous trade agreement. Here are your past agreements with this player:
 {agreements}
-Do you agree to pay a {color} resource to cover the other player? Although you previously agreed to this with the other player, it is not mandatory. Remember that you are trying to maximise your points. List your options and the pros and cons of each, and finish your response with 'yes' if you agree to pay or 'no' if you want to keep those resources.
+Do you agree to pay a {color} resource to cover the other player? Although you previously agreed to this with the other player, it is not mandatory. Remember that you are trying to maximise your points. List your options and the pros and cons of each, and finish your response with 'yes' if you agree to pay or 'no' if you want to keep those resources. 
+Do you accept this arrangement? Answer 'yes' or 'no'
 """
 
 

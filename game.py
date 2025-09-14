@@ -293,7 +293,8 @@ class Game:
                         'resources_after_trades': None,
                         'move_made': None,
                         'position_end': None,
-                        'resources_end': None
+                        'resources_end': None,
+                        'is_pay4partner': self.pay4partner  # Flag to indicate pay4partner mode
                     }
 
             trade_result = None
@@ -383,11 +384,17 @@ class Game:
             if move is None:
                 print(f"{player_label} did not move.")
                 move_result = "no_move"
+                player_turn_data[player.name]['move_type'] = 'no_move'
             else:
                 if player.can_move_to(move, self.grid):
                     player.move(move, self.grid)
                     move_result = move
                     player_turn_data[player.name]['move_made'] = move
+                    player_turn_data[player.name]['move_type'] = 'regular'  # Regular move using own resources
+                    # Record which color was used
+                    r, c = move
+                    color = self.grid.get_color(r, c)
+                    player_turn_data[player.name]['used_color'] = color
                     print(f"{player_label} moved to {move}.")
                 elif player.can_move_to_with_promised(move, self.grid):
                     partner_agrees_to_pay = self.handle_pay4partner_move(player, move)
@@ -395,9 +402,25 @@ class Game:
                         player.move(move, self.grid)
                         move_result = move
                         player_turn_data[player.name]['move_made'] = move
+                        player_turn_data[player.name]['move_type'] = 'pay4partner'
+                        # Record which player covered the move
+                        partner = next((p for p in self.players if p.name != player.name), None)
+                        if partner:
+                            player_turn_data[player.name]['covered_by'] = partner.name
+                            r, c = move
+                            color = self.grid.get_color(r, c)
+                            player_turn_data[player.name]['covered_color'] = color
                         print(f"{player_label} moved to {move} via pay4partner.")
                     else:
-                        move_result = "other player rejected pay4other"
+                        move_result = "partner declined to fulfill p4p promise"
+                        player_turn_data[player.name]['move_type'] = 'pay4partner_promise_broken'
+                        # Record which partner broke their promise and for what color
+                        partner = next((p for p in self.players if p.name != player.name), None)
+                        if partner:
+                            player_turn_data[player.name]['promise_broken_by'] = partner.name
+                            r, c = move
+                            color = self.grid.get_color(r, c)
+                            player_turn_data[player.name]['promised_color'] = color
                 elif self.contract is not None:
                     if move in (tuple(map(int, key.strip("()").split(","))) for key in self.contract.keys() if re.match(r"^\(\d+,\s*\d+\)$", key)):
                         self.handle_contract_move(player, move)
