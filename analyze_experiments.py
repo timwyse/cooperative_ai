@@ -35,16 +35,18 @@ def load_experiment_data(experiment_dir):
             data = json.load(f)
             
         # Extract key metrics
+        final_state = data["game"]["final_state"]
         metrics = {
-            "total_turns": data["game"]["final_state"]["total_turns"],
-            "total_scores": sum(data["game"]["final_state"]["scores"].values()),
+            "total_turns": final_state["total_turns"],
+            "total_scores": sum(final_state["scores"].values()),
+            "final_state": final_state,  # Store the complete final state
             "reached_goal": {
                 player: state["reached_goal"]
-                for player, state in data["game"]["final_state"]["players"].items()
+                for player, state in final_state["players"].items()
             },
             "final_resources": {
                 player: state["resources"]
-                for player, state in data["game"]["final_state"]["players"].items()
+                for player, state in final_state["players"].items()
             }
         }
         
@@ -62,6 +64,20 @@ def calculate_aggregate_metrics(metrics_list):
     total_turns = [m["total_turns"] for m in metrics_list]
     total_scores = [m["total_scores"] for m in metrics_list]
     
+    # Extract individual player scores and max possible score
+    player_scores = defaultdict(list)
+    max_possible_scores = []
+    gini_coefficients = []
+    
+    for m in metrics_list:
+        # Get player scores
+        for player, score in m["final_state"]["scores"].items():
+            player_scores[player].append(score)
+        # Get max possible score and Gini
+        metrics = m["final_state"]["metrics"]
+        max_possible_scores.append(metrics["max_possible_score"])
+        gini_coefficients.append(metrics["gini_coefficient"])
+    
     # Calculate success rates per player
     success_rates = {}
     for player in metrics_list[0]["reached_goal"].keys():
@@ -75,6 +91,16 @@ def calculate_aggregate_metrics(metrics_list):
     )
     success_rates["both"] = both_success / n_runs
     
+    # Calculate player score statistics
+    player_score_stats = {}
+    for player, scores in player_scores.items():
+        player_score_stats[player] = {
+            "mean": np.mean(scores),
+            "std": np.std(scores),
+            "min": min(scores),
+            "max": max(scores)
+        }
+
     return {
         "total_turns": {
             "mean": np.mean(total_turns),
@@ -88,11 +114,20 @@ def calculate_aggregate_metrics(metrics_list):
             "min": min(total_scores),
             "max": max(total_scores)
         },
+        "player_scores": player_score_stats,
+        "max_possible_score": {
+            "mean": np.mean(max_possible_scores),
+            "std": np.std(max_possible_scores)
+        },
+        "gini": {
+            "mean": np.mean(gini_coefficients),
+            "std": np.std(gini_coefficients)
+        },
         "success_rates": success_rates,
         "n_runs": n_runs
     }
 
-def create_metrics_table(model_data):
+def create_metrics_table(board, model_data):
     """Create a DataFrame with metrics for all configurations"""
     rows = []
     
@@ -114,8 +149,14 @@ def create_metrics_table(model_data):
         # Use the directory name as configuration name
         # config_name is the directory name after MODEL-PAIR/
         
+        # Get player models
+        player_models = config_data.get("player_models", ["Unknown", "Unknown"])
+        
         # Create row with configuration details
         row = {
+            "Board": board,  # Add board type
+            "Player 0 Model": player_models[0],  # Add model type for player 0
+            "Player 1 Model": player_models[1],  # Add model type for player 1
             "Configuration": config_name,  # Use the actual directory name
             "N_runs": agg_metrics['n_runs'],  # Add number of runs
             "Pay4Partner": config_data.get("pay4partner", False),
@@ -124,9 +165,13 @@ def create_metrics_table(model_data):
             "Message History": config_data.get("with_message_history", False),
             "Fog of War": str(fog_of_war),
             "Avg Turns": f"{agg_metrics['total_turns']['mean']:.1f} ± {agg_metrics['total_turns']['std']:.1f}",
-            "Avg Score": f"{agg_metrics['total_scores']['mean']:.1f} ± {agg_metrics['total_scores']['std']:.1f}",
-            "Min Score": agg_metrics['total_scores']['min'],
-            "Max Score": agg_metrics['total_scores']['max'],
+            "Player 0 Score": f"{agg_metrics['player_scores']['0']['mean']:.1f} ± {agg_metrics['player_scores']['0']['std']:.1f}",
+            "Player 1 Score": f"{agg_metrics['player_scores']['1']['mean']:.1f} ± {agg_metrics['player_scores']['1']['std']:.1f}",
+            "Total Score": f"{agg_metrics['total_scores']['mean']:.1f} ± {agg_metrics['total_scores']['std']:.1f}",
+            "Max Possible Score": f"{agg_metrics['max_possible_score']['mean']:.1f} ± {agg_metrics['max_possible_score']['std']:.1f}",
+            "Gini": f"{agg_metrics['gini']['mean']:.3f} ± {agg_metrics['gini']['std']:.3f}",
+            "Min Total Score": agg_metrics['total_scores']['min'],
+            "Max Total Score": agg_metrics['total_scores']['max'],
         }
         
         # Add success rates for each player with clearer names
@@ -166,7 +211,7 @@ def analyze_experiments(experiment_dir):
             print(f"\nGenerating table for {model_pair}")
             
             # Create metrics table
-            df = create_metrics_table(model_data)
+            df = create_metrics_table(board, model_data)
             
             # Save as CSV with board name included
             csv_file = tables_dir / f"{board}_{model_pair}_metrics.csv"

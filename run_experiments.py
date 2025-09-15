@@ -8,10 +8,11 @@ from pathlib import Path
 from config import GameConfig, load_config
 from game import Game
 from agents import FOUR_1, NANO, MINI
+from logger import Logger
 
 # Experiment Configuration
 BOARD_CONFIG = "yv_max_trade"  # Name of the board config file
-PARAM_VARIATIONS = "parameter_variations_test"  # Name of the variations file without .yaml extension
+PARAM_VARIATIONS = "parameter_variations"  # Name of the variations file without .yaml extension
 AGENTS = [FOUR_1, FOUR_1]  
 
 # Generate model pair info
@@ -108,18 +109,16 @@ def run_experiments():
             print(f"\nStarting run {run_id + 1}/{N_RUNS}")
             
             # Run game with this configuration, suppressing its output 
-            # --- Note: I was finding the actual game output during experiment run distracting, but it can be personal preference 
             f = io.StringIO()
             with redirect_stdout(f):
-                # Create game with custom log directory
-                game = Game(config=config)
-                # Override the logger's base directory before it creates any files  
-                # -- not to create double set of logs, when experoments are run the logs will be saved only to logs/experiments and no per game logs in logs/
-                # Create new logger that will save files directly in the run directory
-                game.logger = game.logger.__class__(
-                    game_id=run_name,  # Use run name as game_id to avoid creating subdirectories
-                    base_log_dir=str(run_dir.parent)  # Use parent dir so files go directly in run dir
+                # Create logger first with experiment path
+                logger = Logger(
+                    game_id=run_name,  # Use run name as game_id
+                    base_log_dir=str(run_dir.parent),  # Save directly in experiment directory
+                    skip_default_logs=True  # Skip creating default logs in logs/
                 )
+                # Create game with custom logger
+                game = Game(config=config, logger=logger)
                 game.run()
             
             # Print just the summary
