@@ -33,14 +33,19 @@ class Logger(BaseLogger):
         
         self._save_verbose_log()
             
-    def __init__(self, game_id=None, base_log_dir: str = "logs"):
+    def __init__(self, game_id=None, base_log_dir: str = "logs", skip_default_logs=False):
         if game_id is None:
             self.game_id = self._generate_unique_game_id()
         else:
             self.game_id = game_id
         
-        # Create logs/{timestamp}/
-        self.log_dir = Path(base_log_dir) / self.game_id
+        # When running experiments, use base_log_dir directly
+        if skip_default_logs:
+            self.log_dir = Path(base_log_dir)
+        else:
+            # Create logs/{timestamp}/
+            self.log_dir = Path(base_log_dir) / self.game_id
+            
         self.log_dir.mkdir(parents=True, exist_ok=True)
         
         self.event_filepath = self.log_dir / f"event_log_{self.game_id}.json"

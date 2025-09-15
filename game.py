@@ -19,12 +19,16 @@ from utils import freeze
 
 class Game:
    
-    def __init__(self, config):
+    def __init__(self, config, logger=None):
         # Configuration and Logging
         self.config = config
-        from datetime import datetime
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.logger = Logger(game_id=timestamp)
+        # Use provided logger or create a new one
+        if logger is not None:
+            self.logger = logger
+        else:
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            self.logger = Logger(game_id=timestamp)
 
         # Grid Setup
         self.grid_size = self.config.grid_size
