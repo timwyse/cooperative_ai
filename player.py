@@ -575,32 +575,20 @@ class Player:
         """
         Clean and validate a trade proposal:
         1. Make all strings uppercase and stripped
-        2. Convert anonymized player references to actual names
-        3. Prevent trading with self
-        4. Check if trade is needed (have enough resources)
-        5. Return None for invalid trades
+        2. Prevent trading with self
+        3. Return None for invalid trades
         """
         # First clean the strings
         if isinstance(trade_proposal, dict):
             cleaned = {key: self.clean_trade_proposal(value, grid, game) for key, value in trade_proposal.items()}
 
             # Validate the cleaned proposal
-            if cleaned.get('trade_proposer'):
-                # Check if we need to trade at all (only if grid is provided)
-                if grid:
-                    best_path = self.best_routes(grid)[0]
-                    missing_resources = best_path["resources_missing_due_to_insufficient_inventory"]
-                    if not missing_resources:  # Empty dict means we have all needed resources
-                        print(f"Invalid trade: {cleaned['trade_proposer']} already has all needed resources")
-                        return None
-
-                # Check if we need to trade at all (only if grid is provided)
-                if grid:
-                    best_path = self.best_routes(grid)[0]
-                    missing_resources = best_path["resources_missing_due_to_insufficient_inventory"]
-                    if not missing_resources:  # Empty dict means we have all needed resources
-                        print(f"Invalid trade: {cleaned['trade_proposer']} already has all needed resources")
-                        return None
+            if game and game.players:
+                # Prevent trading with self
+                other_player = next((p for p in game.players if p.name != self.name), None)
+                if not other_player:
+                    print(f"Invalid trade: Cannot trade with self")
+                    return None
             return cleaned
 
         elif isinstance(trade_proposal, list):
