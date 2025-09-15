@@ -119,23 +119,35 @@ def run_experiments():
 
             print(f"\nStarting run {run_id + 1}/{N_RUNS}")
             
-            # Run game with this configuration, suppressing its output 
-            f = io.StringIO()
-            with redirect_stdout(f):
-                # Create logger first with experiment path
-                logger = Logger(
-                    game_id=run_name,  # Use run name as game_id
-                    base_log_dir=str(run_dir.parent),  # Save directly in experiment directory
-                    skip_default_logs=True  # Skip creating default logs in logs/
-                )
-                # Create game with custom logger
-                game = Game(config=config, logger=logger)
-                game.run()
-            
-            # Print just the summary
-            scores = {p.name: (100 + 5 * sum(dict(p.resources).values())) if p.has_finished() else 0 
-                     for p in game.players}
-            print(f"Run {run_id + 1}: turns={game.turn}, score={sum(scores.values())}, goals={[p.has_finished() for p in game.players]}")
+            # Run game with this configuration
+            try:
+                f = io.StringIO()
+                with redirect_stdout(f):
+                    # Create logger first with experiment path
+                    logger = Logger(
+                        game_id=run_name,  # Use run name as game_id
+                        base_log_dir=str(run_dir),  # Save in the run directory
+                        skip_default_logs=True  # Skip creating default logs in logs/
+                    )
+                    # Create game with custom logger
+                    game = Game(config=config, logger=logger)
+                    game.run()
+                
+                # Print success summary
+                scores = {p.name: (100 + 5 * sum(dict(p.resources).values())) if p.has_finished() else 0 
+                         for p in game.players}
+                print(f"Run {run_id + 1}: SUCCESS, turns={game.turn}, score={sum(scores.values())}, goals={[p.has_finished() for p in game.players]}")
+            except Exception as e:
+                print(f"\nRun {run_id + 1}: CRASHED!")
+                print(f"Error occurred in config: {config_name}")
+                print(f"Error type: {type(e).__name__}")
+                print(f"Error message: {str(e)}")
+                # Print the captured output to help debug
+                print("\nLast output before crash:")
+                print(f.getvalue())
+                # Re-raise if this is the first run to catch setup issues
+                if run_id == 0:
+                    raise
 
 if __name__ == "__main__":
     run_experiments()

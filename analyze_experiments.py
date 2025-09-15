@@ -18,8 +18,12 @@ def load_experiment_data(experiment_dir):
         print(f"  {file}")
     
     # Walk through experiment directory
-    event_logs = list(experiment_dir.glob("**/event_log_*.json"))
-    print(f"\nFound {len(event_logs)} event log files")
+    event_logs = []
+    for run_dir in experiment_dir.rglob("run_*"):
+        if run_dir.is_dir():
+            logs = list(run_dir.glob("event_log_*.json"))
+            event_logs.extend(logs)
+    print(f"\nFound {len(event_logs)} event log files in run directories")
     
     for event_log in event_logs:
         print(f"\nProcessing log file: {event_log}")
@@ -29,6 +33,10 @@ def load_experiment_data(experiment_dir):
         board = parts[timestamp_idx + 1]
         model_pair = parts[timestamp_idx + 2]
         config_name = parts[timestamp_idx + 3]
+        # Skip the run_* directory as it's just for organization
+        print(f"  Board: {board}")
+        print(f"  Model pair: {model_pair}")
+        print(f"  Config: {config_name}")
         
         # Load event log
         with open(event_log) as f:

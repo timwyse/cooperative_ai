@@ -73,9 +73,9 @@ class Logger(BaseLogger):
             }
         }
         
-        # Write initial verbose log
-        with open(self.verbose_filepath, "w") as f:
-            json.dump(self.verbose_log_data, f, indent=2)
+        # Write initial logs
+        self._save_event_log()  # Write initial event log
+        self._save_verbose_log()  # Write initial verbose log
     
     def _generate_unique_game_id(self):
         """Game id based on timestamp."""
