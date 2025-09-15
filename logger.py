@@ -293,7 +293,34 @@ class Logger(BaseLogger):
         with open(self.event_filepath, "w") as f:
             json.dump(self.log_data, f, indent=2, ensure_ascii=False)
 
+    def log_contract_negotiation(self, turn_number, history_0,
+                history_1,
+                agree_0,
+                agree_1,    
+                judge_contract,
+                agreement_status):
+        """
+        Log the conversation between players and the outcome of the contract negotiation.
+        
+        """
+        turn = str(turn_number)
 
+        # Initialize turn in verbose log if not already present
+        if turn not in self.verbose_log_data["game"]["turns"]:
+            self.verbose_log_data["game"]["turns"][turn] = {}
+        # Log the negotiation details
+        self.verbose_log_data["game"]["turns"][turn]["contract_negotiation"] = {
+                
+                    "conversation_history_0": history_0,
+                    "conversation_history_1": history_1,
+                    "agreement_from_player_0": agree_0,
+                    "agreement_from_player_1": agree_1,
+            "judge_contract": judge_contract,
+            "agreement_status": agreement_status
+        }
+
+        # Save the verbose log
+        self._save_verbose_log()
 
 def preprocess_details(details):
     """Preprocess details for logging, converting non-serializable objects."""
