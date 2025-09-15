@@ -20,7 +20,7 @@ class GameConfig:
     # GAME TYPE CONFIGURATION
     players: Optional[List[str]] = None  # list of Agent namedtuples (see agents.py)
     pay4partner: bool = False # if True, rather than direct trading, players pay their partner to move onto tiles of their color
-    contract_type: str = None # if not none, must be one of 'strict', 
+    contract_type: Optional[str] = None  # if not None, must be one of 'none', 'strict', 'natural_language'
     fog_of_war: Optional[List[bool]] = None  # if True, players can only see the colors of tiles adjacent to their current position; if list, must be same length as players and specifies fog_of_war for each player
 
     # RESOURCE SETTINGS

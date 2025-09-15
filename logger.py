@@ -100,7 +100,9 @@ class Logger(BaseLogger):
             "manual_resources": manual_resources,
             "with_message_history": getattr(config, 'with_message_history', True),
             "pay4partner": getattr(config, 'pay4partner', False),
+            "contract_type": getattr(config, 'contract_type', None),
             "with_context": getattr(config, 'with_context', True),
+            "fog_of_war": getattr(config, 'fog_of_war', [False, False]),  # Add fog_of_war to logged config
             "resource_mode": getattr(config, 'resource_mode', 'single_type_each'),
             "grid_size": getattr(config, 'grid_size', 4),
             "colors": getattr(config, 'colors', []),

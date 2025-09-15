@@ -19,7 +19,7 @@ MODEL_PAIR = {
     "agents": AGENTS,
     "name": "-".join(agent.name.replace(" ", "_") for agent in AGENTS)  # e.g., "FOUR_1-FOUR_1"
 }
-N_RUNS = 3
+N_RUNS = 2
 
 
 def generate_run_name(config, run_id):
@@ -36,8 +36,8 @@ def generate_experiment_path(base_dir, board_name, model_pair, config):
     print(f"  pay4partner: {config.pay4partner}")
     print(f"  contract_type: {config.contract_type}")
     
-    # Convert None to "none" for consistent path naming
-    contract_type = "none" if config.contract_type is None else config.contract_type
+    # Convert None or "none" to "none" for consistent path naming
+    contract_type = "none" if config.contract_type in [None, "none"] else str(config.contract_type)
     
     # Generate unique directory name based on both settings
     contract_mode = f"pay4partner_{str(config.pay4partner).lower()}_contract_{contract_type}"

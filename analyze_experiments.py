@@ -100,6 +100,7 @@ def create_metrics_table(model_data):
     for config_name, run_metrics in model_data.items():
         print(f"\nConfig directory: {config_name}")
         print(f"Config settings: {run_metrics[0]['config']}")
+        print(f"Contract type: {run_metrics[0]['config'].get('contract_type')}")
         
         agg_metrics = calculate_aggregate_metrics(run_metrics)
         config = run_metrics[0]["config"]
@@ -107,18 +108,18 @@ def create_metrics_table(model_data):
         # Extract config from the data structure
         config_data = run_metrics[0]["config"]
         
-        # Create more readable configuration name
-        context_str = "with_context" if config_data.get("with_context", False) else "no_context"
+        # Get fog of war setting for display
         fog_of_war = config_data.get("fog_of_war", [False, False])
-        fog_str = "".join("1" if f else "0" for f in fog_of_war)
-        readable_name = f"p4p_{context_str}_fog{fog_str}"
+        
+        # Use the directory name as configuration name
+        # config_name is the directory name after MODEL-PAIR/
         
         # Create row with configuration details
         row = {
-            "Configuration": readable_name,
+            "Configuration": config_name,  # Use the actual directory name
             "N_runs": agg_metrics['n_runs'],  # Add number of runs
             "Pay4Partner": config_data.get("pay4partner", False),
-            "Contract Type": config_data.get("contract_type", None),
+            "Contract Type": config_data.get("contract_type", "none"),  # Use "none" instead of None for display
             "Context": config_data.get("with_context", False),
             "Message History": config_data.get("with_message_history", False),
             "Fog of War": str(fog_of_war),
