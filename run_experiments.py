@@ -19,25 +19,30 @@ MODEL_PAIR = {
     "agents": AGENTS,
     "name": "-".join(agent.name.replace(" ", "_") for agent in AGENTS)  # e.g., "FOUR_1-FOUR_1"
 }
-N_RUNS = 5  
+N_RUNS = 3
 
 
 def generate_run_name(config, run_id):
+# Note:
+# ctx0 in log name means with_context=False
+# ctx1 in log name mans with_context=True
     ctx = "1" if config.with_context else "0"
     fog = "".join("1" if f else "0" for f in config.fog_of_war)
     return f"run_ctx{ctx}_fog{fog}_{run_id:03d}"
 
 def generate_experiment_path(base_dir, board_name, model_pair, config):
-    contract_mode = ""
-    if config.pay4partner:
-        contract_mode = "pay4partner_true_contract_none"
-    elif config.contract_type == "strict":
-        contract_mode = "pay4partner_false_contract_strict"
-    elif config.contract_type == "natural_language":
-        contract_mode = "pay4partner_false_contract_natural_language"
-    else:
-        contract_mode = "pay4partner_false_contract_none"
-        
+    """Generate unique path for each configuration combination"""
+    print(f"\nGenerating path for config:")
+    print(f"  pay4partner: {config.pay4partner}")
+    print(f"  contract_type: {config.contract_type}")
+    
+    # Convert None to "none" for consistent path naming
+    contract_type = "none" if config.contract_type is None else config.contract_type
+    
+    # Generate unique directory name based on both settings
+    contract_mode = f"pay4partner_{str(config.pay4partner).lower()}_contract_{contract_type}"
+    
+    print(f"Using directory: {contract_mode}")
     return base_dir / board_name / model_pair / contract_mode
 
 def run_experiments():
@@ -54,7 +59,12 @@ def run_experiments():
     base_log_dir = Path("logs") / "experiments"/ timestamp
 
     # Run experiments for each parameter combination
-    for variation in param_variations:
+    print("\nProcessing parameter variations:")
+    for i, variation in enumerate(param_variations):
+        print(f"\nVariation {i+1}:")
+        print(f"  pay4partner: {variation['pay4partner']}")
+        print(f"  contract_type: {variation['contract_type']}")
+        
         config = GameConfig(
             # Board settings from YAML
             grid_size=board_config.grid_size,
@@ -86,6 +96,8 @@ def run_experiments():
         
         print(f"\nRunning experiment in {exp_path}")
         print(f"Configuration: {variation}")
+        print(f"Contract type: {config.contract_type}")
+        print(f"Pay4Partner: {config.pay4partner}")
 
         for run_id in range(N_RUNS):
             # Create unique run folder
@@ -95,15 +107,18 @@ def run_experiments():
 
             print(f"\nStarting run {run_id + 1}/{N_RUNS}")
             
-            # Run game with this configuration, suppressing its output
+            # Run game with this configuration, suppressing its output 
+            # --- Note: I was finding the actual game output during experiment run distracting, but it can be personal preference 
             f = io.StringIO()
             with redirect_stdout(f):
                 # Create game with custom log directory
                 game = Game(config=config)
-                # Override the logger's base directory before it creates any files
+                # Override the logger's base directory before it creates any files  
+                # -- not to create double set of logs, when experoments are run the logs will be saved only to logs/experiments and no per game logs in logs/
+                # Create new logger that will save files directly in the run directory
                 game.logger = game.logger.__class__(
-                    game_id=game.logger.game_id,
-                    base_log_dir=str(run_dir)
+                    game_id=run_name,  # Use run name as game_id to avoid creating subdirectories
+                    base_log_dir=str(run_dir.parent)  # Use parent dir so files go directly in run dir
                 )
                 game.run()
             

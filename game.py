@@ -42,6 +42,11 @@ class Game:
         
         # Store initial resources for player labeling
         self.initial_resources = {player.name: dict(player.resources) for player in self.players}
+        
+        # Store initial positions for max score calculation
+        for player in self.players:
+            player.start = player.start_pos  # Save initial position from start_pos
+            
         # trade version
         self.pay4partner = self.config.pay4partner
         self.contract_type = self.config.contract_type
@@ -54,7 +59,6 @@ class Game:
         self.turn = 0
         self.with_context = config.with_context
         self.turn_summaries = [] if self.with_context else None  # List to store summaries of each turn's events
-        self.max_possible_score = self.max_possible_score()
         
         # Pygame Initialization (only if display_gui is True)
         self.display_gui = config.display_gui
