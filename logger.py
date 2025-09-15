@@ -33,14 +33,19 @@ class Logger(BaseLogger):
         
         self._save_verbose_log()
             
-    def __init__(self, game_id=None, base_log_dir: str = "logs"):
+    def __init__(self, game_id=None, base_log_dir: str = "logs", skip_default_logs=False):
         if game_id is None:
             self.game_id = self._generate_unique_game_id()
         else:
             self.game_id = game_id
         
-        # Create logs/{timestamp}/
-        self.log_dir = Path(base_log_dir) / self.game_id
+        # When running experiments, use base_log_dir directly
+        if skip_default_logs:
+            self.log_dir = Path(base_log_dir)
+        else:
+            # Create logs/{timestamp}/
+            self.log_dir = Path(base_log_dir) / self.game_id
+            
         self.log_dir.mkdir(parents=True, exist_ok=True)
         
         self.event_filepath = self.log_dir / f"event_log_{self.game_id}.json"
@@ -68,9 +73,9 @@ class Logger(BaseLogger):
             }
         }
         
-        # Write initial verbose log
-        with open(self.verbose_filepath, "w") as f:
-            json.dump(self.verbose_log_data, f, indent=2)
+        # Write initial logs
+        self._save_event_log()  # Write initial event log
+        self._save_verbose_log()  # Write initial verbose log
     
     def _generate_unique_game_id(self):
         """Game id based on timestamp."""
@@ -100,7 +105,9 @@ class Logger(BaseLogger):
             "manual_resources": manual_resources,
             "with_message_history": getattr(config, 'with_message_history', True),
             "pay4partner": getattr(config, 'pay4partner', False),
+            "contract_type": getattr(config, 'contract_type', None),
             "with_context": getattr(config, 'with_context', True),
+            "fog_of_war": getattr(config, 'fog_of_war', [False, False]),  # Add fog_of_war to logged config
             "resource_mode": getattr(config, 'resource_mode', 'single_type_each'),
             "grid_size": getattr(config, 'grid_size', 4),
             "colors": getattr(config, 'colors', []),
@@ -251,8 +258,8 @@ class Logger(BaseLogger):
         scores = {str(i): (100 + 5 * sum(dict(p.resources).values())) if p.has_finished() else 0 
                  for i, p in enumerate(players)}
         total_scores = sum(scores.values())
-        max_possible_score = sum(max_possible_score(p) for p in players)
-        total_accuracy = total_scores / max_possible_score if max_possible_score > 0 else 0
+        max_score = sum(max_possible_score(p) for p in players)
+        total_accuracy = total_scores / max_score if max_score > 0 else 0
         
         # Calculate Gini
         scores_list = list(scores.values())
@@ -271,7 +278,7 @@ class Logger(BaseLogger):
                 "total_scores": total_scores,
                 "total_accuracy": total_accuracy,
                 "gini_coefficient": gini,
-                "max_possible_score": max_possible_score
+                "max_possible_score": max_score
             }
         }
         
