@@ -12,7 +12,7 @@ from logger import Logger
 
 # Experiment Configuration
 BOARD_CONFIG = "yv_max_trade"  # Name of the board config file
-PARAM_VARIATIONS = "parameter_variations"  # Name of the variations file without .yaml extension
+PARAM_VARIATIONS = "parameter_variations_test"  # Name of the variations file without .yaml extension
 AGENTS = [FOUR_1, FOUR_1]  
 
 # Generate model pair info
@@ -48,9 +48,20 @@ def generate_experiment_path(base_dir, board_name, model_pair, config):
 
 def run_experiments():
     # Load parameter combinations
-    with open(f"experiment_configs/{PARAM_VARIATIONS}.yaml", "r") as f:
-        param_variations = yaml.safe_load(f)
-    print(param_variations)
+    param_file = f"experiment_configs/{PARAM_VARIATIONS}.yaml"
+    print(f"\nLoading parameter variations from: {param_file}")
+    try:
+        with open(param_file, "r") as f:
+            param_variations = yaml.safe_load(f)
+            print("\nLoaded variations:")
+            print(f"Type: {type(param_variations)}")
+            print(f"Content: {param_variations}")
+            if param_variations is None:
+                raise ValueError(f"YAML file {param_file} was loaded but contains no data")
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Parameter variations file not found: {param_file}")
+    except yaml.YAMLError as e:
+        raise ValueError(f"Error parsing YAML file {param_file}: {e}")
 
 
     board_config = load_config(f"configs/{BOARD_CONFIG}.yaml")
