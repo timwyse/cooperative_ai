@@ -84,11 +84,9 @@ def run_experiments():
             grid=board_config.grid,
             resource_mode=board_config.resource_mode,
             manual_resources=[
-                {"R": 10, "B": 0, "G": 0},
-                {"R": 0, "B": 10, "G": 0}
+                {"R": 14, "B": 0, "G": 1},
+                {"R": 0, "B": 14, "G": 1}
             ],
-            manual_start_positions=[(0, 0), (0, 0)],
-            manual_goal_positions=[(3, 3), (3, 3)],
             
             players=MODEL_PAIR["agents"],
             
@@ -134,12 +132,12 @@ def run_experiments():
                     game.run()
                 
                 # Print success summary
-                scores = {p.name: (100 + 5 * sum(dict(p.resources).values())) if p.has_finished() else 0 
+                scores = {p.name: (10 + 5 * sum(dict(p.resources).values())) if p.has_finished() else 0 
                          for p in game.players}
                 print(f"Run {run_id + 1}: SUCCESS, turns={game.turn}, score={sum(scores.values())}, goals={[p.has_finished() for p in game.players]}")
             except Exception as e:
                 print(f"\nRun {run_id + 1}: CRASHED!")
-                print(f"Error occurred in config: {config_name}")
+                print(f"Error occurred in config: {run_name}")
                 print(f"Error type: {type(e).__name__}")
                 print(f"Error message: {str(e)}")
                 # Print the captured output to help debug
