@@ -32,18 +32,18 @@ def generate_run_name(config, run_id):
 
 def generate_experiment_path(base_dir, board_name, model_pair, config):
     """Generate unique path for each configuration combination"""
-    print(f"\nGenerating path for config:")
-    print(f"  pay4partner: {config.pay4partner}")
-    print(f"  contract_type: {config.contract_type}")
-    
     # Convert None or "none" to "none" for consistent path naming
     contract_type = "none" if config.contract_type in [None, "none"] else str(config.contract_type)
     
-    # Generate unique directory name based on both settings
-    contract_mode = f"pay4partner_{str(config.pay4partner).lower()}_contract_{contract_type}"
+    # Generate context and fog parts
+    ctx = "ctx1" if config.with_context else "ctx0"
+    fog = "fog" + "".join("1" if f else "0" for f in config.fog_of_war)
     
-    print(f"Using directory: {contract_mode}")
-    return base_dir / board_name / model_pair / contract_mode
+    # Generate unique directory name based on all settings
+    config_dir = f"{ctx}_{fog}_p4p{str(config.pay4partner).lower()}_contract_{contract_type}"
+    
+    print(f"\nGenerating path for config: {config_dir}")
+    return base_dir / board_name / model_pair / config_dir
 
 def run_experiments():
     # Load parameter combinations
