@@ -251,8 +251,8 @@ class Logger(BaseLogger):
         scores = {str(i): (100 + 5 * sum(dict(p.resources).values())) if p.has_finished() else 0 
                  for i, p in enumerate(players)}
         total_scores = sum(scores.values())
-        max_possible_score = sum(max_possible_score(p) for p in players)
-        total_accuracy = total_scores / max_possible_score if max_possible_score > 0 else 0
+        max_score = sum(max_possible_score(p) for p in players)
+        total_accuracy = total_scores / max_score if max_score > 0 else 0
         
         # Calculate Gini
         scores_list = list(scores.values())
@@ -271,7 +271,7 @@ class Logger(BaseLogger):
                 "total_scores": total_scores,
                 "total_accuracy": total_accuracy,
                 "gini_coefficient": gini,
-                "max_possible_score": max_possible_score
+                "max_possible_score": max_score
             }
         }
         
