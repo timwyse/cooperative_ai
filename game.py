@@ -487,57 +487,60 @@ class Game:
             player_turn_data[player.name]['position_end'] = player.position
             player_turn_data[player.name]['resources_end'] = dict(player.resources)
             
-            # Collect actions for turn summary
-            if self.with_context:
-                # Get the full response from the player's message history
-                response = player.messages[-1]["content"] if player.with_message_history else ""
-                
-                # Add the move summary
-                move_summary = {
-                    "player": player.name,
-                    "from_pos": old_position,
-                    "to_pos": move_result if isinstance(move_result, tuple) else None,
-                    "success": isinstance(move_result, tuple),
-                    "reason": "successful" if isinstance(move_result, tuple) else move_result,
-                    "response": response,
-                    # Add pay4partner info if relevant
-                    "move_type": player_turn_data[player.name].get('move_type', 'regular'),
-                    "covered_by": player_turn_data[player.name].get('covered_by'),
-                    "covered_color": player_turn_data[player.name].get('covered_color'),
-                    "promise_broken_by": player_turn_data[player.name].get('promise_broken_by'),
-                    "promised_color": player_turn_data[player.name].get('promised_color')
-                }
-                self.current_turn_summary["moves"].append(move_summary)
-                
-                # Update all player states
+
+            # If this is the last player, finalize the turn
+            if player == players[-1]:
+                print("\n" + "=" * 60)
+                print("=== END USER VIEW ===")
+                print("=" * 60)
+
+                # Always log structured event data for each player, regardless of context
                 for p in self.players:
-                    self.current_turn_summary["player_states"][p.name] = {
-                        "position": p.position,
-                        "goal": p.goal,
-                        "distance_to_goal": p.distance_to_goal(),
-                        "resources": dict(p.resources),
-                        "has_finished": p.has_finished(),
-                        "promised_to_give": dict(p.promised_resources_to_give) if self.pay4partner else None,
-                        "promised_to_receive": dict(p.promised_resources_to_receive) if self.pay4partner else None,
+                    if p.name in player_turn_data:
+                        self.logger.log_player_turn_summary(self.turn, p.name, player_turn_data[p.name])
+
+                self.logger.log_turn_end(self.turn)
+
+                # Only handle turn summaries if context is enabled
+                if self.with_context:
+                    # Get the full response from the player's message history
+                    response = player.messages[-1]["content"] if player.with_message_history else ""
+
+                    # Add the move summary
+                    move_summary = {
+                        "player": player.name,
+                        "from_pos": old_position,
+                        "to_pos": move_result if isinstance(move_result, tuple) else None,
+                        "success": isinstance(move_result, tuple),
+                        "reason": "successful" if isinstance(move_result, tuple) else move_result,
+                        "response": response,
+                        # Add pay4partner info if relevant
+                        "move_type": player_turn_data[player.name].get('move_type', 'regular'),
+                        "covered_by": player_turn_data[player.name].get('covered_by'),
+                        "covered_color": player_turn_data[player.name].get('covered_color'),
+                        "promise_broken_by": player_turn_data[player.name].get('promise_broken_by'),
+                        "promised_color": player_turn_data[player.name].get('promised_color')
                     }
-                
-                # If this is the last player, finalize and distribute the turn summary
-                if player == players[-1]:
-                    print("\n" + "="*60)
-                    print("=== END USER VIEW ===")
-                    print("="*60)
-                    
-                    # Log structured event data for each player
+                    self.current_turn_summary["moves"].append(move_summary)
+
+                    # Update all player states
                     for p in self.players:
-                        if p.name in player_turn_data:
-                            self.logger.log_player_turn_summary(self.turn, p.name, player_turn_data[p.name])
-                    
-                    self.logger.log_turn_end(self.turn)
-                    
+                        self.current_turn_summary["player_states"][p.name] = {
+                            "position": p.position,
+                            "goal": p.goal,
+                            "distance_to_goal": p.distance_to_goal(),
+                            "resources": dict(p.resources),
+                            "has_finished": p.has_finished(),
+                            "promised_to_give": dict(p.promised_resources_to_give) if self.pay4partner else None,
+                            "promised_to_receive": dict(p.promised_resources_to_receive) if self.pay4partner else None,
+                        }
+
+                    # Handle turn summaries for AI agents
                     for p in self.players:
                         if p.model_name != 'human':
                             # Each player gets their own personalized turn summary
-                            player_specific_summary = p.format_turn_summary(self.current_turn_summary, self.turn, with_message_history=p.with_message_history)
+                            player_specific_summary = p.format_turn_summary(self.current_turn_summary, self.turn,
+                                                                            with_message_history=p.with_message_history)
                             p.messages.append({
                                 "role": "system",
                                 "content": player_specific_summary
@@ -546,8 +549,8 @@ class Game:
                     self.turn_summaries.append(self.current_turn_summary)
                     # Clear for next turn
                     delattr(self, 'current_turn_summary')
-                    print("="*60 + "\n")
 
+                print("=" * 60 + "\n")
                     
 
     def handle_pay4partner_move(self, player, move):
