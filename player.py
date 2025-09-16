@@ -114,25 +114,12 @@ class Player:
         return self.name
 
     ## Pathfinding and Strategy
-    def best_routes(self, grid, top_n=3):
+    def best_routes(self, grid):
         """
         Runs a BFS to find the top n paths to the player's goal, given their current resources.
-        Path ranking is based on:
-        1. Resource shortfall (ascending): the number of resources the player
-           would still need to trade for or acquire to complete the path.
-        2. Path length (ascending): among paths with the same shortfall,
-           shorter paths are preferred.
-
-        Example:
-        Suppose there are 5 paths:
-        a. 5 steps, player has all 5 required resources
-        b. 5 steps, player has 4/5 required resources
-        c. 6 steps, player has all 6 required resources
-        d. 5 steps, player has 3/5 required resources
-        e. 6 steps, player has 5/6 required resources
-
-        Sorted order: a, c, b, e, d. With top_n=3 → returns [a, c, b]
-        Note that the LM Agent isn't told this ranking explicitly, just that these are some good paths.
+        Returns two paths:
+        1) The path that requires the fewest additional resources (i.e. the path with the least shortfall)
+        2) The shortest path (in steps) that requires the fewest additional resources (i.e. the shortest path with the least shortfall)
         """
 
         def _neighbors(pos, rows, cols):
@@ -170,7 +157,7 @@ class Player:
             dfs(start, {start}, [start])
             return paths
 
-        def top_n_paths(grid, start, goal, resources, n):
+        def top_n_paths(grid, start, goal, resources):
             """Return up to n best paths sorted by:
             1) resource shortfall ascending
             2) path length descending
@@ -193,9 +180,16 @@ class Player:
                 })
             scored.sort(key=lambda x: (sum(x["resources_missing_due_to_insufficient_inventory"].values()),
                                        x["path_length_in_steps"]))
-            return scored[:n]
+            
+            fewest_resources_needed_path = scored[0]
 
-        best = top_n_paths(grid, self.position, self.goal, self.resources, n=top_n)
+            scored.sort(key=lambda x: (x["path_length_in_steps"], sum(x["resources_missing_due_to_insufficient_inventory"].values())))
+
+            shortest_path_with_fewest_resources_needed = scored[0]
+            
+            return [fewest_resources_needed_path, shortest_path_with_fewest_resources_needed]
+
+        best = top_n_paths(grid, self.position, self.goal, self.resources)
 
         return best
 
@@ -261,11 +255,7 @@ class Player:
             player_context = self.generate_player_context_message(game, grid)
             print(player_context)
             user_message = prompts.generate_move_prompt(self,
-                player_context=player_context,
-                next_move=next_move,
-                resources_needed=resources_needed,
-                resources_required_for_path=str(self.best_routes(grid)[0]["resources_required_for_path"]),
-                resources_missing=str(self.best_routes(grid)[0]["resources_missing_due_to_insufficient_inventory"]),
+                player_context=player_context
             )
             
             # Prepare messages for this request
@@ -415,10 +405,7 @@ class Player:
             player_context = self.generate_player_context_message(game, grid)
             best_path = self.best_routes(grid)[0]
             user_message = prompts.generate_trade_proposal_prompt(self,
-                player_context=player_context,
-                resources_required_for_path=str(best_path["resources_required_for_path"]),
-                current_resources=str(dict(self.resources)),
-                resources_missing_due_to_insufficient_inventory=str(best_path["resources_missing_due_to_insufficient_inventory"])
+                player_context=player_context
             )
 
             # Prepare messages for this request

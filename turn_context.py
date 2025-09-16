@@ -122,24 +122,26 @@ def generate_turn_context(game, player):
     current_turn = game.turn
     promised_resources_to_give_message = f"- Resources you have promised to cover for other player (still yours, not yet covered for them): {player.promised_resources_to_give}" if player.pay4partner else ''
     promised_resources_to_receive_message = f"- Resources you have been promised to be covered for by other player (still theirs, not yet covered for you): {player.promised_resources_to_receive}" if player.pay4partner else ''
-    best_path = player.best_routes(game.grid)[0]['path']
+    best_paths = player.best_routes(game.grid)[:2]
     fog_of_war_context = "You are in fog of war mode. You can only see the colors of tiles adjacent to your current position. As you move to other tiles you will be able to see the colors of new adjacent tiles" if player.fog_of_war else ""
 
     # Get the other player's resources
     other_player = [p for p in game.players if p != player][0]
     other_resources = dict(other_player.resources)
+    other_position = other_player.position
 
     return f"""
 === GAME STATUS FOR YOU - TURN {current_turn} ===
 
 - You are at position {player.position}
-- Your goal is at {player.goal}
+- Your goal is at {player.goal}. Note this is also the other player's goal.
 - Your resources: {dict(player.resources)}
 - The other player's resources: {other_resources}
+- The other player is at position {other_position}
 {promised_resources_to_give_message}
 {promised_resources_to_receive_message}
-- Distance to goal: {player.distance_to_goal()} steps
-- Your estimated best path to your goal (although other paths are possible): {best_path}
+- Your estimated best path options to your goal (although other paths are possible): {best_paths}
+- Shorter paths require less resources, but a longer path for which you don't need to trade is also a strong option (as a backup plan or negotiation tool, but it means you finish with less resources than if you take the shorter path). A short path that you don't need to trade for is ideal, and your negotiation strategy should reflect this.
 
 BOARD LAYOUT: {fog_of_war_context}
 {player.get_readable_board()}
