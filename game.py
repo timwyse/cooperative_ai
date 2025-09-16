@@ -14,7 +14,7 @@ from judge import JUDGE
 from logger import Logger
 from player import Player
 import prompts
-from utils import freeze, calculate_score
+from utils import freeze, calculate_scores
 
 
 class Game:
@@ -225,8 +225,7 @@ class Game:
         self.print_game_state()
         
         # Calculate final scores
-        scores = {p.name: (calculate_score(p))
-                 for p in self.players}
+        scores = calculate_scores(self.players)
         
         # Print final scores
         print("\nFinal Scores:")
@@ -272,7 +271,6 @@ class Game:
         # Track player data for event logging
         player_turn_data = {}
 
-        #TODO: consider either remove for loop (diplomacy-style simultaneous turns), or shuffle players each turn to be fair
         for player in players:
             player_label = player.get_player_label(self)
             if player.has_finished():
@@ -305,7 +303,7 @@ class Game:
             move_result = None
             
             # create a contract if in contract mode
-            if self.contract_type is not None:
+            if self.contract_type == 'strict':
                 propose_trade = None
                 if self.turn == 0:
                     
@@ -325,7 +323,26 @@ class Game:
 
             # otherwise Handle trade proposal
             else:
-                # Skip trade proposals for finished players (they can only fulfill promises, not make new ones)
+                
+                # for contract_for_finishing mode trades can still happen
+                if self.contract_type == 'contract_for_finishing':
+                    if self.turn == 0:
+                        
+                        contracts = self.come_up_with_contract(self.players, type='contract_for_finishing')
+                        if contracts:
+                            contract = contracts['contract']
+                            print(f"contract made! {contract}")
+                            self.contract = contract
+                            for player in self.players:
+                                if player.id == '0':
+                                    player.contract = contracts['contract_for_0']
+                                elif player.id == '1':
+                                    player.contract = contracts['contract_for_1']
+                            break
+                        else:
+                            print("contract not made, trying again.") 
+                            continue
+
                 propose_trade = None
                 if not player.has_finished():
                     propose_trade = player.propose_trade(self.grid, self)
@@ -677,7 +694,7 @@ class Game:
             return False
 
     
-    def come_up_with_contract(self, players):
+    def come_up_with_contract(self, players, type='strict'):
         """
         Facilitates a contract negotiation between two players, formats the contract using a judge,
         and ensures both players agree to the final contract.
@@ -694,8 +711,12 @@ class Game:
         # Initialize conversation history for both players
         player_0 = players[0]
         player_1 = players[1]
-        history_0 = [{"role": "system", "content": player_0.generate_contract_prompt(player_0.generate_player_context_message(self, self.grid))}]
-        history_1 = [{"role": "system", "content": player_1.generate_contract_prompt(player_1.generate_player_context_message(self, self.grid))}]
+        if type == 'contract_for_finishing':
+            history_0 = [{"role": "system", "content": player_0.generate_contract_for_finishing_prompt(player_0.generate_player_context_message(self, self.grid))}]
+            history_1 = [{"role": "system", "content": player_1.generate_contract_for_finishing_prompt(player_1.generate_player_context_message(self, self.grid))}]
+        elif type == 'strict':
+            history_0 = [{"role": "system", "content": player_0.generate_tile_level_contract_prompt(player_0.generate_player_context_message(self, self.grid))}]
+            history_1 = [{"role": "system", "content": player_1.generate_tile_level_contract_prompt(player_1.generate_player_context_message(self, self.grid))}]
         n_exchanges = 5
 
         # Seed the conversation
@@ -731,10 +752,11 @@ class Game:
             print(f"Player 0's messages: {history_0}")
             print(f"Player 1's messages: {history_1}")
             
-            conversation_formatted = JUDGE.format_conversation_for_contract(history_0, players, history_pov=0)
-            print(f"Formatted conversation for judge based off player 0:\n{conversation_formatted}")
 
-            judge_contract = JUDGE.create_contract(conversation_formatted)
+            conversation_formatted = JUDGE.format_conversation_for_contract(history_0, players, history_pov=0)
+            print(f"Formatted conversation for judge based off player 0:\n{conversation_formatted}")    
+
+            judge_contract = JUDGE.create_contract(conversation_formatted, type=type)
             print(f"Raw judge contract: {judge_contract}")
             contract_for_0 = JUDGE.format_contract_for_player(judge_contract, player_0)
             print(f"Contract for player 0:\n{contract_for_0}")

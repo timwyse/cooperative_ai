@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 from constants import POINTS_FOR_WIN, POINTS_FOR_EXTRA_RESOURCE
-from utils import calculate_score
+from utils import calculate_scores
 
 class BaseLogger:
     def log(self, event: str, details: dict):
@@ -258,8 +258,7 @@ class Logger(BaseLogger):
 
         # TODO: move metrics related code to a separate file
         # Calculate scores and metrics
-        scores = {str(i): (calculate_score(p))
-                 for i, p in enumerate(players)}
+        scores = calculate_scores(players)
         total_scores = sum(scores.values())
         max_score = sum(max_possible_score(p) for p in players)
         total_accuracy = total_scores / max_score if max_score > 0 else 0
