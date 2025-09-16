@@ -319,6 +319,11 @@ class Player:
                         r, c = map(int, pair_matches[-1])
                         return r, c
                     return None
+                
+                extracted_move = extract_move(move)
+                if extracted_move is None:
+                    print("Invalid move: Could not extract a valid position.")
+                    return None
 
                 r, c = extract_move(move)
                 new_pos = (r, c)
