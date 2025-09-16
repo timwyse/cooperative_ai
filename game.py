@@ -225,7 +225,7 @@ class Game:
         self.print_game_state()
         
         # Calculate final scores
-        scores = {p.name: (100 + 5 * sum(dict(p.resources).values())) if p.has_finished() else 0 
+        scores = {p.name: (10 + 5 * sum(dict(p.resources).values())) if p.has_finished() else 0
                  for p in self.players}
         
         # Print final scores

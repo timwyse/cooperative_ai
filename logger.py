@@ -345,6 +345,6 @@ def max_possible_score(player):
     """
     starting_resources = sum(player.starting_resources.values())
     min_steps = abs(player.goal[0] - player.start[0]) + abs(player.goal[1] - player.start[1])
-    max_possible_score = 100 + (5 * (starting_resources - min_steps)) if starting_resources >= min_steps else 0
+    max_possible_score = 10 + (5 * (starting_resources - min_steps)) if starting_resources >= min_steps else 0
     
     return max_possible_score
