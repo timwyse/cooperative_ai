@@ -14,7 +14,7 @@ from judge import JUDGE
 from logger import Logger
 from player import Player
 import prompts
-from utils import freeze
+from utils import freeze, calculate_score
 
 
 class Game:
@@ -225,7 +225,7 @@ class Game:
         self.print_game_state()
         
         # Calculate final scores
-        scores = {p.name: (10 + 5 * sum(dict(p.resources).values())) if p.has_finished() else 0
+        scores = {p.name: (calculate_score(p))
                  for p in self.players}
         
         # Print final scores

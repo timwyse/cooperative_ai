@@ -9,6 +9,7 @@ from config import GameConfig, load_config
 from game import Game
 from agents import FOUR_1, NANO, MINI
 from logger import Logger
+from utils import calculate_score
 
 # Experiment Configuration
 BOARD_CONFIG = "needs_benefits_1"  # Name of the board config file
@@ -132,8 +133,7 @@ def run_experiments():
                     game.run()
                 
                 # Print success summary
-                scores = {p.name: (10 + 5 * sum(dict(p.resources).values())) if p.has_finished() else 0 
-                         for p in game.players}
+                scores = {p.name: calculate_score(p) for p in game.players}
                 print(f"Run {run_id + 1}: SUCCESS, turns={game.turn}, score={sum(scores.values())}, goals={[p.has_finished() for p in game.players]}")
             except Exception as e:
                 print(f"\nRun {run_id + 1}: CRASHED!")
