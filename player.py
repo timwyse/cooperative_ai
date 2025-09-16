@@ -51,7 +51,9 @@ class Player:
         self.starting_resources = {color: 0 for color in self.colors}
         self.promised_resources_to_give = {color: 0 for color in self.colors}
         self.promised_resources_to_receive = {color: 0 for color in self.colors}
+        self.contract_type = config.contract_type
         self.contract = None
+        self.score = 0
         self.grid = Grid(self.grid_size, self.colors, grid=self.config.grid)
         self.fog_of_war = False # set in game.py based on config.fog_of_war
 
@@ -645,9 +647,13 @@ class Player:
                 return False
     
     
-    def generate_contract_prompt(self, player_context):
+    def generate_tile_level_contract_prompt(self, player_context):
         
-        return prompts.generate_contract_prompt(self.system_prompt, player_context)
+        return prompts.generate_tile_level_contract_prompt(self.system_prompt, player_context)
+    
+    def generate_contract_for_finishing_prompt(self, player_context):
+        
+        return prompts.generate_contract_for_finishing_prompt(self.system_prompt, player_context)
     
     def get_completion(self, messages, max_completion_tokens=1000):
         response = self.client.chat.completions.create(

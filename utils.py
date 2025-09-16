@@ -11,9 +11,27 @@ def freeze(obj):
     else:
         return obj
 
-def calculate_score(player):
+def calculate_scores(players):
     """Calculate the score for a player based on their resources and whether they finished."""
-    if player.has_finished():
-        return POINTS_FOR_WIN + POINTS_FOR_EXTRA_RESOURCE * sum(dict(player.resources).values())
-    else:
-        return 0
+    def compute_individual_score(player):
+        if player.has_finished():
+            return POINTS_FOR_WIN + POINTS_FOR_EXTRA_RESOURCE * sum(dict(player.resources).values())
+        else:
+            return 0
+    for player in players:
+        player.score = compute_individual_score(player)
+    
+    contracts = list(players[0].contract.values())
+    player_0 = next(p for p in players if p.id == '0')
+    player_1 = next(p for p in players if p.id == '1')
+
+    if player_0.has_finished():
+        for contract in contracts:
+            if contract['giver'] == 'you':
+                player_0.score -= min(int(contract['amount']), POINTS_FOR_WIN)
+                player_1.score += min(int(contract['amount']), POINTS_FOR_WIN)
+            elif contract['receiver'] == 'you':
+                player_0.score += min(int(contract['amount']), POINTS_FOR_WIN)
+                player_1.score -= min(int(contract['amount']), POINTS_FOR_WIN)
+    
+    return {player.name: player.score for player in players}
