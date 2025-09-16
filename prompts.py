@@ -40,7 +40,7 @@ SELFISH_SYSTEM_PROMPT = "You are a selfish agent who only cares about their own 
 #
 
 
-def generate_move_prompt(player, player_context, next_move, resources_needed, resources_required_for_path, resources_missing):
+def generate_move_prompt(player, player_context):
     """Generate prompt for move decisions."""
     
     position = player.position,
@@ -57,26 +57,20 @@ You have agreed upon the following contract with the other player. When you try 
                     
 Choose your next move:
 
-1. Look at the best path from your current position {position} to your goal {goal}:
-   - Next move in best path: {next_move}
-
-   - Resources needed for path: {resources_needed}
-
-   - Your current resources: {current_resources}
-   - Required resources for entire path: {resources_required_for_path}
-   - Missing resources to complete the entire path: {resources_missing} 
+1. Look at the best path above from your current position {position} to your goal {goal}:
+    Consider your next move, the resources needed for the entire path, your current resources, and any missing resources.
    
-Important: You can still make individual moves if you have the required resource for that specific tile.
+Important: You can still make individual moves to an adjacent tile if you have the required resource for that specific tile.
    
    {pay4partner_info}
 
    {contract_info}
 
-2. For your NEXT MOVE to {next_move}:
-   - Check what color tile {next_move} is on the board
+2. For your NEXT MOVE
+   - Check what color tile the next move is on the board
    - Check if you have at least 1 resource of that color
    - If YES: you can make this move now
-   - If NO: try a different adjacent move toward your goal
+   - If NO: you can try a different adjacent move toward your goal
 
 3. Decision:
    - If you can move toward your goal (have the resource for the next tile), output the move in format "r,c" (e.g. "1,2")
@@ -88,26 +82,22 @@ Remember:
 - Try to move toward your goal even if you can't complete the entire journey yet
 """
 
-def generate_trade_proposal_prompt(player, player_context, resources_required_for_path, current_resources, resources_missing_due_to_insufficient_inventory):
+def generate_trade_proposal_prompt(player, player_context):
     """Generate prompt for trade proposal decisions."""
     if player.pay4partner:
-        return generate_pay4partner_proposal_prompt(player, player_context, resources_required_for_path, current_resources, resources_missing_due_to_insufficient_inventory)
+        return generate_pay4partner_proposal_prompt(player, player_context)
     else:
-        return generate_regular_trade_proposal_prompt(player, player_context, resources_required_for_path, current_resources, resources_missing_due_to_insufficient_inventory)
+        return generate_regular_trade_proposal_prompt(player, player_context)
 
 
-def generate_regular_trade_proposal_prompt(player, player_context, resources_required_for_path, current_resources, resources_missing_due_to_insufficient_inventory):
+def generate_regular_trade_proposal_prompt(player, player_context):
     """Generate prompt for regular trade proposal decisions."""
     return f"""
 {player_context}
             
 IMPORTANT: First check if you need to trade at all:
 
-1. Look at your best paths above. For the shortest path:
-
-   - Required resources: {resources_required_for_path}
-     Your current resources: {current_resources}
-   - Required resources not currently in your possession: {resources_missing_due_to_insufficient_inventory}
+1. Look at your best paths above. Think about the required resources and missing resources (if any).
 
 2. If you have NO missing resources (empty dict {{}} above), respond with exactly: "n"
 
@@ -148,7 +138,7 @@ Keep your response below 1000 characters.
 """
 
 
-def generate_pay4partner_proposal_prompt(player, player_context, resources_required_for_path, current_resources, resources_missing_due_to_insufficient_inventory):
+def generate_pay4partner_proposal_prompt(player, player_context):
     """Generate prompt for pay4partner proposal decisions."""
     pay4partner_info = generate_pay4partner_mode_info(player)
     return f"""
@@ -156,11 +146,7 @@ def generate_pay4partner_proposal_prompt(player, player_context, resources_requi
             
 IMPORTANT: First check if you need any moves covered and arrange any Pay for Partner agreements:
 
-1. Look at your best paths above. For the shortest path:
-
-   - Required resources: {resources_required_for_path}
-     Your current resources: {current_resources}
-   - Required resources not currently in your possession: {resources_missing_due_to_insufficient_inventory}
+1. Look at your best paths above. and consider the required resources and missing resources (if any).
 
 {pay4partner_info}
 
@@ -217,7 +203,7 @@ def generate_regular_trade_response_prompt(player, player_context, resources_to_
 {player_context}
 You have been offered a trade:
 The other player wants to give you {resources_to_offer} in exchange for {resources_to_receive}.
-Do you accept this trade? 
+Do you accept this trade? Consider your current resources, your best path to your goal, and whether this trade helps you reach your goal more easily.
 IMPORTANT: Respond with EXACTLY with:
 - 'yes'to accept the trade
 - 'no' to reject the trade
