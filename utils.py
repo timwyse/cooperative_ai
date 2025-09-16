@@ -21,17 +21,18 @@ def calculate_scores(players):
     for player in players:
         player.score = compute_individual_score(player)
     
-    contracts = list(players[0].contract.values())
-    player_0 = next(p for p in players if p.id == '0')
-    player_1 = next(p for p in players if p.id == '1')
+    if players[0].contract and players[0].contract_type == 'contract_for_finishing':
+        contracts = list(players[0].contract.values())
+        player_0 = next(p for p in players if p.id == '0')
+        player_1 = next(p for p in players if p.id == '1')
 
-    if player_0.has_finished():
-        for contract in contracts:
-            if contract['giver'] == 'you':
-                player_0.score -= min(int(contract['amount']), POINTS_FOR_WIN)
-                player_1.score += min(int(contract['amount']), POINTS_FOR_WIN)
-            elif contract['receiver'] == 'you':
-                player_0.score += min(int(contract['amount']), POINTS_FOR_WIN)
-                player_1.score -= min(int(contract['amount']), POINTS_FOR_WIN)
-    
+        if player_0.has_finished():
+            for contract in contracts:
+                if contract['giver'] == 'you':
+                    player_0.score -= min(int(contract['amount']), POINTS_FOR_WIN)
+                    player_1.score += min(int(contract['amount']), POINTS_FOR_WIN)
+                elif contract['receiver'] == 'you':
+                    player_0.score += min(int(contract['amount']), POINTS_FOR_WIN)
+                    player_1.score -= min(int(contract['amount']), POINTS_FOR_WIN)
+        
     return {player.name: player.score for player in players}
