@@ -11,8 +11,8 @@ from agents import FOUR_1, NANO, MINI
 from logger import Logger
 
 # Experiment Configuration
-BOARD_CONFIG = "yv_max_trade"  # Name of the board config file
-PARAM_VARIATIONS = "parameter_variations_test"  # Name of the variations file without .yaml extension
+BOARD_CONFIG = "needs_benefits_1"  # Name of the board config file
+PARAM_VARIATIONS = "temp_parameter_variations"  # Name of the variations file without .yaml extension
 AGENTS = [FOUR_1, FOUR_1]  
 
 # Generate model pair info
@@ -20,7 +20,7 @@ MODEL_PAIR = {
     "agents": AGENTS,
     "name": "-".join(agent.name.replace(" ", "_") for agent in AGENTS)  # e.g., "FOUR_1-FOUR_1"
 }
-N_RUNS = 2
+N_RUNS = 10
 
 
 def generate_run_name(config, run_id):

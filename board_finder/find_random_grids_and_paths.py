@@ -21,9 +21,9 @@ from tqdm import tqdm
 
 # === CONFIG ===
 N_SAMPLES = 1_000_000   # number of random grids
-N = 6
-rows, cols = 6 , 6
-num_B = 17
+N = 4
+rows, cols = N, N
+num_B = (N**2 - 2) // 2   # half of remaining positions
 MAX_LEN = 15
 OUTPUT_FILE = f"random_boards_classification_{rows}x{cols}.jsonl"
 # fixed greens
@@ -41,7 +41,7 @@ def neighbors(pos):
             yield (nr,nc)
 
 # DFS path enumerator with max length limit
-def enumerate_paths(grid, start, goal, max_len=12):
+def enumerate_paths(grid, start, goal, max_len=2*(N-1) + 4):
     paths = []
     def dfs(curr, visited, path):
         if len(path) > max_len:
@@ -61,11 +61,14 @@ def enumerate_paths(grid, start, goal, max_len=12):
 
 # path checker for both POVs
 def check_path_conditions(grid):
-    start, goal = (0,0), (5,5)
+    start, goal = (0,0), (N - 1, N - 1)
     all_paths = enumerate_paths(grid, start, goal, max_len=MAX_LEN)
+    short_path_length = 2 * (N - 1)
+    short_plus_2_path_length = short_path_length + 2
+    short_plus_4_path_length = short_path_length + 4
 
-    B_10_path = B_12_path = B_14_path = B_1_trade = B_2_trade = B_3_trade = False
-    R_10_path = R_12_path = R_14_path = R_1_trade = R_2_trade = R_3_trade = False
+    B_short_pure_path = B_pure_plus_2_path = B_pure_plus_4_path = B_1_trade = B_2_trade = B_3_trade = False
+    R_short_pure_path = R_pure_plus_2_path = R_pure_plus_4_path = R_1_trade = R_2_trade = R_3_trade = False
 
     for path in all_paths:
         colors = [grid[r][c] for (r,c) in path[1:]]
@@ -74,57 +77,58 @@ def check_path_conditions(grid):
         r_count = colors.count('R')
         g_count = colors.count('G')
 
-        # --- Blue POV ---
-        if length == 10 and b_count == 9 and r_count == 0 and g_count == 1:
+        if length == short_path_length and b_count == short_path_length - 1 and r_count == 0 and g_count == 1:
             # needs = False
-            B_10_path = True
-        if length == 12 and b_count == 11 and r_count == 0 and g_count == 1:
+            B_short_pure_path = True
+        if length == short_plus_2_path_length and b_count == short_plus_2_path_length - 1 and r_count == 0 and g_count == 1:
             # needs = False
-            B_12_path = True
-        if length == 14 and b_count == 13 and r_count == 0 and g_count == 1:
+            B_pure_plus_2_path = True
+        if length == short_plus_4_path_length and b_count == short_plus_4_path_length - 1 and r_count == 0 and g_count == 1:
             # needs = False
-            B_14_path = True
+            B_pure_plus_4_path = True
             # short path with one trade exists
-        if length == 10 and b_count == 8 and r_count == 1 and g_count == 1:
+        if length == short_path_length and b_count == short_path_length - 2 and r_count == 1 and g_count == 1:
             B_1_trade = True
-        if length == 10 and b_count == 7 and r_count == 2 and g_count == 1:
+        if length == short_path_length and b_count == short_path_length - 3 and r_count == 2 and g_count == 1:
             B_2_trade = True
-        if length == 10 and b_count == 6 and r_count == 3 and g_count == 1:
+        if length == short_path_length and b_count == short_path_length - 4 and r_count == 3 and g_count == 1:
             B_3_trade = True
 
         # --- Red POV ---
-        if length == 10 and r_count == 9 and b_count == 0 and g_count == 1:
-            # needs = False
-            R_10_path = True
-        if length == 12 and r_count == 11 and b_count == 0 and g_count == 1:
-            # needs = False
-            R_12_path = True
-        if length == 14 and r_count == 13 and b_count == 0 and g_count == 1:
-            # needs = False
-            R_14_path = True
-            # short path with one trade exists
-        if length == 10 and r_count == 8 and b_count == 1 and g_count == 1:
+        if length == short_path_length and r_count == short_path_length - 1 and b_count == 0 and g_count == 1:
+            R_short_pure_path = True
+        if length == short_plus_2_path_length and r_count == short_plus_2_path_length - 1 and b_count == 0 and g_count == 1:
+            R_pure_plus_2_path = True
+        if length == short_plus_4_path_length and r_count == short_plus_4_path_length - 1 and b_count == 0 and g_count == 1:
+            R_pure_plus_4_path = True
+        if length == short_path_length and r_count == short_path_length - 2 and b_count == 1 and g_count == 1:
             R_1_trade = True
-        if length == 10 and r_count == 7 and b_count == 2 and g_count == 1:
+        if length == short_path_length and r_count == short_path_length - 3 and b_count == 2 and g_count == 1:
             R_2_trade = True
-        if length == 10 and r_count == 6 and b_count == 3 and g_count == 1:
+        if length == short_path_length and r_count == short_path_length - 4 and b_count == 3 and g_count == 1:
             R_3_trade = True
-
-        if B_10_path and B_12_path and B_14_path and B_1_trade and B_2_trade and B_3_trade and R_10_path and R_12_path and  R_14_path and R_1_trade and R_2_trade and R_3_trade:
-            break
+        
+        if (B_short_pure_path and R_short_pure_path and
+            B_pure_plus_2_path and R_pure_plus_2_path and
+            B_pure_plus_4_path and R_pure_plus_4_path and
+            B_1_trade and R_1_trade and
+            B_2_trade and R_2_trade and
+            B_3_trade and R_3_trade):
+                break
+    
     return {
-            'B_10_path': B_10_path,
-            'B_12_path': B_12_path,
-            'B_14_path': B_14_path,
+            'B_short_pure_path': B_short_pure_path,
+            'B_pure_plus_2_path': B_pure_plus_2_path,
+            'B_pure_plus_4_path': B_pure_plus_4_path,
             'B_1_trade': B_1_trade,
             'B_2_trade': B_2_trade,
             'B_3_trade': B_3_trade,
-            'R_10_path': R_10_path,
-            'R_12_path': R_12_path,
-            'R_14_path': R_14_path,
+            'R_short_pure_path': R_short_pure_path,
+            'R_pure_plus_2_path': R_pure_plus_2_path,
+            'R_pure_plus_4_path': R_pure_plus_4_path,
             'R_1_trade': R_1_trade,
             'R_2_trade': R_2_trade,
-            'R_3_trade': R_3_trade,
+            'R_3_trade': R_3_trade
         }
 
 
@@ -132,7 +136,7 @@ def classify_board(conditions):
     """Analyzes boolean conditions to calculate metrics and classify the board."""
     # Minimum and Maximum trades for the most efficient (10-step) path
     b_min_trades = -1
-    if conditions['B_10_path']:
+    if conditions['B_short_pure_path']:
         b_min_trades = 0
     elif conditions['B_1_trade']:
         b_min_trades = 1
@@ -142,7 +146,7 @@ def classify_board(conditions):
         b_min_trades = 3
 
     r_min_trades = -1
-    if conditions['R_10_path']:
+    if conditions['R_short_pure_path']:
         r_min_trades = 0
     elif conditions['R_1_trade']:
         r_min_trades = 1
@@ -152,13 +156,13 @@ def classify_board(conditions):
         r_min_trades = 3
 
     b_max_trades = -1
-    if conditions['B_3_trade']:
+    if conditions['R_3_trade']:
         b_max_trades = 3
-    elif conditions['B_2_trade']:
+    elif conditions['R_2_trade']:
         b_max_trades = 2
-    elif conditions['B_1_trade']:
+    elif conditions['R_1_trade']:
         b_max_trades = 1
-    elif conditions['B_10_path']:
+    elif conditions['B_short_pure_path']:
         b_max_trades = 0
 
     r_max_trades = -1
@@ -168,7 +172,7 @@ def classify_board(conditions):
         r_max_trades = 2
     elif conditions['R_1_trade']:
         r_max_trades = 1
-    elif conditions['R_10_path']:
+    elif conditions['R_short_pure_path']:
         r_max_trades = 0
 
     # Efficiency Choice Score
@@ -189,8 +193,8 @@ def classify_board(conditions):
     bucket = "Uncategorized"
 
     # This checks if a long, pure path exists
-    b_has_long_pure_path = conditions['B_12_path'] or conditions['B_14_path']
-    r_has_long_pure_path = conditions['R_12_path'] or conditions['R_14_path']
+    b_has_long_pure_path = conditions['B_pure_plus_2_path'] or conditions['B_pure_plus_4_path']
+    r_has_long_pure_path = conditions['R_pure_plus_2_path'] or conditions['R_pure_plus_4_path']
 
     if b_min_trades > 0 and r_min_trades > 0:
         bucket = "Mutual Dependency"
