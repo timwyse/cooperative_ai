@@ -144,6 +144,5 @@ def generate_turn_context(game, player):
 BOARD LAYOUT: {fog_of_war_context}
 {player.get_readable_board()}
 
-HISTORY OF EVENTS:
-{recent_history if recent_history else "This is the first turn."}
+{f"HISTORY OF EVENTS:\n{recent_history if recent_history else 'This is the first turn.'}" if game.with_context else ""}
 """

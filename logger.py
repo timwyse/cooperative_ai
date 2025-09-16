@@ -255,7 +255,7 @@ class Logger(BaseLogger):
 
         # TODO: move metrics related code to a separate file
         # Calculate scores and metrics
-        scores = {str(i): (100 + 5 * sum(dict(p.resources).values())) if p.has_finished() else 0 
+        scores = {str(i): (10 + 5 * sum(dict(p.resources).values())) if p.has_finished() else 0
                  for i, p in enumerate(players)}
         total_scores = sum(scores.values())
         max_score = sum(max_possible_score(p) for p in players)
@@ -345,6 +345,6 @@ def max_possible_score(player):
     """
     starting_resources = sum(player.starting_resources.values())
     min_steps = abs(player.goal[0] - player.start[0]) + abs(player.goal[1] - player.start[1])
-    max_possible_score = 100 + (5 * (starting_resources - min_steps)) if starting_resources >= min_steps else 0
+    max_possible_score = 10 + (5 * (starting_resources - min_steps)) if starting_resources >= min_steps else 0
     
     return max_possible_score
