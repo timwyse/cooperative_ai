@@ -139,7 +139,7 @@ def run_experiments(start_id=None, end_id=None):
                 "config": {
                     "pay4partner": variation["pay4partner"],
                     "contract_type": variation["contract_type"],
-                    "with_context": variation["with_context"],
+                    "with_context": config.with_context,
                     "with_message_history": variation["with_message_history"],
                     "fog_of_war": variation["fog_of_war"]
                 },
