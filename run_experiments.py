@@ -115,12 +115,12 @@ def run_experiments(start_id=None, end_id=None):
                 
                 pay4partner=variation["pay4partner"],
                 contract_type=variation["contract_type"],
-                with_context=variation["with_context"],
                 with_message_history=variation["with_message_history"],
                 fog_of_war=variation["fog_of_war"],
                 
                 display_gui=False,
-                wait_for_enter=False
+                wait_for_enter=False,
+                with_context = True
             )
 
             # Generate experiment path and timestamp
