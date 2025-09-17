@@ -81,6 +81,11 @@ class Game:
             self.clock = pygame.time.Clock()
         self.running = True
 
+        # Initialize trade metrics
+        self.total_trades_proposed = 0
+        self.total_trades_accepted = 0
+        self.total_trades_rejected = 0
+
         # Logging Initial State
         self.logger.log_game_config(self.config, self.players, self.grid)
 
@@ -246,8 +251,14 @@ class Game:
         for player_name, score in scores.items():
             print(f"{player_name}: {score} points")
         
+        final_metrics = {
+            'total_trades_proposed': self.total_trades_proposed,
+            'total_trades_accepted': self.total_trades_accepted,
+            'total_trades_rejected': self.total_trades_rejected
+        }
+        
         # Log final game state and metrics to combined logger
-        self.logger.log_game_end(self.players, self.turn)
+        self.logger.log_game_end(self.players, self.turn, additional_metrics=final_metrics)
 
         # for player in self.players:
         #     print(f"message history for player {player.name}: {player.messages}")
@@ -369,6 +380,14 @@ class Game:
                 if trade_result["is_valid"]:
                     trade_executed = self.handle_trade(player, propose_trade, player_turn_data)
                     trade_result["executed"] = trade_executed
+
+                    # record trade metrics
+                    resources_to_offer = propose_trade.get('resources_to_offer', [])
+                    resources_to_receive = propose_trade.get('resources_to_receive', [])
+                    if resources_to_offer and resources_to_receive:  # Only count if actual resources specified
+                        self.total_trades_proposed += 1
+    
+
                     player_turn_data[player.name]['trade_proposal_outcome'] = 'accepted' if trade_executed else 'rejected'
                     
                     # Add trade to turn summary immediately
@@ -642,6 +661,7 @@ class Game:
             trade_accepted = other_player.accept_trade(self.grid, self, propose_trade)
             
             if trade_accepted:
+                self.total_trades_accepted += 1
                 # Execute the trade immediately
                 if self.pay4partner is False:
                     # Execute the trade by swapping resources
@@ -703,6 +723,7 @@ class Game:
                 return True
             else:
                 target_label = other_player.get_player_label(self)
+                self.total_trades_rejected += 1
                 print(f"\nTrade rejected by {target_label}")
                 return False
 
