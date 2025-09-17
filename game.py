@@ -5,7 +5,8 @@ import random
 import re
 from time import sleep
 
-import pygame
+# Only import pygame when needed
+pygame = None
 from tabulate import tabulate
 
 from constants import AVAILABLE_COLORS, COLOR_MAP, TILE_SIZE, FPS
@@ -22,6 +23,12 @@ class Game:
     def __init__(self, config, logger=None):
         # Configuration and Logging
         self.config = config
+        
+        # Only import pygame if we need to display GUI
+        global pygame
+        if config.display_gui and pygame is None:
+            import pygame
+            
         # Use provided logger or create a new one
         if logger is not None:
             self.logger = logger
