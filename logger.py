@@ -100,7 +100,8 @@ class Logger(BaseLogger):
                 "model": player.model_name,
                 "start": list(player.position),
                 "goal": list(player.goal),
-                "initial_resources": dict(player.resources)
+                "initial_resources": dict(player.resources),
+                "non_cooperative_baseline": player.non_cooperative_baseline
             })
         
         self.log_data["config"] = {

@@ -8,7 +8,7 @@ from openai import OpenAI
 from together import Together
 
 from config import GameConfig
-from constants import OPENAI_API_KEY, TOGETHER_API_KEY, AVAILABLE_COLORS
+from constants import OPENAI_API_KEY, TOGETHER_API_KEY, AVAILABLE_COLORS, POINTS_FOR_WIN, POINTS_FOR_EXTRA_RESOURCE
 from grid import Grid
 import prompts
 
@@ -56,6 +56,7 @@ class Player:
         self.score = 0
         self.grid = Grid(self.grid_size, self.colors, grid=self.config.grid)
         self.fog_of_war = False # set in game.py based on config.fog_of_war
+        self.non_cooperative_baseline = 0
 
         # init pay4partner settings
         self.pay4partner = config.pay4partner
@@ -85,6 +86,16 @@ class Player:
             readable_board = '\n'.join([f'Row {i}: ' + ' '.join(row) for i, row in enumerate(board)])
             return readable_board
 
+    def compute_non_cooperative_baseline(self):
+        path_with_fewest_resources_needed = self.best_routes(self.grid)[0]
+        resources_needed = path_with_fewest_resources_needed['resources_missing_due_to_insufficient_inventory']
+        path_length = path_with_fewest_resources_needed['path_length_in_steps']
+        print(f"resources_needed: {resources_needed}. data type: {type(resources_needed)}")
+        if resources_needed == {}:
+            return POINTS_FOR_WIN + POINTS_FOR_EXTRA_RESOURCE * (sum(self.resources.values()) - path_length)
+        else:
+            return 0
+    
     ## Core Gameplay
     def distance_to_goal(self):
         distance = abs(self.position[0] - self.goal[0]) + abs(self.position[1] - self.goal[1])
