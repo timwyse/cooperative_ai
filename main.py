@@ -24,11 +24,11 @@ CONFIG = replace(
     # manual_resources = [{'R':0, 'B': 10}, {'R':10, 'B': 0}],
 
     wait_for_enter=False,
-    # display_gui=True,  # Disable Pygame window, only show console output
-    # with_context=True,  # Enable turn history between players
+    display_gui=True,  # Disable Pygame window, only show console output
+    with_context=True,  # Enable turn history between players
     with_message_history=False,  # Enable conversation memory for each player
     # pay4partner=True,  # Enable 'pay for partner' mode
-    # contract_type='strict',
+    contract_type='contract_for_finishing',
     # system_prompt=p.SELFISH_SYSTEM_PROMPT,
     # fog_of_war=[True, True],  # Enable fog of war for both players
 )

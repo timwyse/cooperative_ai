@@ -32,5 +32,5 @@ COLOR_MAP = {
 # Exclude 'black'
 AVAILABLE_COLORS = [color for color in COLOR_MAP if color != 'BK']
 
-POINTS_FOR_WIN = 10
+POINTS_FOR_WIN = 20
 POINTS_FOR_EXTRA_RESOURCE = 5

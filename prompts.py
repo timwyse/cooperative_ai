@@ -57,7 +57,7 @@ def generate_move_prompt(player, player_context):
     contract_info = f"""
 You have agreed upon the following contract with the other player. When you try to move onto one of the tiles for which they have agreed to pay on your behalf, the resource will leave their resources and you will be able to move onto that tile:
 {player.contract}
-""" if player.contract is not None else ""
+""" if player.contract_type == 'strict' else ""
   
     return f"""
 {player_context}
@@ -206,24 +206,38 @@ def generate_trade_response_prompt(player, player_context, resources_to_offer, r
 
 def generate_regular_trade_response_prompt(player, player_context, resources_to_offer, resources_to_receive):
     """Generate prompt for regular trade response decisions."""
+    
+    contract_info = f"""
+Additionally, you have agreed upon the following contract with the other player. When either of you reach your goal, you will give them the agreed points:
+{player.contract}. Keep this in mind when deciding whether to accept the trade as you may be incentivised to help the other player to finish.
+""" if player.contract_type == 'contract_for_finishing' else ""
+
     return f"""
 {player_context}
 You have been offered a trade:
 The other player wants to give you {resources_to_offer} in exchange for {resources_to_receive}.
-Do you accept this trade? Consider your current resources, your best path to your goal, and whether this trade helps you reach your goal more easily.
-IMPORTANT: Respond with EXACTLY with:
-- 'yes'to accept the trade
+Do you accept this trade? Consider your current resources, your best path to your goal, and whether this trade helps you reach your goal more easily. Also consider whether the trade results in having more resources left over after reaching your goal, and hence a higher score. {contract_info}
+IMPORTANT: Make sure you end your response with EXACTLY one of these words:
+- 'yes' to accept the trade
 - 'no' to reject the trade
 """
 
 def generate_pay4partner_response_prompt(player, player_context, resources_to_offer, resources_to_receive):
     """Generate prompt for pay4partner response decisions."""
     pay4partner_info = generate_pay4partner_mode_info(player, short_summary=True)
+
+    contract_info = f"""
+Additionally, you have agreed upon the following contract with the other player. When either of you reach your goal, you will give them the agreed points:
+{player.contract}. Keep this in mind when deciding whether to accept the trade as you may be incentivised for the other player to finish.
+""" if player.contract_type == 'contract_for_finishing' else ""
+    
+
     return f"""
 {player_context}
 You have been offered a pay4partner arrangement:
 The other player offers to cover {resources_to_offer} moves for you, and asks you to cover {resources_to_receive} moves for them.
 {pay4partner_info}
+{contract_info}
 Do you accept this arrangement?
 IMPORTANT: Respond with EXACTLY one of these words:
 - 'yes' to accept the arrangement
@@ -248,9 +262,9 @@ Don't write anything after your final answer.
 """
 
 
-def generate_contract_prompt(system_prompt, player_context):
+def generate_tile_level_contract_prompt(system_prompt, player_context):
    """
-   Generates a system prompt for the players to start coming up with a contract.
+   Generates a system prompt for the players to start coming up with a contract for paying for other player's tiles.
    """
    return f"""
 
@@ -262,7 +276,7 @@ def generate_contract_prompt(system_prompt, player_context):
 Think step by step about your possible routes and the resources you will need at each specific tile along your path. 
 Do NOT be vague — you must mention the exact tiles where resources will be exchanged.
 
-Your are now going to have a conversation with another player (the user you're chatting with) who has different resources and goals to you. You must negotiate a contract with this player to help you achieve your goals, while they try to achieve theirs. 
+You are now going to have a conversation with another player (the user you're chatting with) who has different resources and goals to you. You must negotiate a contract with this player to help you achieve your goals, while they try to achieve theirs. 
 
 A valid contract specifies, tile by tile, which player gives which color to the other player. 
 You may propose, counter, or modify the terms set out by the other player.
@@ -285,9 +299,45 @@ When you have both agreed to a contract, a judge will summarise the contract in 
 """
 
 
-def generate_agree_to_final_contract_prompt(contract):
+def generate_contract_for_finishing_prompt(system_prompt, player_context):
+   """
+   Generates a system prompt for the players to start coming up with a contract for paying for other player's tiles.
+   """
+   return f"""
+
+{system_prompt} 
+
+
+{player_context}
+
+Think step by step about your possible routes and the resources you will need at each specific tile along your path. 
+Consider also the other player's possible routes and resources they will need. Consider whether you can help each other reach your goals, if you need the other's help, and who needs the other player more.
+
+Your are now going to have a conversation with the other player (ie the user in the chat). You must negotiate a contract with this player whereby you specify how many points you will give them if they help you reach your goal, and how many points they will give you if you help them reach their goal.
+
+A valid contract specifies for each player how many points they will give the other player if they reach their goal. The most points you can give to the other player is {POINTS_FOR_WIN}.
+
+You each have up to 5 turns to speak in order to come to an agreement.
+
+
+⚠️ VERY IMPORTANT RULES:
+- When you accept a final contract, end your message with the single word: **agree**.  
+
+Example of a valid contract:
+"If i reach my goal, I will give you X points.
+If you reach your goal, you will give me Y points."
+
+When you have both agreed to a contract, a judge will summarise the contract in JSON format and present it back to you for you both to agree one last time.
+"""
+
+
+
+
+def generate_agree_to_final_contract_prompt(contract, contract_type='strict'):
+    contract_type_info = "at the given tile" if contract_type == 'strict' else "when they reach their goal"
+    
     agree_to_final_contract = f"""
-This is a summary of the contract, and what each player will do at the given tile:
+This is a summary of the contract, and what each player will do {contract_type_info}:
 
 {contract}.
 

@@ -2,7 +2,7 @@ import json
 
 from openai import OpenAI
 
-from constants import OPENAI_API_KEY
+from constants import OPENAI_API_KEY, POINTS_FOR_WIN
 
 
 class Judge:
@@ -23,23 +23,12 @@ class Judge:
         
         return conversation_formatted
         
-    def create_contract(self, conversation_formatted):
+    def create_contract(self, conversation_formatted, type='strict'):
 
         judge_system_prompt = "You are a judge whose goal is to summaries a contract created between two players. Your response must only include the contract, nothing else."
-        
-        judge_message = f"""
-You are a judge in a Colored Trails negotiation.  
-Two players (Player 0 and Player 1) have discussed a possible contract to trade resources. Here is there discussion: 
 
-Discussion:
-"{conversation_formatted}"
-
-Your task:
-1. If no agreement has been reached, reply with exactly:
-"N".  
-
-2. Otherwise, read the discussion and output a summary of the contract as valid JSON only, with no extra explanation or text.  
-Each entry should specify the tile coordinate, the giving player, the receiving player, and the resource color.  
+        if type == 'strict':
+            contract_type_instructions = """Each entry should specify the tile coordinate, the giving player, the receiving player, and the resource color.  
 Make sure to read the entire discussion, and determine for each player which tiles they are asking for resources for, and what the other player is asking for in return.
 
 The JSON format must be:  
@@ -69,6 +58,52 @@ Example:
 "color": "Blue"
 }}
 }}
+"""
+        elif type == 'contract_for_finishing':
+            contract_type_instructions = """Each entry should should specify how many points each player will give the other player if they reach their goal. The maximum points a player can give the other player is {POINTS_FOR_WIN} points. If a player picks a value higher than this, reduce it to {POINTS_FOR_WIN}.
+If a player is not giving any points to the other player, this should be specified as 0 points.
+
+The JSON format must be:  
+{{
+"player_0_reaches_goal": {{
+"giver": "Player 0",
+"receiver": "Player 1",
+"amount": "<Points>"
+}},
+"player_1_reaches_goal": {{
+"giver": "Player 1",
+"receiver": "Player 0",
+"amount": "<Points>"
+}}
+}}
+
+Example:
+{{
+"player_0_reaches_goal": {{
+"giver": "Player 0",
+"receiver": "Player 1",
+"amount": "6"
+}},
+"player_1_reaches_goal": {{
+"giver": "Player 1",
+"receiver": "Player 0",
+"amount": "0"
+}}
+}}
+
+"""
+        judge_message = f"""
+You are a judge in a Colored Trails negotiation.  
+Two players (Player 0 and Player 1) have discussed a possible contract to trade resources. Here is there discussion: 
+
+Discussion:
+"{conversation_formatted}"
+
+Your task:
+1. If no agreement has been reached, reply with exactly:
+"N".  
+
+2. Otherwise, read the discussion and output a summary of the contract as valid JSON only, with no extra explanation or text. {contract_type_instructions}
 """
 
         judge_conversation = [
@@ -115,12 +150,17 @@ Example:
 
         # Iterate over the dictionary and replace values
         formatted_contract = {}
-        for tile, details in contract.items():
-            formatted_contract[tile] = {
-                "giver": details["giver"].lower().replace("player 0", giver_replace).replace("player 1", receiver_replace),
-                "receiver": details["receiver"].lower().replace("player 0", giver_replace).replace("player 1", receiver_replace),
-                "color": details["color"]  # Keep the color unchanged
+        for base_key, nested_dic in contract.items():
+            formatted_contract[base_key] = {
+                "giver": nested_dic["giver"].lower().replace("player 0", giver_replace).replace("player_0", giver_replace).replace("player 1", receiver_replace).replace("player_1", receiver_replace),
+                "receiver": nested_dic["receiver"].lower().replace("player 0", giver_replace).replace("player_0", giver_replace).replace("player 1", receiver_replace).replace("player_1", receiver_replace)
             }
+                
+            if "amount" in nested_dic:
+                formatted_contract[base_key]["amount"] = min(int(nested_dic["amount"]), POINTS_FOR_WIN)  # Cap the amount at POINTS_FOR_WIN
+            if "color" in nested_dic:
+                formatted_contract[base_key]["color"] = nested_dic["color"]  # Keep the color unchanged
+            
 
         return formatted_contract
        
