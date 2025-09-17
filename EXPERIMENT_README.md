@@ -4,20 +4,20 @@
 
 1. **Setup Experiment Parameters** in `run_experiments.py`:
    ```python
-   N_RUNS = 10                    # Number of runs per configuration
    AGENTS = [FOUR_1, FOUR_1]      # Fixed model agents for all experiments
    GRIDS_FILE = "experiment_configs/4x4_experiment_grids.yaml"  # Grid configurations
    PARAM_VARIATIONS = "parameter_variations_test"  # Parameter variations file
    ```
 
 2. **Configure Parameter Combinations** in `experiment_configs/parameter_variations_test.yaml`:
+now we always have 
+with_context: true
+fog_of_war: [false, false]
    ```yaml
    # Each entry is a different configuration to test
    - pay4partner: true
      contract_type: none
      with_context: true
-     with_message_history: false
-     fog_of_war: [false, false]
    ```
 
 3. **Run Experiments**:
@@ -74,6 +74,7 @@ All experiments use these fixed settings:
 grid_size = 4
 colors = ['R', 'B', 'G']
 resource_mode = 'manual'
+with_context: true
 manual_resources = [
     {"R": 14, "B": 0, "G": 1},  # Player 0: Red chips + 1 Green
     {"R": 0, "B": 14, "G": 1}   # Player 1: Blue chips + 1 Green
