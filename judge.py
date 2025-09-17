@@ -4,6 +4,7 @@ from openai import OpenAI
 
 from constants import OPENAI_API_KEY, POINTS_FOR_WIN
 
+JUDGE_SYSTEM_PROMPT = "You are a judge whose goal is to summaries a contract created between two players. Your response must only include the contract, nothing else."
 
 class Judge:
     def __init__(self, model="gpt-4o", temperature=1):
@@ -25,7 +26,7 @@ class Judge:
         
     def create_contract(self, conversation_formatted, type='strict'):
 
-        judge_system_prompt = "You are a judge whose goal is to summaries a contract created between two players. Your response must only include the contract, nothing else."
+    
 
         if type == 'strict':
             contract_type_instructions = """Each entry should specify the tile coordinate, the giving player, the receiving player, and the resource color.  
@@ -107,7 +108,7 @@ Your task:
 """
 
         judge_conversation = [
-        {"role": "system", "content": judge_system_prompt},
+        {"role": "system", "content": JUDGE_SYSTEM_PROMPT},
             {"role": "user", "content": judge_message}
         ]
 
@@ -163,5 +164,49 @@ Your task:
             
 
         return formatted_contract
-       
+    
+    def check_if_move_is_in_contract(self, player, move, contract):
+        message_for_judge = f"""
+You are a judge in a Colored Trails game, a 2-D grid game where players spend resources to move onto tiles. 
+The two players have negotiated an agreement that specifies which tiles one player will cover (pay for) on behalf of the other. 
+
+Here is the negotiation:
+{contract}
+
+Task:
+1. First, check whether the players clearly agreed on specific tiles that one will cover for the other. 
+   - If there is no clear agreement, reply with "N" and nothing else. 
+
+2. If there is a clear agreement, consider the following move:
+   - Player: {player.name}
+   - Tile: {move}
+
+   Answer: 
+   - If this tile is NOT in the contract, reply with "N".
+   - If this tile is in the contract **but** {player.name} is the **giver** of a color for this tile, reply with "N".  
+   - If this tile is in the contract **and** {player.name} is the **receiver** of a color for this tile, reply with "Y". 
+
+IMPORTANT RULES:  
+- You may reason internally about the move and the contract.  
+- Your final output must be exactly one letter, either "Y" or "N". No other text.
+"""
+        response = self.get_completion(
+                [
+                    {"role": "system", "content": JUDGE_SYSTEM_PROMPT},
+                    {"role": "user", "content": message_for_judge}
+                ],
+                max_completion_tokens=10
+            ).strip().upper()
+
+        if response == 'Y':
+            print(f"Judge determined that move {move} by {player.name} is covered by the contract.")
+            return True
+        elif response == 'N':
+            print(f"Judge determined that move {move} by {player.name} is NOT covered by the contract.")
+            return False
+        else:
+            print(f"⚠️ Judge returned unexpected response: {response}. Treating as 'N'.")
+            return False
+        
+    
 JUDGE = Judge()

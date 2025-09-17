@@ -57,7 +57,7 @@ def generate_move_prompt(player, player_context):
     contract_info = f"""
 You have agreed upon the following contract with the other player. When you try to move onto one of the tiles for which they have agreed to pay on your behalf, the resource will leave their resources and you will be able to move onto that tile:
 {player.contract}
-""" if player.contract_type == 'strict' else ""
+""" if player.contract_type in ['strict', 'tile_with_judge_implementation'] and player.contract is not None else ""
   
     return f"""
 {player_context}

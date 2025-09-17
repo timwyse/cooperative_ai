@@ -28,7 +28,7 @@ CONFIG = replace(
     with_context=True,  # Enable turn history between players
     with_message_history=False,  # Enable conversation memory for each player
     # pay4partner=True,  # Enable 'pay for partner' mode
-    contract_type='contract_for_finishing',
+    contract_type='tile_with_judge_implementation',  # Enable contract negotiation
     # system_prompt=p.SELFISH_SYSTEM_PROMPT,
     # fog_of_war=[True, True],  # Enable fog of war for both players
 )
