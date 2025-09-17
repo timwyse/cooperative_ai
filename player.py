@@ -90,7 +90,6 @@ class Player:
         path_with_fewest_resources_needed = self.best_routes(self.grid)[0]
         resources_needed = path_with_fewest_resources_needed['resources_missing_due_to_insufficient_inventory']
         path_length = path_with_fewest_resources_needed['path_length_in_steps']
-        print(f"resources_needed: {resources_needed}. data type: {type(resources_needed)}")
         if resources_needed == {}:
             return POINTS_FOR_WIN + POINTS_FOR_EXTRA_RESOURCE * (sum(self.resources.values()) - path_length)
         else:
