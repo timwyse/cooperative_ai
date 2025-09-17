@@ -58,6 +58,7 @@ class Game:
 
         # Game State Initialization
         self.initialize_player_positions()
+        self.compute_non_cooperative_baselines()
         self.game_state = self.initialize_game_state()
         self.game_states = [copy.deepcopy(self.game_state)]
         self.turn = 0
@@ -136,6 +137,7 @@ class Game:
                 player.resources = dict(sorted(player.resources.items())) 
                 player.starting_resources = copy.deepcopy(player.resources)   
     
+    
     def initialize_player_positions(self):
         if self.config.manual_start_positions:
             if len(self.config.manual_start_positions) != self.n_players:
@@ -174,6 +176,11 @@ class Game:
                 if not isinstance(fog, bool):
                     raise ValueError("fog_of_war list must contain only boolean values (True/False).")
                 player.fog_of_war = fog
+    
+    
+    def compute_non_cooperative_baselines(self):
+        for player in self.players:
+            player.non_cooperative_baseline = player.compute_non_cooperative_baseline()
     
     
     def initialize_game_state(self):

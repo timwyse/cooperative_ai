@@ -24,7 +24,7 @@ CONFIG = replace(
     # manual_resources = [{'R':0, 'B': 10}, {'R':10, 'B': 0}],
 
     wait_for_enter=False,
-    # display_gui=True,  # Disable Pygame window, only show console output
+    display_gui=True,  # Disable Pygame window, only show console output
     with_context=True,  # Enable turn history between players
     with_message_history=False,  # Enable conversation memory for each player
     # pay4partner=True,  # Enable 'pay for partner' mode
