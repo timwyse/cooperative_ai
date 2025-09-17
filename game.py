@@ -401,7 +401,8 @@ class Game:
         for player in players:
             player_label = player.get_player_label(self)
             old_position = player.position
-            
+
+            move = None
             # For finished players in pay4partner mode
             if player.has_finished():
                 if not self.pay4partner or not any(v > 0 for v in player.promised_resources_to_give.values()):
