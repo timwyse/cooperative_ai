@@ -134,14 +134,16 @@ def generate_turn_context(game, player):
 === GAME STATUS FOR YOU - TURN {current_turn} ===
 
 - You are at position {player.position}
-- Your goal is at {player.goal}. Note this is also the other player's goal.
+- Your goal is at {player.goal}. 
 - Your resources: {dict(player.resources)}
-- The other player's resources: {other_resources}
-- The other player is at position {other_position}
 {promised_resources_to_give_message}
 {promised_resources_to_receive_message}
 - Your estimated best path options to your goal (although other paths are possible): {best_paths}
 - Shorter paths require less resources, but a longer path for which you don't need to trade is also a strong option (as a backup plan or negotiation tool, but it means you finish with less resources than if you take the shorter path). A short path that you don't need to trade for is ideal, and your negotiation strategy should reflect this.
+
+- The other player's goal is also {player.goal}. Note that because the other player likely has different resources to you, their best path to the goal may be different to yours.
+- The other player's resources: {other_resources}
+- The other player is at position {other_position}
 
 BOARD LAYOUT: {fog_of_war_context}
 {player.get_readable_board()}
