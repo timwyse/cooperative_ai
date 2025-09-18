@@ -250,7 +250,7 @@ class Logger(BaseLogger):
         with open(self.verbose_filepath, "w") as f:
             json.dump(self.verbose_log_data, f, indent=2, ensure_ascii=False)
     
-    def log_game_end(self, players, total_turns):
+    def log_game_end(self, players, total_turns, additional_metrics=None):
         """Log final game state and metrics."""
         # Set end timestamp for both logs
         end_time = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
@@ -284,7 +284,11 @@ class Logger(BaseLogger):
                 "max_possible_score": max_score
             }
         }
-        
+
+        # Add additional metrics if provided
+        if additional_metrics:
+            self.log_data["game"]["final_state"]["metrics"].update(additional_metrics)
+    
         # Add player states
         for i, player in enumerate(players):
             self.log_data["game"]["final_state"]["players"][str(i)] = {
