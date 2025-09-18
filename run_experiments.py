@@ -15,7 +15,7 @@ import argparse
 # File containing all 4x4 grids
 GRIDS_FILE = "experiment_configs/4x4_experiment_grids.yaml"  
 # Name of the variations file without .yaml extension
-PARAM_VARIATIONS = "parameter_variations_test"  
+PARAM_VARIATIONS = "parameter_variations"  
 AGENTS = [FOUR_1, FOUR_1]  
 
 MODEL_PAIR = {
@@ -94,6 +94,11 @@ def run_experiments(start_id=None, end_id=None):
         print(f"\nGrid {grid_id}")
         print(f"Bucket: {bucket}")
         print(f"Sub-stratum: {sub_stratum}")
+        if bucket == 'Needy Player (Red)' and AGENTS[0] == AGENTS[1]:
+            print(f"Skipping this grid because it is type {bucket} which is symmetry to Needy Player (Blue) when agents are identical.")
+            continue
+        
+         # Run experiments for each parameter variation
         
         for i, variation in enumerate(param_variations):
             print(f"\nVariation {i+1}:")
@@ -132,6 +137,7 @@ def run_experiments(start_id=None, end_id=None):
 
             metadata = {
                 "grid_id": grid_id,
+                "grid": grid,
                 "game_id": game_id,
                 "timestamp": timestamp,
                 "bucket": bucket,

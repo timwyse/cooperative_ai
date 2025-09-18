@@ -85,6 +85,18 @@ class Game:
         self.total_trades_proposed = 0
         self.total_trades_accepted = 0
         self.total_trades_rejected = 0
+        self.amount_received_from_trades = {'0': 0, '1': 0}  
+
+        # Initialize contract metrics
+        self.contract_accepted = 0
+        self.contract_negotiaion_length = 0  # in turns
+        self.num_tiles_in_contract = 0
+        self.num_tiles_promised_to_receive_from_contract = {'0': 0, '1': 0}
+        self.points_for_completion_promised_to_receive_from_contract = {'0': 0, '1': 0}
+
+        # initialise p4p metrics
+        self.total_p4p_promises_kept = 0
+        self.total_p4p_promises_broken = 0
 
         # Logging Initial State
         self.logger.log_game_config(self.config, self.players, self.grid)
@@ -254,7 +266,18 @@ class Game:
         final_metrics = {
             'total_trades_proposed': self.total_trades_proposed,
             'total_trades_accepted': self.total_trades_accepted,
-            'total_trades_rejected': self.total_trades_rejected
+            'total_trades_rejected': self.total_trades_rejected,
+            'amount_received_by_0_from_trades': self.amount_received_from_trades['0'],
+            'amount_received_by_1_from_trades': self.amount_received_from_trades['1'],
+            'contract_accepted': self.contract_accepted,
+            'contract_negotiaion_length': self.contract_negotiaion_length ,
+            'num_tiles_in_contract': self.num_tiles_in_contract,
+            'num_tiles_promised_to_receive_from_contract_0': self.num_tiles_promised_to_receive_from_contract['0'],
+            'num_tiles_promised_to_receive_from_contract_1': self.num_tiles_promised_to_receive_from_contract['1'],
+            'points_for_completion_promised_to_0': self.points_for_completion_promised_to_receive_from_contract['0'],
+            'points_for_completion_promised_to_1': self.points_for_completion_promised_to_receive_from_contract['1'],
+            'total_p4p_promises_kept': self.total_p4p_promises_kept,
+            'total_p4p_promises_broken': self.total_p4p_promises_broken
         }
         
         # Log final game state and metrics to combined logger
@@ -337,6 +360,7 @@ class Game:
                         contract = contracts['contract']
                         print(f"contract made! {contract}")
                         self.contract = contract
+
                         for player in self.players:
                             if player.id == '0':
                                 player.contract = contracts['contract_for_0']
@@ -459,6 +483,7 @@ class Game:
                 elif player.can_move_to_with_promised(move, self.grid):
                     partner_agrees_to_pay = self.handle_pay4partner_move(player, move)
                     if partner_agrees_to_pay:
+                        self.total_p4p_promises_kept += 1
                         player.move(move, self.grid)
                         move_result = move
                         player_turn_data[player.name]['move_made'] = move
@@ -481,6 +506,7 @@ class Game:
                                 })
                         print(f"{player_label} moved to {move} via pay4partner.")
                     else:
+                        self.total_p4p_promises_broken += 1
                         move_result = "partner declined to fulfill p4p promise"
                         # Get partner and color info
                         partner = next((p for p in self.players if p.name != player.name), None)
@@ -668,10 +694,13 @@ class Game:
                     for resource, quantity in resources_to_offer:
                         player.resources[resource] -= quantity
                         other_player.resources[resource] += quantity
+                        self.amount_received_from_trades[other_player.id] += quantity
 
                     for resource, quantity in resources_to_receive:
                         player.resources[resource] += quantity
                         other_player.resources[resource] -= quantity
+                        self.amount_received_from_trades[player.id] += quantity
+
                 else:
                     # In pay4partner mode, update promised resources instead of actual resources
                     for resource, quantity in resources_to_offer:
@@ -835,15 +864,29 @@ class Game:
 
             if contract_status: 
                 print("Both players agreed to the final contract.")
-                
+                self.contract_accepted = 1
+                self.contract_negotiaion_length = turn + 1 # in turns
+                self.num_tiles_in_contract = len(judge_contract) if self.contract_type == 'strict' else None
+                self.num_tiles_promised_to_receive_from_contract = {
+                                                                    '0': sum(1 for v in judge_contract.values() if v.get('receiver').lower() == 'player 0'),
+                                                                    '1': sum(1 for v in judge_contract.values() if v.get('receiver').lower() == 'player 1')
+                                                                } if self.contract_type == 'strict' else {'0': 0, '1': 0}
+                self.points_for_completion_promised_to_receive_from_contract = {
+                                                                '0': sum(int(v.get('amount', 0)) for v in judge_contract.values() if v.get('receiver', '').lower() == 'player 0'),
+                                                                '1': sum(int(v.get('amount', 0)) for v in judge_contract.values() if v.get('receiver', '').lower() == 'player 1')
+                                                            } if self.contract_type == 'contract_for_finishing'else {'0': 0, '1': 0}
+
                 return {'contract': judge_contract, 'contract_for_0': contract_for_0, 'contract_for_1': contract_for_1}
+            
             elif not message_starts_or_ends_with_agree(agree_0):
                 print(f"{player_0.name} did not agree to the final contract.")
                 print(f"{player_0.name}'s response: {agree_0}")
+                self.contract_negotiaion_length = turn + 1 # in turns
                 return None
             elif not message_starts_or_ends_with_agree(agree_1):
                 print(f"{player_1.name} did not agree to the final contract.")
                 print(f"{player_1.name}'s response: {agree_1}")
+                self.contract_negotiaion_length = turn + 1 # in turns
                 return None
 
     
