@@ -69,6 +69,10 @@ def load_experiment_data(experiment_dir="logs/experiments/per_grid"):
                 'Contract Type': metadata.get('config', {}).get('contract_type', contract),
                 'Total Turns': len(data['game']['turns']),
                 'Run ID': run_id,
+                'Non-Cooperative Baseline Player 0': data['config']['player_details'][0].get('non_cooperative_baseline',
+                                                                                            0),
+                'Non-Cooperative Baseline Player 1': data['config']['player_details'][1].get('non_cooperative_baseline',
+                                                                                             0),
                 'Total Score': sum(final_state['scores'].values()),
                 'Score Player 0': final_state['scores'].get('0', 0),  # Changed from 'Player 0' to '0'
                 'Score Player 1': final_state['scores'].get('1', 0),  # Changed from 'Player 1' to '1'
@@ -79,9 +83,9 @@ def load_experiment_data(experiment_dir="logs/experiments/per_grid"):
                 'Total Trades Proposed': final_state.get('metrics', {}).get('total_trades_proposed', 0),
                 'Total Trades Accepted': final_state.get('metrics', {}).get('total_trades_accepted', 0),
                 'Total Trades Rejected': final_state.get('metrics', {}).get('total_trades_rejected', 0),
-                'Total P4P Agreements': final_state.get('metrics', {}).get('total_p4p_agreements', 0),
                 'Total P4P Promises Kept': final_state.get('metrics', {}).get('total_p4p_promises_kept', 0),
                 'Total P4P Promises Broken': final_state.get('metrics', {}).get('total_p4p_promises_broken', 0)
+                # TODO: add the successful contracts
             }
             
             # Add grid metrics if available
