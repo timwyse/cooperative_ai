@@ -836,21 +836,25 @@ class Game:
                 # Get the judge to create a formal contract
                 judge_contract = JUDGE.create_contract(conversation_formatted, type=type)
                 print(f"Raw judge contract: {judge_contract}")
-                contract_for_0 = JUDGE.format_contract_for_player(judge_contract, player_0)
-                print(f"Contract for player 0:\n{contract_for_0}")
+                try: 
+                    contract_for_0 = JUDGE.format_contract_for_player(judge_contract, player_0)
+                    print(f"Contract for player 0:\n{contract_for_0}")
+                    
+                    contract_for_1 = JUDGE.format_contract_for_player(judge_contract, player_1)
+                    print(f"Contract for player 1:\n{contract_for_1}")
                 
-                contract_for_1 = JUDGE.format_contract_for_player(judge_contract, player_1)
-                print(f"Contract for player 1:\n{contract_for_1}")
+                    history_0.append({"role": "user", "content": prompts.generate_agree_to_final_contract_prompt(contract_for_0)})
+                    
+                    history_1.append({"role": "user", "content": prompts.generate_agree_to_final_contract_prompt(contract_for_1)})
 
-                history_0.append({"role": "user", "content": prompts.generate_agree_to_final_contract_prompt(contract_for_0)})
-                
-                history_1.append({"role": "user", "content": prompts.generate_agree_to_final_contract_prompt(contract_for_1)})
-
-                agree_0 = player_0.get_completion(history_0)
-                agree_1 = player_1.get_completion(history_1)
-                
-                contract_status = message_starts_or_ends_with_agree(agree_0) and message_starts_or_ends_with_agree(agree_1)
-                # Log the negotiation details
+                    agree_0 = player_0.get_completion(history_0)
+                    agree_1 = player_1.get_completion(history_1)
+                    
+                    contract_status = message_starts_or_ends_with_agree(agree_0) and message_starts_or_ends_with_agree(agree_1)
+                    # Log the negotiation details
+                except Exception as e:
+                    print(f"Error formatting contract for players: {e}")
+                    return None
             
             self.logger.log_contract_negotiation(
                 turn_number=self.turn,
