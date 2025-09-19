@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 load_dotenv(override=True)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY")
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
 # pygame constants
 TILE_SIZE = 100

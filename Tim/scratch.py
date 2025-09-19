@@ -137,3 +137,24 @@ df[
     (df['B_10_path'] == True)
 ].iloc[:3]['grid'].to_clipboard()
 # %%
+from anthropic import Anthropic
+import os
+key = os.getenv("ANTHROPIC_API_KEY")
+
+client = Anthropic(api_key=key)  # or leave blank if using env var
+
+# response = client.messages.create(
+#     model="claude-3-5-sonnet-20240620",  # choose a Claude model
+#     max_tokens=200,
+#     messages=[
+#         {"role": "user", "content": "Hello Claude, can you summarize how to use this API?"}
+#     ]
+# )
+
+# print(response.content[0].text)
+# %%
+client.models.list(limit=20)
+
+
+
+# %%

@@ -4,11 +4,12 @@ import json
 import random
 import re
 
+from anthropic import Anthropic
 from openai import OpenAI
 from together import Together
 
 from config import GameConfig
-from constants import OPENAI_API_KEY, TOGETHER_API_KEY, AVAILABLE_COLORS, POINTS_FOR_WIN, POINTS_FOR_EXTRA_RESOURCE
+from constants import ANTHROPIC_API_KEY, OPENAI_API_KEY, TOGETHER_API_KEY, AVAILABLE_COLORS, POINTS_FOR_WIN, POINTS_FOR_EXTRA_RESOURCE
 from grid import Grid
 import prompts
 
@@ -32,6 +33,8 @@ class Player:
             self.client = OpenAI(api_key=OPENAI_API_KEY)
         elif self.model_api == 'together':
             self.client = Together(api_key=TOGETHER_API_KEY)
+        elif self.model_api == 'anthropic':
+            self.client = Anthropic(api_key=ANTHROPIC_API_KEY)
         else:
             self.client = None
 
@@ -271,15 +274,14 @@ class Player:
             )
             
             # Prepare messages for this request
+            system_prompt = self.system_prompt.format(player_name="you",
+                                                    pay4partner_mode_info=self.pay4partner_mode_sys_prompt,
+                                                    pay4partner_scoring_info=self.pay4partner_scoring_info)
             current_messages = list(self.messages) if self.with_message_history else [{"role": "system",
-                                                                                       "content": self.system_prompt.format(
-                                                                                           player_name="you",
-                                                                                           pay4partner_mode_info=self.pay4partner_mode_sys_prompt,
-                                                                                           pay4partner_scoring_info=self.pay4partner_scoring_info)}]
+                                                                                       "content": system_prompt}]
             current_messages.append({"role": "user", "content": user_message})
 
             # Log prompt to verbose logger
-            system_prompt = current_messages[0]["content"]
             user_prompt = current_messages[-1]["content"]
             game.logger.log_player_prompt(game.turn, self.name, self.model_name, "move", system_prompt, user_prompt)
 
@@ -421,15 +423,14 @@ class Player:
             )
 
             # Prepare messages for this request
+            system_prompt = self.system_prompt.format(player_name="you",
+                                                      pay4partner_mode_info=self.pay4partner_mode_sys_prompt,
+                                                      pay4partner_scoring_info=self.pay4partner_scoring_info)
             current_messages = list(self.messages) if self.with_message_history else [{"role": "system",
-                                                                                       "content": self.system_prompt.format(
-                                                                                           player_name="you",
-                                                                                           pay4partner_mode_info=self.pay4partner_mode_sys_prompt,
-                                                                                           pay4partner_scoring_info=self.pay4partner_scoring_info)}]
+                                                                                       "content": system_prompt}]
             current_messages.append({"role": "user", "content": user_message})
 
             # Log prompt to verbose logger
-            system_prompt = current_messages[0]["content"]
             user_prompt = current_messages[-1]["content"]
             game.logger.log_player_prompt(game.turn, self.name, self.model_name, "trade_proposal", system_prompt,
                                           user_prompt)
@@ -529,13 +530,12 @@ class Player:
             )
 
             # Prepare messages for this request
+            system_prompt =  self.system_prompt.format(player_name="you",
+                                                       pay4partner_mode_info=self.pay4partner_mode_sys_prompt,
+                                                       pay4partner_scoring_info=self.pay4partner_scoring_info)
             current_messages = list(self.messages) if self.with_message_history else [{"role": "system",
-                                                                                       "content": self.system_prompt.format(
-                                                                                           player_name="you",
-                                                                                           pay4partner_mode_info=self.pay4partner_mode_sys_prompt,
-                                                                                           pay4partner_scoring_info=self.pay4partner_scoring_info)}]
+                                                                                       "content": system_prompt}]
             current_messages.append({"role": "user", "content": user_message})
-            system_prompt = current_messages[0]["content"]
             user_prompt = current_messages[-1]["content"]
             game.logger.log_player_prompt(game.turn, self.name, self.model_name, "trade_response", system_prompt,
                                           user_prompt)
@@ -625,15 +625,14 @@ class Player:
                 return agree == 'y'
         else:
             # Prepare messages for this request
+            system_prompt = self.system_prompt.format(player_name="you",
+                                                      pay4partner_mode_info=self.pay4partner_mode_sys_prompt,
+                                                      pay4partner_scoring_info=self.pay4partner_scoring_info)
             current_messages = list(self.messages) if self.with_message_history else [{"role": "system",
-                                                                                       "content": self.system_prompt.format(
-                                                                                           player_name="you",
-                                                                                           pay4partner_mode_info=self.pay4partner_mode_sys_prompt,
-                                                                                           pay4partner_scoring_info=self.pay4partner_scoring_info)}]
+                                                                                       "content": system_prompt}]
             current_messages.append({"role": "user", "content": message})
 
             # Log prompt to verbose logger
-            system_prompt = current_messages[0]["content"]
             user_prompt = message
             game.logger.log_player_prompt(game.turn, self.name, self.model_name, "pay4partner", system_prompt, user_prompt)
 
@@ -666,12 +665,24 @@ class Player:
         return prompts.generate_contract_for_finishing_prompt(self.system_prompt, player_context)
     
     def get_completion(self, messages, max_completion_tokens=1000):
-        response = self.client.chat.completions.create(
-                model=self.model,
-                temperature=self.temperature,
-                messages=messages,
-                max_completion_tokens=max_completion_tokens)
-        return response.choices[0].message.content.strip().lower()
+        if self.model_api == 'anthropic':
+            if messages[0]['role'] == 'system':
+                system_prompt = messages[0]['content']
+                messages = messages[1:]
+            else:
+                system_prompt = ""
+            response = self.client.messages.create(model=self.model,
+                                                   temperature=self.temperature,
+                                                   messages=messages,
+                                                   system=system_prompt,
+                                                   max_tokens=max_completion_tokens)
+            return response.content[0].text.strip().lower()
+        else:   
+            response = self.client.chat.completions.create(model=self.model,
+                                                           temperature=self.temperature,
+                                                           messages=messages,
+                                                           max_completion_tokens=max_completion_tokens)
+            return response.choices[0].message.content.strip().lower()
 
 
 def get_last_alphabetic_word(text):
