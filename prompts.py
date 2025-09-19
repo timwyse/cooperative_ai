@@ -22,6 +22,7 @@ CRITICAL SCORING RULES - READ CAREFULLY:
 - If you do NOT reach your goal position, you LOSE EVERYTHING and get 0 points total.
 - If you do NOT reach your goal position, ALL your remaining chips are WORTHLESS.
 - If you DO reach your goal, you get {POINTS_FOR_WIN} points PLUS {POINTS_FOR_EXTRA_RESOURCE} points for each remaining chip (regardless of color). 
+{pay4partner_scoring_info}
 - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
 
 Note: You have to reach your goal point, this is your ultimate goal. The secondary goal is to have as many chips as you can. You should not care about other players' performance. 
