@@ -31,7 +31,10 @@ def calculate_scores(players):
                 if contract['giver'] == 'you':
                     player_0.score -= min(int(contract['amount']), POINTS_FOR_WIN)
                     player_1.score += min(int(contract['amount']), POINTS_FOR_WIN)
-                elif contract['receiver'] == 'you':
+        
+        if player_1.has_finished():
+            for contract in contracts:
+                 if contract['receiver'] == 'you':
                     player_0.score += min(int(contract['amount']), POINTS_FOR_WIN)
                     player_1.score -= min(int(contract['amount']), POINTS_FOR_WIN)
         
