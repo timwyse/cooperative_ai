@@ -5,6 +5,8 @@ from pathlib import Path
 from collections import defaultdict
 from datetime import datetime
 
+OUTPUT_DIR =  'results'
+
 def load_experiment_data(experiment_dir="logs/experiments/per_grid"):
     """Load all experiment data from per_grid directory"""
     experiment_dir = Path(experiment_dir)
@@ -124,7 +126,9 @@ def load_experiment_data(experiment_dir="logs/experiments/per_grid"):
     
     # Save with timestamp
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_dir = Path(experiment_dir)
+    if not Path(OUTPUT_DIR).exists():
+        Path(OUTPUT_DIR).mkdir(parents=True)
+    output_dir = Path(OUTPUT_DIR)
     df.to_csv(output_dir / f"all_runs_{timestamp}.csv", index=False)
     df.to_csv(output_dir / "all_runs_latest.csv", index=False)
     
