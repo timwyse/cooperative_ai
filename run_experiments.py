@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from config import GameConfig, load_config
 from game import Game
-from agents import FOUR_1, NANO, MINI
+from agents import *
 from logger import Logger
 from utils import calculate_scores
 import argparse
@@ -16,7 +16,7 @@ import argparse
 GRIDS_FILE = "experiment_configs/4x4_experiment_grids.yaml"  
 # Name of the variations file without .yaml extension
 PARAM_VARIATIONS = "parameter_variations"  
-AGENTS = [FOUR_1, FOUR_1]  
+AGENTS = [LLAMA_3_3B, LLAMA_3_3B]  
 
 MODEL_PAIR = {
     "agents": AGENTS,

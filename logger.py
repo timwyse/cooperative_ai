@@ -220,7 +220,7 @@ class Logger(BaseLogger):
         
         # Add trade/arrangement data if exists
         trade_proposed = player_data.get('trade_proposed')
-        if trade_proposed and trade_proposed.get('resources_to_offer'):
+        if trade_proposed and isinstance(trade_proposed, dict) and trade_proposed.get('resources_to_offer'):
             if player_data.get('is_pay4partner', False):
                 # Pay4partner arrangement
                 player_turn_data["arrangement"] = {
