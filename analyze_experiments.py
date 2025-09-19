@@ -61,6 +61,7 @@ def load_experiment_data(experiment_dir="logs/experiments/per_grid"):
             
             # Extract metrics
             row = {
+                'Model Pair': metadata.get('model_pair', '') if 'model_pair' in metadata else 'FOUR_1-FOUR_1',
                 'Grid ID': metadata.get('grid_id', grid_dir.replace('grid_', '')),
                 'Config ID': config_dir,
                 'Run ID': run_id,

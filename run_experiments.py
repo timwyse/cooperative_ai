@@ -41,7 +41,7 @@ def generate_experiment_path(grid_data, config):
     config_dir = generate_config_dir_name(config)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     
-    base_path = Path("logs") / "experiments" / "per_grid" / bucket / grid_id / config_dir / timestamp
+    base_path = Path("logs") / "experiments" / "per_grid" / MODEL_PAIR['name']/ bucket / grid_id / config_dir / timestamp
     print(f"\nGenerating path for experiment:")
     print(f"  Bucket: {bucket}")
     print(f"  Grid: {grid_id}")
@@ -136,6 +136,7 @@ def run_experiments(start_id=None, end_id=None):
             game_id = f"grid_{grid_id}_{timestamp}"
 
             metadata = {
+                'model_pair': MODEL_PAIR['name'],
                 "grid_id": grid_id,
                 "grid": grid,
                 "game_id": game_id,
