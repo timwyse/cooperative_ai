@@ -11,7 +11,7 @@ import prompts as p
 # can replace any of the default values in DEFAULT_CONFIG with your own values
 CONFIG = replace(
     load_config("configs/asymmetric_trade_needed.yaml"), # can use DEFAULT_CONFIG or load a specific configs here eg load_config("configs/simple_prisoners_dilemma.yaml"),
-    players=[FOUR_1, FOUR_1],
+    players=[SONNET_4, SONNET_4],
 #     grid_size=6,
 # #     colors=['R', 'B', 'G', 'Y', 'PK'],
 # #     resource_mode='manual',

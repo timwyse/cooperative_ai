@@ -779,18 +779,21 @@ class Game:
         player_0 = players[0]
         player_1 = players[1]
         if type == 'contract_for_finishing':
-            history_0 = [{"role": "system", "content": player_0.generate_contract_for_finishing_prompt(player_0.generate_player_context_message(self, self.grid))}]
-            history_1 = [{"role": "system", "content": player_1.generate_contract_for_finishing_prompt(player_1.generate_player_context_message(self, self.grid))}]
+            system_player_0 = player_0.generate_contract_for_finishing_prompt(player_0.generate_player_context_message(self, self.grid))
+            system_player_1 = player_1.generate_contract_for_finishing_prompt(player_1.generate_player_context_message(self, self.grid))
+            history_0 = [{"role": "system", "content": system_player_0 }]
+            history_1 = [{"role": "system", "content": system_player_1 }]
         elif type == 'strict':
-            history_0 = [{"role": "system", "content": player_0.generate_tile_level_contract_prompt(player_0.generate_player_context_message(self, self.grid))}]
-            history_1 = [{"role": "system", "content": player_1.generate_tile_level_contract_prompt(player_1.generate_player_context_message(self, self.grid))}]
+            system_player_0 = player_0.generate_tile_level_contract_prompt(player_0.generate_player_context_message(self, self.grid))
+            system_player_1 = player_1.generate_tile_level_contract_prompt(player_1.generate_player_context_message(self, self.grid))
+            history_0 = [{"role": "system", "content": system_player_0}]
+            history_1 = [{"role": "system", "content": system_player_1}]
         n_exchanges = 5
 
         # Seed the conversation
         initial_message = "Let's begin negotiation to come up with a contract. What would you like to propose?"
         history_0.append({"role": "user", "content": initial_message})
         response_1 = ""
-        # history_1.append({"role": "assistant", "content": initial_message})
 
         # Alternating dialogue
         agree = False
