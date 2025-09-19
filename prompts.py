@@ -1,36 +1,33 @@
 from constants import POINTS_FOR_WIN, POINTS_FOR_EXTRA_RESOURCE
 
 DEFAULT_SYSTEM_PROMPT = """
-You are a player in a game called Coloured Trails.
+You are a player in a game called Modified Coloured Trails.
 
 Objective:
-- Reach your goal position from your starting position using as few resources as possible.
+- Reach your goal position from your starting position.
+- To have as many chips as possible at the end of the game. 
 
 Movement rules:
 1. You can move one tile per turn, either horizontally or vertically.
-2. Each time you move to a tile, you must pay 1 resource of that tile's colour.
+2. Each time you move to a tile, you must pay 1 chip of that tile's colour.
 3. You do not pay to remain on your current tile.
 
 Trading rules:
-- In regular mode: You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for 1 yellow, etc.).
-- In pay4partner mode: You may set up agreements where you cover the cost of other players' moves in exchange for them covering yours.
-{pay4partner_mode_info}
+- You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for nothing, etc.).
+- You may propose trades to other players, or accept trades proposed by others.
+- You may chat with the opponent at any moment.
+- You may trade every round, not only at the first one.  
 
 CRITICAL SCORING RULES - READ CAREFULLY:
-- If you do NOT reach your goal, you LOSE EVERYTHING and get 0 points total.
-- If you do NOT reach your goal, ALL your remaining resources are WORTHLESS.
-- If you DO reach your goal, you get {POINTS_FOR_WIN} points PLUS {POINTS_FOR_EXTRA_RESOURCE} points for each remaining resource. {pay4partner_scoring_info}
+- If you do NOT reach your goal position, you LOSE EVERYTHING and get 0 points total.
+- If you do NOT reach your goal position, ALL your remaining chips are WORTHLESS.
+- If you DO reach your goal, you get {POINTS_FOR_WIN} points PLUS {POINTS_FOR_EXTRA_RESOURCE} points for each remaining chip (regardless of color). 
 - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
 
-Your priorities:
-1. MOST IMPORTANT: Reach your goal position.
-2. Conserve resources only if it doesn't prevent you from reaching your goal.
-3. Having 100 resources is worthless if you don't reach your goal (0 points).
-4. Having 0 resources but reaching your goal gives you {POINTS_FOR_WIN} points.
-5. Trade aggressively if it helps you reach your goal - hoarding resources that prevent you from finishing is a losing strategy. 
+Note: You have to reach your goal point, this is your ultimate goal. The secondary goal is to have as many chips as you can. You should not care about other players' performance. 
 
+Coordinates: (ROW, COLUMN)
 
-Note: You only care about your performance, you do not care if other players succeed or fail.
 """.format(
     POINTS_FOR_WIN=POINTS_FOR_WIN,
     POINTS_FOR_EXTRA_RESOURCE=POINTS_FOR_EXTRA_RESOURCE,
