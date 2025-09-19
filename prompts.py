@@ -19,7 +19,6 @@ Trading rules:
 {pay4partner_mode_info} 
 - You may propose trades to other players, or accept trades proposed by others.
 - You may chat with the opponent at any moment.
-- You may trade every round, not only at the first one.
 
 CRITICAL SCORING RULES - READ CAREFULLY:
 - If you do NOT reach your goal position, you LOSE EVERYTHING and get 0 points total.
