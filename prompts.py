@@ -13,10 +13,13 @@ Movement rules:
 3. You do not pay to remain on your current tile.
 
 Trading rules:
-- You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for nothing, etc.).
+
+- In regular mode: You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for nothing, etc.). 
+- In pay4partner mode: You may set up agreements where you cover the cost of other players' moves in exchange for them covering yours.
+{pay4partner_mode_info} 
 - You may propose trades to other players, or accept trades proposed by others.
 - You may chat with the opponent at any moment.
-- You may trade every round, not only at the first one.  
+- You may trade every round, not only at the first one.
 
 CRITICAL SCORING RULES - READ CAREFULLY:
 - If you do NOT reach your goal position, you LOSE EVERYTHING and get 0 points total.
