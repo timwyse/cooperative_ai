@@ -666,17 +666,24 @@ class Player:
     
     def get_completion(self, messages, max_completion_tokens=1000):
         if self.model_api == 'anthropic':
-            if messages[0]['role'] == 'system':
-                system_prompt = messages[0]['content']
-                messages = messages[1:]
-            else:
+            try:
                 system_prompt = ""
-            response = self.client.messages.create(model=self.model,
-                                                   temperature=self.temperature,
-                                                   messages=messages,
-                                                   system=system_prompt,
-                                                   max_tokens=max_completion_tokens)
-            return response.content[0].text.strip().lower()
+                for message in messages:
+                    if message['role'] == 'system':
+                        system_prompt += message['content'] + "\n"
+                # Remove system messages from the list
+                messages = [m for m in messages if m['role'] != 'system']   
+
+                response = self.client.messages.create(model=self.model,
+                                                    temperature=self.temperature,
+                                                    messages=messages,
+                                                    system=system_prompt,
+                                                    max_tokens=max_completion_tokens)
+                return response.content[0].text.strip().lower()
+            except Exception as e:
+                print(f"Error with Anthropic API: {e}")
+                print(messages)
+                raise e
         else:   
             response = self.client.chat.completions.create(model=self.model,
                                                            temperature=self.temperature,
