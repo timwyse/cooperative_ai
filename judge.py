@@ -30,7 +30,7 @@ class Judge:
 
         if type == 'strict':
             contract_type_instructions = """Each entry should specify the tile coordinate, the giving player, the receiving player, and the resource color.  
-Make sure to read the entire discussion, and determine for each player which tiles they are asking for resources for, and what the other player is asking for in return.
+Make sure to read the entire discussion, and determine for each player which tiles they are asking for resources for, and what the other player is asking for in return. If the players don't specify the color of a tile, you can leave it blank or put "unknown".
 
 The JSON format must be:  
 {{

@@ -16,7 +16,7 @@ import argparse
 GRIDS_FILE = "experiment_configs/4x4_experiment_grids.yaml"  
 # Name of the variations file without .yaml extension
 PARAM_VARIATIONS = "parameter_variations"  
-AGENTS = [DEEPSEEK_V3, DEEPSEEK_V3]  
+AGENTS = [LLAMA_405B, LLAMA_405B]  
 
 MODEL_PAIR = {
     "agents": AGENTS,
