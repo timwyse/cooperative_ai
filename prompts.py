@@ -278,7 +278,7 @@ Do NOT be vague — you must mention the exact tiles where resources will be exc
 
 You are now going to have a conversation with another player (the user you're chatting with) who has different resources and goals to you. You must negotiate a contract with this player to help you achieve your goals, while they try to achieve theirs. 
 
-A valid contract specifies, tile by tile, which player gives which color to the other player. 
+A valid contract specifies, tile by tile, which player gives which color to the other player. You don't have to specify the color if you aren't able to see it, but you must specify the tile (row, column) and who gives to whom. 
 You may propose, counter, or modify the terms set out by the other player.
 
 You each have up to 5 turns to speak in order to come to an agreement.

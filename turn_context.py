@@ -122,7 +122,7 @@ def generate_turn_context(game, player):
     current_turn = game.turn
     promised_resources_to_give_message = f"- Resources you have promised to cover for other player (still yours, not yet covered for them): {player.promised_resources_to_give}" if player.pay4partner else ''
     promised_resources_to_receive_message = f"- Resources you have been promised to be covered for by other player (still theirs, not yet covered for you): {player.promised_resources_to_receive}" if player.pay4partner else ''
-    best_paths = player.best_routes(game.grid)[:2]
+    best_paths = "Can't see your best route in fog of war mode, you have to plan a route out yourself." if player.fog_of_war else player.best_routes(game.grid)[:2] 
     fog_of_war_context = "You are in fog of war mode. You can only see the colors of tiles adjacent to your current position. As you move to other tiles you will be able to see the colors of new adjacent tiles" if player.fog_of_war else ""
 
     # Get the other player's resources
