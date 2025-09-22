@@ -111,11 +111,7 @@ def load_experiment_data(experiment_dir="logs/experiments/per_grid"):
             turns_obj = (data.get('game') or {}).get('turns', [])
             total_turns = len(turns_obj) if hasattr(turns_obj, '__len__') else 0
 
-            # safe access for scores/players
-            scores = final_state.get('scores') or {}
-            players = final_state.get('players') or {}
-
-            # Build row
+            # Extract metrics
             row = {
                 'Model Pair': metadata.get('model_pair', '') if 'model_pair' in metadata else 'FOUR_1-FOUR_1',
                 'Grid ID': metadata.get('grid_id', grid_dir.replace('grid_', '')),
@@ -128,51 +124,33 @@ def load_experiment_data(experiment_dir="logs/experiments/per_grid"):
                 'Sub-stratum': metadata.get('sub_stratum', ''),
                 'Pay4Partner': metadata.get('config', {}).get('pay4partner', p4p),
                 'Contract Type': metadata.get('config', {}).get('contract_type', contract),
-
                 'Total Turns': total_turns,
-                'Non-Cooperative Baseline Player 0': (data.get('config') or {}).get('player_details', [{}, {}])[0].get(
-                    'non_cooperative_baseline', 0)
-                if isinstance((data.get('config') or {}).get('player_details'), list) and len(
-                    (data.get('config') or {}).get('player_details')) > 0
-                else 0,
-                'Non-Cooperative Baseline Player 1': (data.get('config') or {}).get('player_details', [{}, {}])[1].get(
-                    'non_cooperative_baseline', 0)
-                if isinstance((data.get('config') or {}).get('player_details'), list) and len(
-                    (data.get('config') or {}).get('player_details')) > 1
-                else 0,
-
-                'Total Score': sum(scores.values()) if hasattr(scores, 'values') else 0,
-                'Score Player 0': scores.get('Player 0', 0),
-                'Score Player 1': scores.get('Player 1', 0),
-
-                # Metrics (validated non-empty dict)
-                'Gini': metrics.get('gini_coefficient', 0),
-                'Max Possible Score': metrics.get('max_possible_score', 0),
-
-                'Reached Goal Player 0': (players.get('0') or {}).get('reached_goal', False),
-                'Reached Goal Player 1': (players.get('1') or {}).get('reached_goal', False),
-
-                'Total Trades Proposed': metrics.get('total_trades_proposed', 0),
-                'Total Trades Accepted': metrics.get('total_trades_accepted', 0),
-                'Total Trades Rejected': metrics.get('total_trades_rejected', 0),
-
-                'Total P4P Promises Kept': metrics.get('total_p4p_promises_kept', 0),
-                'Total P4P Promises Broken': metrics.get('total_p4p_promises_broken', 0),
-
-                'amount_received_by_0_from_trades': metrics.get('amount_received_by_0_from_trades', 0),
-                'amount_received_by_1_from_trades': metrics.get('amount_received_by_1_from_trades', 0),
-
-                'contract_accepted': metrics.get('contract_accepted', 0),
-                'contract_negotiaion_length': metrics.get('contract_negotiaion_length', 0),
-                'num_tiles_in_contract': metrics.get('num_tiles_in_contract', 0),
-                'num_tiles_promised_to_receive_from_contract_0': metrics.get(
-                    'num_tiles_promised_to_receive_from_contract_0', 0),
-                'num_tiles_promised_to_receive_from_contract_1': metrics.get(
-                    'num_tiles_promised_to_receive_from_contract_1', 0),
-                'points_for_completion_promised_to_0': metrics.get('points_for_completion_promised_to_0', 0),
-                'points_for_completion_promised_to_1': metrics.get('points_for_completion_promised_to_1', 0),
+                'Non-Cooperative Baseline Player 0': data['config']['player_details'][0].get('non_cooperative_baseline',
+                                                                                            0),
+                'Non-Cooperative Baseline Player 1': data['config']['player_details'][1].get('non_cooperative_baseline',
+                                                                                             0),
+                'Total Score': sum(final_state['scores'].values()),
+                'Score Player 0': final_state['scores'].get('Player 0', 0),
+                'Score Player 1': final_state['scores'].get('Player 1', 0),
+                'Gini': final_state.get('metrics', {}).get('gini_coefficient', 0),  # Updated path
+                'Max Possible Score': final_state.get('metrics', {}).get('max_possible_score', 0),  # Updated path
+                'Reached Goal Player 0': final_state['players']['0']['reached_goal'],  # Changed from 'Player 0' to '0'
+                'Reached Goal Player 1': final_state['players']['1']['reached_goal'],  # Changed from 'Player 1' to '1'
+                'Total Trades Proposed': final_state.get('metrics', {}).get('total_trades_proposed', 0),
+                'Total Trades Accepted': final_state.get('metrics', {}).get('total_trades_accepted', 0),
+                'Total Trades Rejected': final_state.get('metrics', {}).get('total_trades_rejected', 0),
+                'Total P4P Promises Kept': final_state.get('metrics', {}).get('total_p4p_promises_kept', 0),
+                'Total P4P Promises Broken': final_state.get('metrics', {}).get('total_p4p_promises_broken', 0),
+                'amount_received_by_0_from_trades': final_state.get('metrics', {}).get('amount_received_by_0_from_trades', 0),
+                'amount_received_by_1_from_trades': final_state.get('metrics', {}).get('amount_received_by_1_from_trades', 0),
+                'contract_accepted': final_state.get('metrics', {}).get('contract_accepted', 0),
+                'contract_negotiaion_length': final_state.get('metrics', {}).get('contract_negotiaion_length', 0),
+                'num_tiles_in_contract': final_state.get('metrics', {}).get('num_tiles_in_contract', 0),
+                'num_tiles_promised_to_receive_from_contract_0': final_state.get('metrics', {}).get('num_tiles_promised_to_receive_from_contract_0', 0),
+                'num_tiles_promised_to_receive_from_contract_1': final_state.get('metrics', {}).get('num_tiles_promised_to_receive_from_contract_1', 0),
+                'points_for_completion_promised_to_0': final_state.get('metrics', {}).get('points_for_completion_promised_to_0', 0),
+                'points_for_completion_promised_to_1': final_state.get('metrics', {}).get('points_for_completion_promised_to_1', 0),
             }
-
             # Add grid metrics if available
             if 'grid_metrics' in metadata:
                 row.update({
