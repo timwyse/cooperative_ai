@@ -456,7 +456,7 @@ class Player:
             else:
                 print(f"\n{player_label} proposes trade:")
             try:
-                match = re.search(r"\{.*\}", trade_proposal, re.DOTALL)
+                match = re.search(r"\{.*?\}", trade_proposal, re.DOTALL)
                 if match:
                     json_str = match.group(0)
                     try:

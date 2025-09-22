@@ -158,3 +158,57 @@ client.models.list(limit=20)
 
 
 # %%
+import re
+import json
+
+trade_proposal = """looking at my situation:\n- i'm at (0, 1) with resources: {'b': 13, 'g': 1, 'r': 0}\n- my best path requires: {'b': 3, 'r': 1, 'g': 1}\n- i'm missing: {'r': 1}\n\ni need 1 red chip to complete my optimal path. the other player has 13 red chips but needs blue chips (they have 0 blue). i have 13 blue chips, which is more than enough for my path (i only need 3).\n\nthis is a mutually beneficial trade - i can offer some of my excess blue chips for the 1 red chip i need.\n\n{\n  \"resources_to_offer\": [[\"b\", 2]],\n  \"resources_to_receive\": [[\"r\", 1]]\n}
+"""
+
+match = re.search(r"\{.*\}", trade_proposal, re.DOTALL)
+if match:
+    json_str = match.group(-1)
+    try:
+        trade_proposal = json.loads(json_str)
+
+        # Fix common key errors
+        if 'resources_to offer' in trade_proposal:
+            trade_proposal['resources_to_offer'] = trade_proposal.pop('resources_to offer')
+        if 'resources to offer' in trade_proposal:
+            trade_proposal['resources_to_offer'] = trade_proposal.pop('resources to offer')
+        if 'resources_to receive' in trade_proposal:
+            trade_proposal['resources_to_receive'] = trade_proposal.pop('resources_to receive')
+        if 'resources to receive' in trade_proposal:
+            trade_proposal['resources_to_receive'] = trade_proposal.pop('resources to receive')
+        
+        # cleaned = self.clean_trade_proposal(trade_proposal, grid, game)
+        # if cleaned:
+        #     trade_proposal = cleaned
+        #     if self.pay4partner:
+        #         print(f"- Offering to cover: {trade_proposal['resources_to_offer']}")
+        #         print(f"- Requesting to be covered for: {trade_proposal['resources_to_receive']}")
+        #     else:
+        #         print(f"- Offering: {trade_proposal['resources_to_offer']}")
+        #         print(f"- Requesting: {trade_proposal['resources_to_receive']}")
+        # else:
+        #     print("- Invalid trade proposal")
+    except json.JSONDecodeError as e:
+        error_msg = f"Invalid JSON format in trade proposal: {e}"
+        print(error_msg)
+        
+# %%
+
+# %%
+matches = re.findall(r'\{.*?\}', trade_proposal, re.DOTALL)
+
+
+# %%
+matches[-1]
+
+# %%
+trade_proposal_2 = """looking at my situation:\n- i'm at (0, 1) with resources: {'b': 13, 'g': 1, 'r': 0}\n- my best path requires: {'b': 3, 'r': 1, 'g': 1}\n- i'm missing: {'r': 1}\n\ni need 1 red chip to complete my optimal path. the other player has 13 red chips but needs blue chips (they have 0 blue). i have 13 blue chips, which is more than enough for my path (i only need 3).\n\nthis is a mutually beneficial trade - i can offer some of my excess blue chips for the 1 red chip i need.\n\n{\n  \"resources_to_offer\": [[\"b\", 2]],\n  \"resources_to_receive\": [[\"r\", 1]]\n}"""
+
+
+matches = re.findall(r'\{.*\}', trade_proposal_2, re.DOTALL)
+# %%
+matches[-1]
+# %%
