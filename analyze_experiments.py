@@ -151,4 +151,4 @@ def analyze_experiments(experiment_dir=None):
     return df
 
 if __name__ == "__main__":
-    analyze_experiments()
+    analyze_experiments(experiment_dir='/Users/timwyse/cooperative_ai/logs/experiments/per_grid/GPT_4.1-GPT_4.1_fog_of_war')
