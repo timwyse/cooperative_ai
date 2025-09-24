@@ -125,7 +125,14 @@ Your task:
             return contract
         except json.JSONDecodeError as e:
             print("⚠️ Failed to parse JSON:", e)
-            print(f"contrct put forward by judge: {contract}")
+            print(f"contract put forward by judge: {contract}")
+            if hasattr(self, 'logger'):
+                self.logger.log_format_error(
+                    turn_number,  # You'll need to pass this to extract_contract
+                    "Judge",
+                    "contract_json_parse_error",
+                    {"error": str(e), "raw_response": contract}
+                )
 
     def get_completion(self, messages, max_completion_tokens=1000):
         response = self.client.chat.completions.create(

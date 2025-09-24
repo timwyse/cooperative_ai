@@ -298,6 +298,15 @@ class Logger(BaseLogger):
                 "resources": dict(player.resources)
             }
         
+        # Count format errors
+        format_error_count = 0
+        for turn_data in self.log_data["game"]["turns"].values():
+            for player_data in turn_data.get("players", {}).values():
+                format_error_count += len(player_data.get("format_errors", []))
+
+        # Add to metrics
+        self.log_data["game"]["final_state"]["metrics"]["format_errors_total"] = format_error_count
+
         # Save final JSON
         self._save_event_log()
     
@@ -332,6 +341,42 @@ class Logger(BaseLogger):
         }
 
         # Save the verbose log
+        self._save_verbose_log()
+
+    def log_format_error(self, turn_number, player_name, error_type, error_details):
+        """Log format errors to both event and verbose logs."""
+        turn = str(turn_number)
+        player_id = player_name.split()[-1] if "Player" in player_name else player_name
+        
+        # Log to verbose log
+        if turn not in self.verbose_log_data["game"]["turns"]:
+            self.verbose_log_data["game"]["turns"][turn] = {}
+        if "events" not in self.verbose_log_data["game"]["turns"][turn]:
+            self.verbose_log_data["game"]["turns"][turn]["events"] = {}
+        
+        self.verbose_log_data["game"]["turns"][turn]["events"][f"format_error_{error_type}"] = {
+            "timestamp": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+            "player": player_name,
+            "error_type": error_type,
+            "details": error_details
+        }
+        
+        # Log to event log
+        if turn not in self.log_data["game"]["turns"]:
+            self.log_data["game"]["turns"][turn] = {"players": {}}
+        if player_id not in self.log_data["game"]["turns"][turn]["players"]:
+            self.log_data["game"]["turns"][turn]["players"][player_id] = {}
+        
+        if "format_errors" not in self.log_data["game"]["turns"][turn]["players"][player_id]:
+            self.log_data["game"]["turns"][turn]["players"][player_id]["format_errors"] = []
+        
+        self.log_data["game"]["turns"][turn]["players"][player_id]["format_errors"].append({
+            "type": error_type,
+            "details": error_details,
+            "timestamp": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+        })
+        
+        self._save_event_log()
         self._save_verbose_log()
 
 def preprocess_details(details):

@@ -676,6 +676,15 @@ class Game:
                     "player": player.name,
                     "message": validation_result['message']
                 })
+                self.logger.log_format_error(
+                    self.turn,
+                    player.name,
+                    "trade_validation_failed",
+                    {
+                        "message": validation_result['message'],
+                        "proposed_trade": propose_trade
+                    }
+                )
                 return False
 
             # Get the other player (in 2-player game, it's always the non-proposer)
