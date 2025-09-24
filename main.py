@@ -26,10 +26,9 @@ CONFIG = replace(
     wait_for_enter=False,
     display_gui=True,  # Disable Pygame window, only show console output
     with_context=True,  # Enable turn history between players
-    with_message_history=True,  # Enable conversation memory for each player
-    pay4partner=False,
-    contract_type=None,  # Enable 'pay for partner' mode
-    #contract_type='tile_with_judge_implementation',  # Enable contract negotiation
+    with_message_history=False,  # Enable conversation memory for each player
+    # pay4partner=True,  # Enable 'pay for partner' mode
+    contract_type='contract_for_finishing',  # Enable contract negotiation contract_for_finishing, strict, tile_with_judge_implementation
     # system_prompt=p.SELFISH_SYSTEM_PROMPT,
     # fog_of_war=[True, True],  # Enable fog of war for both players
 )
