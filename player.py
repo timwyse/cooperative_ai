@@ -12,6 +12,7 @@ from config import GameConfig
 from constants import ANTHROPIC_API_KEY, OPENAI_API_KEY, TOGETHER_API_KEY, AVAILABLE_COLORS, POINTS_FOR_WIN, POINTS_FOR_EXTRA_RESOURCE
 from grid import Grid
 import prompts
+from utils import get_last_alphabetic_word
 
 
 class Player:
@@ -692,8 +693,3 @@ class Player:
             return response.choices[0].message.content.strip().lower()
 
 
-def get_last_alphabetic_word(text):
-    # Find all alphabetic words in the text
-    words = re.findall(r"[a-zA-Z]+", text)
-    # Return the last word if the list is not empty
-    return words[-1] if words else None
