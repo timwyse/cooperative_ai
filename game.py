@@ -444,8 +444,16 @@ class Game:
                 player_turn_data[player.name]['trade_proposal_outcome'] = 'invalid'
                 self.logger.log("trade_validation_failed", {
                 "player": player.name,
-                "message": trade_result['message']
-            })
+                "message": trade_result['message']})
+                self.logger.log_format_error(
+                    self.turn,
+                    player.name,
+                    "trade_validation_failed",
+                    {
+                        "message": trade_result['message'],
+                        "proposed_trade": propose_trade
+                    }
+                )
                 self.total_trades_failed += 1
 
         # Record resources after trades (before moves)

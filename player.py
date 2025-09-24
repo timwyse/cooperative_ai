@@ -328,20 +328,47 @@ class Player:
                 extracted_move = extract_move(move)
                 if extracted_move is None:
                     print("Invalid move: Could not extract a valid position.")
+                    
+                    game.logger.log_format_error(
+                    game.turn,
+                    self.name,
+                    "move_format_error",
+                    {"error": "Couldn't extract move", "raw_response": str(move)}
+                )
                     return None
 
                 r, c = extract_move(move)
                 new_pos = (r, c)
                 if not (0 <= r < self.grid_size and 0 <= c < self.grid_size):
                     print("Invalid move: The position is out of bounds.")
+                    game.logger.log_format_error(
+                        game.turn,
+                        self.name,
+                        "move_out_of_bounds",
+                        {"error": "Position out of bounds", "attempted_move": str(new_pos), "raw_response": str(move)}
+                    )
                     return None
                 if new_pos not in grid.get_adjacent(self.position):
                     print("Invalid move: You can only move to an adjacent tile.")
+                    game.logger.log_format_error(
+                        game.turn,
+                        self.name,
+                        "move_not_adjacent",
+                        {"error": "Not an adjacent tile", 
+                         "attempted_move_from": str(self.position),
+                         "attempted_move_to": str(new_pos), "raw_response": str(move)}
+                    )
                     return None
                 tile_color = grid.get_color(r, c)
 
                 return new_pos
-            except (ValueError, IndexError):
+            except Exception as e:
+                game.logger.log_format_error(
+                    game.turn,
+                    self.name,
+                    "move_format_error",
+                    {"error": str(e), "raw_response": str(move)}
+                )
                 return None
 
     def propose_trade(self, grid, game):
@@ -489,12 +516,28 @@ class Player:
                         print(error_msg)
                         game.logger.log_player_response(game.turn, self.name, self.model_name, "trade_proposal_invalid_json", 
                             f"(AI Agent does not see this)\n{error_msg}")
+                        
+                        game.logger.log_format_error(
+                            game.turn, 
+                            self.name, 
+                            "trade_json_parse_error",
+                            {"error": str(e), "raw_response": trade_proposal} 
+                        )
+
                         trade_proposal = None
             except Exception as e:
                 error_msg = f"Error parsing trade proposal: {e}"
                 print(error_msg)
                 game.logger.log_player_response(game.turn, self.name, self.model_name, "trade_proposal_error", 
                     f"(AI Agent does not see this)\n{error_msg}")
+                
+                game.logger.log_format_error(
+                    game.turn,
+                    self.name,
+                    "trade_parse_error", 
+                    {"error": str(e), "raw_response": trade_proposal}  
+                )
+
                 trade_proposal = None
 
             return trade_proposal

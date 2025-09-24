@@ -161,7 +161,13 @@ Your task:
             return contract
         except json.JSONDecodeError as e:
             print("⚠️ Failed to parse JSON:", e)
-            print(f"contrct put forward by judge: {contract}")
+            print(f"contract put forward by judge: {contract}")
+            if hasattr(self, 'logger'):
+                self.logger.log_format_error(
+                    "Judge",
+                    "contract_json_parse_error",
+                    {"error": str(e), "raw_response": contract}
+                )
 
     
     
