@@ -1,17 +1,53 @@
 import json
 
+from anthropic import Anthropic
 from openai import OpenAI
 
-from constants import OPENAI_API_KEY, POINTS_FOR_WIN
+from agents import SONNET_4, FOUR_0
+from constants import ANTHROPIC_API_KEY, OPENAI_API_KEY, POINTS_FOR_WIN
+from utils import get_last_alphabetic_word
 
 JUDGE_SYSTEM_PROMPT = "You are a judge whose goal is to summaries a contract created between two players. Your response must only include the contract, nothing else."
 
 class Judge:
-    def __init__(self, model="gpt-4o", temperature=1):
-        self.model = model
-        self.client = OpenAI(api_key=OPENAI_API_KEY)
+    def __init__(self, model=FOUR_0, temperature=1):
+        self.model = model.value
+        self.model_api = model.api
+        if self.model_api == 'open_ai':
+            self.client = OpenAI(api_key=OPENAI_API_KEY)
+        elif self.model_api == 'anthropic':
+            self.client = Anthropic(api_key=ANTHROPIC_API_KEY)
         self.temperature = temperature
 
+    def get_completion(self, messages, max_completion_tokens=1000):
+        if self.model_api == 'anthropic':
+            try:
+                system_prompt = ""
+                for message in messages:
+                    if message['role'] == 'system':
+                        system_prompt += message['content'] + "\n"
+                # Remove system messages from the list
+                messages = [m for m in messages if m['role'] != 'system']   
+
+                response = self.client.messages.create(model=self.model,
+                                                    temperature=self.temperature,
+                                                    messages=messages,
+                                                    system=system_prompt,
+                                                    max_tokens=max_completion_tokens)
+                return response.content[0].text.strip().lower()
+            except Exception as e:
+                print(f"Error with Anthropic API: {e}")
+                print(messages)
+                raise e
+        
+        else:   
+            response = self.client.chat.completions.create(model=self.model,
+                                                           temperature=self.temperature,
+                                                           messages=messages,
+                                                           max_completion_tokens=max_completion_tokens)
+            return response.choices[0].message.content.strip().lower()
+
+    
     def format_conversation_for_contract(self, conversation, players, history_pov=0):
 
         conversation_formatted = conversation[1:]
@@ -127,13 +163,7 @@ Your task:
             print("⚠️ Failed to parse JSON:", e)
             print(f"contrct put forward by judge: {contract}")
 
-    def get_completion(self, messages, max_completion_tokens=1000):
-        response = self.client.chat.completions.create(
-                model=self.model,
-                temperature=self.temperature,
-                messages=messages,
-                max_completion_tokens=max_completion_tokens)
-        return response.choices[0].message.content.strip().lower()    
+    
     
     def format_contract_for_player(self, contract, player):
         if not isinstance(contract, dict):
@@ -195,13 +225,13 @@ IMPORTANT RULES:
                     {"role": "system", "content": JUDGE_SYSTEM_PROMPT},
                     {"role": "user", "content": message_for_judge}
                 ],
-                max_completion_tokens=10
+                max_completion_tokens=1000
             ).strip().upper()
-
-        if response == 'Y':
+        response = get_last_alphabetic_word(response)  # Extract the last alphabetic word
+        if response.lower() == 'y':
             print(f"Judge determined that move {move} by {player.name} is covered by the contract.")
             return True
-        elif response == 'N':
+        elif response.lower() == 'n':
             print(f"Judge determined that move {move} by {player.name} is NOT covered by the contract.")
             return False
         else:
@@ -209,4 +239,4 @@ IMPORTANT RULES:
             return False
         
     
-JUDGE = Judge()
+JUDGE = Judge(model=SONNET_4)

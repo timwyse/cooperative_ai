@@ -1,4 +1,5 @@
 from collections import Counter
+import re
 
 from constants import POINTS_FOR_WIN, POINTS_FOR_EXTRA_RESOURCE
 
@@ -39,3 +40,10 @@ def calculate_scores(players):
                     player_1.score -= min(int(contract['amount']), POINTS_FOR_WIN)
         
     return {player.name: player.score for player in players}
+
+
+def get_last_alphabetic_word(text):
+    # Find all alphabetic words in the text
+    words = re.findall(r"[a-zA-Z]+", text)
+    # Return the last word if the list is not empty
+    return words[-1] if words else None

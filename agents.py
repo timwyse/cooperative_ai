@@ -11,7 +11,7 @@ HUMAN = Agent(name="human", value=None, api=None)
 MINI = Agent(name="4.1 mini", value="gpt-4.1-mini", api='open_ai') # $1.60 
 GPT_5 = Agent(name="GPT-5", value="gpt-5", api='open_ai') # $10 
 FOUR_1 = Agent(name="GPT 4.1", value="gpt-4.1", api='open_ai') # $8 
-# FOUR_0 = Agent(name="GPT 4o", value="gpt-4o", api='open_ai') # $10 
+FOUR_0 = Agent(name="GPT 4o", value="gpt-4o", api='open_ai') # $10 
 DEEPSEEK_V3 = Agent(name="DeepSeek_R1", value="deepseek-ai/DeepSeek-V3", api='together') # $1.25
 # QWEN_2_7B = Agent(name="QWEN_25_7B", value="Qwen/Qwen2.5-7B-Instruct-Turbo", api='together') # $0.30 
 QWEN_480B = Agent(name="QWEN_480B", value=" Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8", api='together') # $0.6
