@@ -61,6 +61,7 @@ class Player:
         self.grid = Grid(self.grid_size, self.colors, grid=self.config.grid)
         self.fog_of_war = False # set in game.py based on config.fog_of_war
         self.non_cooperative_baseline = 0
+        self.show_paths = config.show_paths
 
         # init pay4partner settings
         self.pay4partner = config.pay4partner
@@ -263,10 +264,6 @@ class Player:
                     print("Invalid input: Please enter the new tile in r,c format. Try again.")
         # LLM Player
         else:
-            best_path = self.best_routes(grid)[0]
-            next_move = best_path["path"][1] if best_path["path"] else None
-            resources_needed = best_path["resources_required_for_path"]
-            resources_missing = best_path["resources_missing_due_to_insufficient_inventory"]
 
             player_context = self.generate_player_context_message(game, grid)
             print(player_context)
@@ -445,7 +442,6 @@ class Player:
         else:
 
             player_context = self.generate_player_context_message(game, grid)
-            best_path = self.best_routes(grid)[0]
             user_message = prompts.generate_trade_proposal_prompt(self,
                 player_context=player_context
             )

@@ -77,7 +77,7 @@ def generate_move_prompt(player, player_context):
                     
 Choose your next move:
 
-1. Look at the best path above from your current position {position} to your goal {goal}:
+1. Consider your best path from your current position {position} to your goal {goal}:
     Consider your next move, the resources needed for the entire path, your current resources, any missing resources{extra_context}.
    
 2. For your NEXT MOVE
@@ -116,7 +116,7 @@ def generate_trade_proposal_prompt(player, player_context):
             
 IMPORTANT: First check if you need to trade at all:
 
-1. Look at your best paths above. Think about the required resources and missing resources (if any){extra_context}.
+1. Consider your best path to your goal. Think about the required resources and missing resources (if any){extra_context}.
 
 2. If you have NO missing resources (empty dict {{}} above), respond with exactly: "n"
 
