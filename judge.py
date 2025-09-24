@@ -164,7 +164,6 @@ Your task:
             print(f"contract put forward by judge: {contract}")
             if hasattr(self, 'logger'):
                 self.logger.log_format_error(
-                    turn_number,  # You'll need to pass this to extract_contract
                     "Judge",
                     "contract_json_parse_error",
                     {"error": str(e), "raw_response": contract}

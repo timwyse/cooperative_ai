@@ -10,8 +10,8 @@ import prompts as p
 # refer to config.py to see which arguments are available for the game and what their defaults are
 # can replace any of the default values in DEFAULT_CONFIG with your own values
 CONFIG = replace(
-    load_config("my_configs/single_board_3x3_md11.yaml"), # can use DEFAULT_CONFIG or load a specific configs here eg load_config("configs/simple_prisoners_dilemma.yaml"),
-#    players=[SONNET_4, SONNET_4],
+    load_config("configs/simple_prisoners_dilemma.yaml"), # can use DEFAULT_CONFIG or load a specific configs here eg load_config("configs/simple_prisoners_dilemma.yaml"),
+   players=[SONNET_4, SONNET_4],
 #     grid_size=6,
 # #     colors=['R', 'B', 'G', 'Y', 'PK'],
 # #     resource_mode='manual',

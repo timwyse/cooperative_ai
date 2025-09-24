@@ -454,10 +454,6 @@ class Game:
                         "proposed_trade": propose_trade
                     }
                 )
-                return False
-                  
-                  
-            })
                 self.total_trades_failed += 1
 
         # Record resources after trades (before moves)

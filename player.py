@@ -328,7 +328,13 @@ class Player:
                 extracted_move = extract_move(move)
                 if extracted_move is None:
                     print("Invalid move: Could not extract a valid position.")
-                    raise ValueError(f"Invalid move format: expected 'r,c' got '{move}'")
+                    
+                    game.logger.log_format_error(
+                    game.turn,
+                    self.name,
+                    "move_format_error",
+                    {"error": "Couldn't extract move", "raw_response": str(move)}
+                )
                     return None
 
                 r, c = extract_move(move)
@@ -348,13 +354,15 @@ class Player:
                         game.turn,
                         self.name,
                         "move_not_adjacent",
-                        {"error": "Not an adjacent tile", "attempted_move": str(new_pos), "raw_response": str(move)}
+                        {"error": "Not an adjacent tile", 
+                         "attempted_move_from": str(self.position),
+                         "attempted_move_to": str(new_pos), "raw_response": str(move)}
                     )
                     return None
                 tile_color = grid.get_color(r, c)
 
                 return new_pos
-            except (ValueError, IndexError):
+            except Exception as e:
                 game.logger.log_format_error(
                     game.turn,
                     self.name,
@@ -457,7 +465,6 @@ class Player:
 
             # Make the API call
             trade_proposal = self.get_completion(current_messages, max_completion_tokens=2000)
-            original_agent_response = trade_proposal
 
             # Log response to verbose logger with full response
             game.logger.log_player_response(game.turn, self.name, self.model_name, "trade_proposal", trade_proposal)
@@ -514,7 +521,7 @@ class Player:
                             game.turn, 
                             self.name, 
                             "trade_json_parse_error",
-                            {"error": str(e), "raw_response": original_agent_response} 
+                            {"error": str(e), "raw_response": trade_proposal} 
                         )
 
                         trade_proposal = None
@@ -528,7 +535,7 @@ class Player:
                     game.turn,
                     self.name,
                     "trade_parse_error", 
-                    {"error": str(e), "raw_response": original_agent_response}  
+                    {"error": str(e), "raw_response": trade_proposal}  
                 )
 
                 trade_proposal = None
