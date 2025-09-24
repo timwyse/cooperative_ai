@@ -22,6 +22,7 @@ class GameConfig:
     pay4partner: bool = False # if True, rather than direct trading, players pay their partner to move onto tiles of their color
     contract_type: Optional[str] = None  # if not None, must be one of 'none', 'strict', 'natural_language'
     fog_of_war: Optional[List[bool]] = None  # if True, players can only see the colors of tiles adjacent to their current position; if list, must be same length as players and specifies fog_of_war for each player
+    show_paths: bool = False  # if True, each player is informed of their best paths to their goal at the start of each turn
 
     # RESOURCE SETTINGS
     surplus: float = 1.5 # Multiplier of the minimum steps required to complete the game. Used to determine how many resources each player starts with.
