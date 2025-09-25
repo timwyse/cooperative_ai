@@ -27,7 +27,6 @@ class Player:
         self.model_name = agent.name
         self.model_api = agent.api
         self.temperature = config.temperature
-        self.system_prompt = config.system_prompt
 
         # Init API client
         if self.model_api == 'open_ai':
@@ -66,16 +65,14 @@ class Player:
         # init pay4partner settings
         self.pay4partner = config.pay4partner
         self.pay4partner_log = []
-        self.pay4partner_scoring_info = "In 'pay for other' mode, any resources you have promised to give to other players as part of trade agreements are still counted as your resources (and hence potential contributors to your final score) until you actually give them away." if self.pay4partner else ""
-
         self.pay4partner_mode_sys_prompt = prompts.generate_pay4partner_mode_info(self, short_summary=True) 
-
+        self.trading_rules = prompts.generate_trade_system_info(self)
+        self.system_prompt = config.system_prompt.format(pay4partner_mode_info=self.pay4partner_mode_sys_prompt,
+                                                         trading_rules=self.trading_rules)
 
         # Init message history settings
         self.with_message_history = config.with_message_history
-        self.messages = [{"role": "system", "content": self.system_prompt.format(player_name="you",
-                                                                                 pay4partner_mode_info=self.pay4partner_mode_sys_prompt,
-                                                                                 pay4partner_scoring_info=self.pay4partner_scoring_info)}] if self.with_message_history else []
+        self.messages = [{"role": "system", "content": self.system_prompt}] if self.with_message_history else []
 
     def get_readable_board(self):
         if self.fog_of_war is None or not self.fog_of_war:
@@ -271,17 +268,13 @@ class Player:
                 player_context=player_context
             )
             
-            # Prepare messages for this request
-            system_prompt = self.system_prompt.format(player_name="you",
-                                                    pay4partner_mode_info=self.pay4partner_mode_sys_prompt,
-                                                    pay4partner_scoring_info=self.pay4partner_scoring_info)
             current_messages = list(self.messages) if self.with_message_history else [{"role": "system",
-                                                                                       "content": system_prompt}]
+                                                                                       "content": self.system_prompt}]
             current_messages.append({"role": "user", "content": user_message})
 
             # Log prompt to verbose logger
             user_prompt = current_messages[-1]["content"]
-            game.logger.log_player_prompt(game.turn, self.name, self.model_name, "move", system_prompt, user_prompt)
+            game.logger.log_player_prompt(game.turn, self.name, self.model_name, "move", self.system_prompt, user_prompt)
 
             move = self.get_completion(current_messages)
 
@@ -446,17 +439,13 @@ class Player:
                 player_context=player_context
             )
 
-            # Prepare messages for this request
-            system_prompt = self.system_prompt.format(player_name="you",
-                                                      pay4partner_mode_info=self.pay4partner_mode_sys_prompt,
-                                                      pay4partner_scoring_info=self.pay4partner_scoring_info)
             current_messages = list(self.messages) if self.with_message_history else [{"role": "system",
-                                                                                       "content": system_prompt}]
+                                                                                       "content": self.system_prompt}]
             current_messages.append({"role": "user", "content": user_message})
 
             # Log prompt to verbose logger
             user_prompt = current_messages[-1]["content"]
-            game.logger.log_player_prompt(game.turn, self.name, self.model_name, "trade_proposal", system_prompt,
+            game.logger.log_player_prompt(game.turn, self.name, self.model_name, "trade_proposal", self.system_prompt,
                                           user_prompt)
 
             # Make the API call
@@ -471,7 +460,7 @@ class Player:
                     {"role": "user", "content": user_message},
                     {"role": "assistant", "content": trade_proposal}
                 ])
-            if trade_proposal == 'n':
+            if trade_proposal[-1].lower() == 'n':
                 return None
 
             player_label = self.get_player_label(game)
@@ -480,9 +469,9 @@ class Player:
             else:
                 print(f"\n{player_label} proposes trade:")
             try:
-                match = re.search(r"\{.*?\}", trade_proposal, re.DOTALL)
-                if match:
-                    json_str = match.group(0)
+                matches = re.findall(r"\{.*?\}", trade_proposal, re.DOTALL)
+                if matches:
+                    json_str = matches[-1]
                     try:
                         trade_proposal = json.loads(json_str)
 
@@ -569,15 +558,11 @@ class Player:
                 resources_to_receive=resources_to_receive
             )
 
-            # Prepare messages for this request
-            system_prompt =  self.system_prompt.format(player_name="you",
-                                                       pay4partner_mode_info=self.pay4partner_mode_sys_prompt,
-                                                       pay4partner_scoring_info=self.pay4partner_scoring_info)
             current_messages = list(self.messages) if self.with_message_history else [{"role": "system",
-                                                                                       "content": system_prompt}]
+                                                                                       "content": self.system_prompt}]
             current_messages.append({"role": "user", "content": user_message})
             user_prompt = current_messages[-1]["content"]
-            game.logger.log_player_prompt(game.turn, self.name, self.model_name, "trade_response", system_prompt,
+            game.logger.log_player_prompt(game.turn, self.name, self.model_name, "trade_response", self.system_prompt,
                                           user_prompt)
 
             # Make the API call to get rade response
@@ -664,17 +649,13 @@ class Player:
                     continue
                 return agree == 'y'
         else:
-            # Prepare messages for this request
-            system_prompt = self.system_prompt.format(player_name="you",
-                                                      pay4partner_mode_info=self.pay4partner_mode_sys_prompt,
-                                                      pay4partner_scoring_info=self.pay4partner_scoring_info)
             current_messages = list(self.messages) if self.with_message_history else [{"role": "system",
-                                                                                       "content": system_prompt}]
+                                                                                       "content": self.system_prompt}]
             current_messages.append({"role": "user", "content": message})
 
             # Log prompt to verbose logger
             user_prompt = message
-            game.logger.log_player_prompt(game.turn, self.name, self.model_name, "pay4partner", system_prompt, user_prompt)
+            game.logger.log_player_prompt(game.turn, self.name, self.model_name, "pay4partner", self.system_prompt, user_prompt)
 
             # Make the API call
             agree = self.get_completion(current_messages)
@@ -697,7 +678,6 @@ class Player:
     
     
     def generate_tile_level_contract_prompt(self, player_context):
-        
         return prompts.generate_tile_level_contract_prompt(self.system_prompt, player_context)
     
     def generate_contract_for_finishing_prompt(self, player_context):
