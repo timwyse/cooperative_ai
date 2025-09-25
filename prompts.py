@@ -14,17 +14,16 @@ Movement rules:
 
 Trading rules:
 
-- In regular mode: You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for nothing, etc.). 
-- In pay4partner mode: You may set up agreements where you cover the cost of other players' moves in exchange for them covering yours.
+{trading_rules}
 {pay4partner_mode_info} 
-- You may propose trades to other players, or accept trades proposed by others.
+- You may propose trades to other players, or accept / reject trades proposed by others.
 - You may chat with the opponent at any moment.
 
 CRITICAL SCORING RULES - READ CAREFULLY:
 - If you do NOT reach your goal position, you LOSE EVERYTHING and get 0 points total.
 - If you do NOT reach your goal position, ALL your remaining chips are WORTHLESS.
 - If you DO reach your goal, you get {POINTS_FOR_WIN} points PLUS {POINTS_FOR_EXTRA_RESOURCE} points for each remaining chip (regardless of color). 
-{pay4partner_scoring_info}
+
 - REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.
 
 Note: You have to reach your goal point, this is your ultimate goal. The secondary goal is to have as many chips as you can. You should not care about other players' performance. 
@@ -34,8 +33,8 @@ Coordinates: (ROW, COLUMN)
 """.format(
     POINTS_FOR_WIN=POINTS_FOR_WIN,
     POINTS_FOR_EXTRA_RESOURCE=POINTS_FOR_EXTRA_RESOURCE,
+    trading_rules="{trading_rules}",
     pay4partner_mode_info="{pay4partner_mode_info}",
-    pay4partner_scoring_info="{pay4partner_scoring_info}"
 )
 #TODO: review the above, is it too scaffolded? ^^ 
 
@@ -56,6 +55,13 @@ def extra_short_context(player):
     else: 
         extra_context = f", and any resources you have been promised to be covered for by the other player, as well as any contract terms you have agreed to with the other player" 
     return extra_context
+
+def generate_trade_system_info(player):
+    if not player.pay4partner:
+        trading_rules = """- You are in 'regular' mode: You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for nothing, etc.)."""
+    else:
+        trading_rules = """- You are in 'pay for other' mode: You may set up agreements where you cover the cost of other players' moves when they move onto a tile of a resource you have, in exchange for them covering you."""
+    return trading_rules
 
 def generate_move_prompt(player, player_context):
     """Generate prompt for move decisions."""
@@ -118,11 +124,9 @@ IMPORTANT: First check if you need to trade at all:
 
 1. Consider your best path to your goal. Think about the required resources and missing resources (if any){extra_context}.
 
-2. If you have NO missing resources (empty dict {{}} above), respond with exactly: "n"
+2. If you have enough of the required resources to reach your goal, say "n"
 
-   If you have enough resources to reach your goal, say "n"
-
-3. Only if you are missing resources, consider a trade:
+3. Only if you are missing resources needed to reach your goal, consider a trade:
    - You can ONLY request resources you're missing
    - You can ONLY offer resources you have in excess
    - NEVER trade with yourself 
@@ -130,7 +134,7 @@ IMPORTANT: First check if you need to trade at all:
    - NEVER request resources you already have enough of
    - Make the trade beneficial for both players
 
-Respond in ONE of these two formats:
+Think step by step about your situation. Once you have decided, finish your response with ONE of these two formats:
 
 1. If you want to make a trade with the other player, use EXACTLY this JSON format (replace values in <>):
 {{
@@ -196,7 +200,7 @@ def generate_pay4partner_response_prompt(player, player_context, resources_to_of
 {pay4partner_info}
 {contract_info}
 
-You have been offered a pay4partner arrangement:
+You have been offered a 'pay for other' arrangement:
 The other player offers to cover {resources_to_offer} moves for you, and asks you to cover {resources_to_receive} moves for them.
 Do you accept this arrangement?
 IMPORTANT: After considering the above, finish your response with EXACTLY one of these two options:
@@ -231,7 +235,8 @@ def generate_pay4partner_mode_info(player, short_summary=False):
 Important Note: The game is in 'pay for other' mode. This means that trades are not made by directly swapping resources. Instead, when a trade agreement is reached, each player commits to covering the cost of the other’s movement on the agreed tile colors. In practice:
 	•	If the other player steps onto a tile of a color you agreed to cover, you pay the resource cost for that move.
 	•	If you step onto a tile of a color the other player agreed to cover, they pay the resource cost for you.
-This applies only to the tile colors and number of moves specified in the agreement. If at the end of the game a promised resource has not been used, it remains in your inventory and counts towards your final score."""
+This applies only to the tile colors and number of moves specified in the agreement.
+If at the end of the game a resource that you promised has not been used, it remains in your inventory and counts towards your final score. The same applies to resources promised to you by the other player."""
             if short_summary:
                 return pay4partner_mode_info
             else:
@@ -244,7 +249,6 @@ In order to move onto a tile of a color you have been promised, select that move
             return pay4partner_mode_info
         else:
             return ""
-
 
 def generate_tile_level_contract_prompt(system_prompt, player_context):
    """
