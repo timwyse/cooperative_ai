@@ -212,3 +212,15 @@ matches = re.findall(r'\{.*\}', trade_proposal_2, re.DOTALL)
 # %%
 matches[-1]
 # %%
+
+def test_fn():
+    x= {'a':1}
+        
+    inner(x)
+    return x
+
+def inner(x):
+        x['a'] += 2
+    
+test_fn()
+# %%

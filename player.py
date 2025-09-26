@@ -12,6 +12,7 @@ from config import GameConfig
 from constants import ANTHROPIC_API_KEY, OPENAI_API_KEY, TOGETHER_API_KEY, AVAILABLE_COLORS, POINTS_FOR_WIN, POINTS_FOR_EXTRA_RESOURCE
 from grid import Grid
 import prompts
+from utils import get_last_alphabetic_word
 
 
 class Player:
@@ -60,6 +61,7 @@ class Player:
         self.grid = Grid(self.grid_size, self.colors, grid=self.config.grid)
         self.fog_of_war = False # set in game.py based on config.fog_of_war
         self.non_cooperative_baseline = 0
+        self.show_paths = config.show_paths
 
         # init pay4partner settings
         self.pay4partner = config.pay4partner
@@ -262,10 +264,6 @@ class Player:
                     print("Invalid input: Please enter the new tile in r,c format. Try again.")
         # LLM Player
         else:
-            best_path = self.best_routes(grid)[0]
-            next_move = best_path["path"][1] if best_path["path"] else None
-            resources_needed = best_path["resources_required_for_path"]
-            resources_missing = best_path["resources_missing_due_to_insufficient_inventory"]
 
             player_context = self.generate_player_context_message(game, grid)
             print(player_context)
@@ -327,7 +325,13 @@ class Player:
                 extracted_move = extract_move(move)
                 if extracted_move is None:
                     print("Invalid move: Could not extract a valid position.")
-                    raise ValueError(f"Invalid move format: expected 'r,c' got '{move}'")
+                    
+                    game.logger.log_format_error(
+                    game.turn,
+                    self.name,
+                    "move_format_error",
+                    {"error": "Couldn't extract move", "raw_response": str(move)}
+                )
                     return None
 
                 r, c = extract_move(move)
@@ -347,13 +351,15 @@ class Player:
                         game.turn,
                         self.name,
                         "move_not_adjacent",
-                        {"error": "Not an adjacent tile", "attempted_move": str(new_pos), "raw_response": str(move)}
+                        {"error": "Not an adjacent tile", 
+                         "attempted_move_from": str(self.position),
+                         "attempted_move_to": str(new_pos), "raw_response": str(move)}
                     )
                     return None
                 tile_color = grid.get_color(r, c)
 
                 return new_pos
-            except (ValueError, IndexError):
+            except Exception as e:
                 game.logger.log_format_error(
                     game.turn,
                     self.name,
@@ -436,7 +442,6 @@ class Player:
         else:
 
             player_context = self.generate_player_context_message(game, grid)
-            best_path = self.best_routes(grid)[0]
             user_message = prompts.generate_trade_proposal_prompt(self,
                 player_context=player_context
             )
@@ -456,7 +461,6 @@ class Player:
 
             # Make the API call
             trade_proposal = self.get_completion(current_messages, max_completion_tokens=2000)
-            original_agent_response = trade_proposal
 
             # Log response to verbose logger with full response
             game.logger.log_player_response(game.turn, self.name, self.model_name, "trade_proposal", trade_proposal)
@@ -513,7 +517,7 @@ class Player:
                             game.turn, 
                             self.name, 
                             "trade_json_parse_error",
-                            {"error": str(e), "raw_response": original_agent_response} 
+                            {"error": str(e), "raw_response": trade_proposal} 
                         )
 
                         trade_proposal = None
@@ -527,7 +531,7 @@ class Player:
                     game.turn,
                     self.name,
                     "trade_parse_error", 
-                    {"error": str(e), "raw_response": original_agent_response}  
+                    {"error": str(e), "raw_response": trade_proposal}  
                 )
 
                 trade_proposal = None
@@ -728,8 +732,3 @@ class Player:
             return response.choices[0].message.content.strip().lower()
 
 
-def get_last_alphabetic_word(text):
-    # Find all alphabetic words in the text
-    words = re.findall(r"[a-zA-Z]+", text)
-    # Return the last word if the list is not empty
-    return words[-1] if words else None

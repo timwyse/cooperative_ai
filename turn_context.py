@@ -122,13 +122,17 @@ def generate_turn_context(game, player):
     current_turn = game.turn
     promised_resources_to_give_message = f"- Resources you have promised to cover for other player (still yours, not yet covered for them): {player.promised_resources_to_give}" if player.pay4partner else ''
     promised_resources_to_receive_message = f"- Resources you have been promised to be covered for by other player (still theirs, not yet covered for you): {player.promised_resources_to_receive}" if player.pay4partner else ''
-    best_paths = "Can't see your best route in fog of war mode, you have to plan a route out yourself." if player.fog_of_war else player.best_routes(game.grid)[:2] 
+    
     fog_of_war_context = "You are in fog of war mode. You can only see the colors of tiles adjacent to your current position. As you move to other tiles you will be able to see the colors of new adjacent tiles" if player.fog_of_war else ""
 
     # Get the other player's resources
     other_player = [p for p in game.players if p != player][0]
     other_resources = dict(other_player.resources)
     other_position = other_player.position
+
+    best_paths_message = f"- Your best paths to your goal (although others may be possible) are: {player.best_routes(game.grid)[:2]}" if player.show_paths and not player.fog_of_war else ""
+    
+    
 
     return f"""
 === GAME STATUS FOR YOU - TURN {current_turn} ===
@@ -138,8 +142,8 @@ def generate_turn_context(game, player):
 - Your resources: {dict(player.resources)}
 {promised_resources_to_give_message}
 {promised_resources_to_receive_message}
-- Your estimated best path options to your goal (although other paths are possible): {best_paths}
-- Shorter paths require less resources, but a longer path for which you don't need to trade is also a strong option (as a backup plan or negotiation tool, but it means you finish with less resources than if you take the shorter path). A short path that you don't need to trade for is ideal, and your negotiation strategy should reflect this.
+{best_paths_message}
+- Considering potential paths to your goal: shorter paths require less resources, but a longer path for which you don't need to trade is also a strong option (as a backup plan or negotiation tool, but it means you finish with less resources than if you take the shorter path). A short path that you don't need to trade for is ideal, and your negotiation strategy should reflect this.
 
 - The other player's goal is also {player.goal}. Note that because the other player likely has different resources to you, their best path to the goal may be different to yours.
 - The other player's resources: {other_resources}
@@ -150,3 +154,7 @@ BOARD LAYOUT: {fog_of_war_context}
 
 {f"HISTORY OF EVENTS:\n{recent_history if recent_history else 'This is the first turn.'}" if game.with_context else ""}
 """
+
+
+    
+    
