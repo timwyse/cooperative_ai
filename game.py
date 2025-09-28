@@ -11,10 +11,11 @@ from tabulate import tabulate
 
 from constants import AVAILABLE_COLORS, COLOR_MAP, TILE_SIZE, FPS
 from grid import Grid
-from judge import JUDGE
+from judge import JUDGE, JUDGE_SYSTEM_PROMPT
 from logger import Logger
 from player import Player
 import prompts
+from constants import POINTS_FOR_WIN, POINTS_FOR_EXTRA_RESOURCE
 from utils import freeze, calculate_scores
 
 
@@ -37,6 +38,8 @@ class Game:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             self.logger = Logger(game_id=timestamp)
 
+        JUDGE.logger = self.logger
+
         # Grid Setup
         self.grid_size = self.config.grid_size
         self.colors = self.config.colors
@@ -44,7 +47,7 @@ class Game:
         self.grid = Grid(self.grid_size, self.colors, grid=self.config.grid)
 
         # Player Initialization
-        self.players = [Player(i, player, self.logger, self.config) for i, player in enumerate(self.config.players)]
+        self.players = [Player(i, player, self.logger, self.config, game = self) for i, player in enumerate(self.config.players)]
         self.n_players = len(self.players)
         self.initialize_fog_of_war()
         
@@ -102,6 +105,23 @@ class Game:
 
         # Logging Initial State
         self.logger.log_game_config(self.config, self.players, self.grid)
+        # Log system prompt configuration
+        self.logger.log_system_prompts({
+            "base_template_type": "SELFISH" if "SELFISH" in str(config.system_prompt) else "DEFAULT",
+            "template": config.system_prompt,
+            "constants": {
+                "POINTS_FOR_WIN": POINTS_FOR_WIN,
+                "POINTS_FOR_EXTRA_RESOURCE": POINTS_FOR_EXTRA_RESOURCE
+            },
+            "pay4partner": config.pay4partner,
+            "contract_type": config.contract_type
+        })
+        
+        # Log all available prompt templates
+        if self.contract_type == 'tile_with_judge_implementation':
+            judge_prompt = JUDGE_SYSTEM_PROMPT
+        else:
+            judge_prompt = None
 
     
     # 1. Initialization and Setup
@@ -244,12 +264,16 @@ class Game:
             if self.check_for_repeated_states():
                 break
             
+            for player in self.players:
+                self.logger.log_prompt_components(player)
+
             # Handle turn delay
             print(f"End of turn {self.turn}. Waiting for next turn...")
             if self.config.wait_for_enter:
                 input("Press Enter to proceed to the next turn...")
             
             self.turn += 1
+            self.logger.turn += 1
 
         print("Game over!")
         self.print_game_state()
@@ -282,7 +306,7 @@ class Game:
         }
         
         # Log final game state and metrics to combined logger
-        self.logger.log_game_end(self.players, self.turn, additional_metrics=final_metrics)
+        self.logger.log_game_end(self.players, additional_metrics=final_metrics)
 
         # for player in self.players:
         #     print(f"message history for player {player.name}: {player.messages}")
@@ -306,7 +330,7 @@ class Game:
         
         if self.turn == 0:
             self.logger.log_game_config(self.config, self.players, self.grid)
-        self.logger.log_turn_start(self.turn)
+        self.logger.log_turn_start()
         
         # Initialize turn summary and player data
         if self.with_context:
@@ -362,7 +386,7 @@ class Game:
             self.handle_move(player, player_turn_data)
 
         # Finalize player data for logging
-        self.logger.log_turn_end(self.turn)
+        self.logger.log_turn_end()
 
         # Only handle turn summaries if context is enabled
         if self.with_context:
@@ -446,7 +470,6 @@ class Game:
                 "player": player.name,
                 "message": trade_result['message']})
                 self.logger.log_format_error(
-                    self.turn,
                     player.name,
                     "trade_validation_failed",
                     {
@@ -585,7 +608,7 @@ class Game:
         # Record final state
         player_turn_data[player.name]['position_end'] = player.position
         player_turn_data[player.name]['resources_end'] = dict(player.resources)
-        self.logger.log_player_turn_summary(self.turn, player.name, player_turn_data[player.name])
+        self.logger.log_player_turn_summary(player.name, player_turn_data[player.name])
 
         if self.with_context:
             # Get the full response from the player's message history
@@ -848,13 +871,31 @@ class Game:
                     agree_1 = player_1.get_completion(history_1)
                     
                     contract_status = message_starts_or_ends_with_agree(agree_0) and message_starts_or_ends_with_agree(agree_1)
-                    # Log the negotiation details
+
+                    #log invalid-format responses (neither 'agree' nor 'disagree')
+                    #AS: I don't like the implementation, but better than nothing
+                    if not (message_starts_or_ends_with_agree(agree_0) or re.search(r"\bdisagree\b", agree_0.lower())):
+                        self.logger.log_format_error(
+                            player_0.name,
+                            "final_contract_response_invalid_format",
+                            {"raw_response": agree_0}
+                        )
+                    if not (message_starts_or_ends_with_agree(agree_1) or re.search(r"\bdisagree\b", agree_1.lower())):
+                        self.logger.log_format_error(
+                            player_1.name,
+                            "final_contract_response_invalid_format",
+                            {"raw_response": agree_1}
+                        )
                 except Exception as e:
+                    self.logger.log_format_error(
+                        "Judge",
+                        "contract_formatting_error",
+                        {"error": str(e), "raw_contract": judge_contract}
+                    )
                     print(f"Error formatting contract for players: {e}")
                     return None
             
             self.logger.log_contract_negotiation(
-                turn_number=self.turn,
                 history_0=history_0,
                 history_1=history_1,
                 agree_0=agree_0,
