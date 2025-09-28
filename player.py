@@ -13,6 +13,7 @@ from constants import ANTHROPIC_API_KEY, OPENAI_API_KEY, TOGETHER_API_KEY, AVAIL
 from grid import Grid
 import prompts
 from utils import get_last_alphabetic_word
+from utils import get_last_alphabetic_word
 
 
 class Player:
@@ -334,6 +335,13 @@ class Player:
                     "move_format_error",
                     {"error": "Couldn't extract move", "raw_response": str(move)}
                 )
+                    
+                    game.logger.log_format_error(
+                    game.turn,
+                    self.name,
+                    "move_format_error",
+                    {"error": "Couldn't extract move", "raw_response": str(move)}
+                )
                     return None
 
                 r, c = extract_move(move)
@@ -354,11 +362,15 @@ class Player:
                         {"error": "Not an adjacent tile", 
                          "attempted_move_from": str(self.position),
                          "attempted_move_to": str(new_pos), "raw_response": str(move)}
+                        {"error": "Not an adjacent tile", 
+                         "attempted_move_from": str(self.position),
+                         "attempted_move_to": str(new_pos), "raw_response": str(move)}
                     )
                     return None
                 tile_color = grid.get_color(r, c)
 
                 return new_pos
+            except Exception as e:
             except Exception as e:
                 game.logger.log_format_error(
                     self.name,
@@ -516,6 +528,7 @@ class Player:
                             self.name, 
                             "trade_json_parse_error",
                             {"error": str(e), "raw_response": trade_proposal} 
+                            {"error": str(e), "raw_response": trade_proposal} 
                         )
 
                         trade_proposal = None
@@ -528,6 +541,7 @@ class Player:
                 game.logger.log_format_error(
                     self.name,
                     "trade_parse_error", 
+                    {"error": str(e), "raw_response": trade_proposal}  
                     {"error": str(e), "raw_response": trade_proposal}  
                 )
 
@@ -753,5 +767,6 @@ class Player:
                                                            messages=messages,
                                                            max_completion_tokens=max_completion_tokens)
             return response.choices[0].message.content.strip().lower()
+
 
 
