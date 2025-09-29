@@ -13,7 +13,7 @@ from constants import ANTHROPIC_API_KEY, OPENAI_API_KEY, TOGETHER_API_KEY, AVAIL
 from grid import Grid
 import prompts
 from utils import get_last_alphabetic_word
-from utils import get_last_alphabetic_word
+
 
 
 class Player:
@@ -362,15 +362,11 @@ class Player:
                         {"error": "Not an adjacent tile", 
                          "attempted_move_from": str(self.position),
                          "attempted_move_to": str(new_pos), "raw_response": str(move)}
-                        {"error": "Not an adjacent tile", 
-                         "attempted_move_from": str(self.position),
-                         "attempted_move_to": str(new_pos), "raw_response": str(move)}
                     )
                     return None
                 tile_color = grid.get_color(r, c)
 
                 return new_pos
-            except Exception as e:
             except Exception as e:
                 game.logger.log_format_error(
                     self.name,
@@ -528,7 +524,6 @@ class Player:
                             self.name, 
                             "trade_json_parse_error",
                             {"error": str(e), "raw_response": trade_proposal} 
-                            {"error": str(e), "raw_response": trade_proposal} 
                         )
 
                         trade_proposal = None
@@ -540,8 +535,7 @@ class Player:
                 
                 game.logger.log_format_error(
                     self.name,
-                    "trade_parse_error", 
-                    {"error": str(e), "raw_response": trade_proposal}  
+                    "trade_parse_error",   
                     {"error": str(e), "raw_response": trade_proposal}  
                 )
 
@@ -726,6 +720,13 @@ class Player:
         return prompts.generate_contract_for_finishing_prompt(self.system_prompt, player_context)
     
     def get_completion(self, messages, max_completion_tokens=1000):
+        # Log the complete message set before API call
+        if hasattr(self, 'game') and self.game and hasattr(self.game, 'logger'):
+            self.game.logger.log_complete_message_set(
+                self.name,
+                messages,
+                max_completion_tokens
+            )
         if self.model_api == 'anthropic':
             try:
                 system_prompt = ""
@@ -734,15 +735,6 @@ class Player:
                         system_prompt += message['content'] + "\n"
                 # Remove system messages from the list
                 messages = [m for m in messages if m['role'] != 'system']   
-
-                # Log the complete message set before API call
-                if hasattr(self, 'game') and self.game and hasattr(self.game, 'logger'):
-                    self.game.logger.log_complete_message_set(
-                        self.name,
-                        messages,
-                        max_completion_tokens
-                    )
-
                 response = self.client.messages.create(model=self.model,
                                                     temperature=self.temperature,
                                                     messages=messages,
@@ -754,14 +746,6 @@ class Player:
                 print(messages)
                 raise e
         else: 
-
-            # Log the complete message set before API call
-            if hasattr(self, 'game') and self.game and hasattr(self.game, 'logger'):
-                self.game.logger.log_complete_message_set(
-                    self.name,
-                    messages,
-                    max_completion_tokens
-                )
             response = self.client.chat.completions.create(model=self.model,
                                                            temperature=self.temperature,
                                                            messages=messages,

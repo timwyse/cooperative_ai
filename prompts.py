@@ -101,7 +101,6 @@ Choose your next move:
 2. For your NEXT MOVE
    - Check what color tile the next move is on the board
    - Check if it is possible to move onto that tile (given your current resources{extra_context}).
-   - Check if it is possible to move onto that tile (given your current resources{extra_context}).
    - If YES: you can make this move now
    - If NO: you can try a different adjacent move toward your goal
 
@@ -111,13 +110,8 @@ Choose your next move:
 
 Remember:
 - It only costs 1 resource of the tile's color to move to that tile
-- It only costs 1 resource of the tile's color to move to that tile
 - Missing resources for the entire path doesn't prevent you from making individual moves
 - Try to move toward your goal even if you can't complete the entire journey yet
-
-IMPORTANT: After considering the above, finish your response with EXACTLY one of these two options:
-- Your next move in "r,c" format (e.g. "1,2")
-- "n" if you cannot make any valid move toward your goal
 
 IMPORTANT: After considering the above, finish your response with EXACTLY one of these two options:
 - Your next move in "r,c" format (e.g. "1,2")
@@ -132,16 +126,8 @@ def generate_trade_proposal_prompt(player, player_context):
     extra_context = extra_short_context(player)
     contract_info = generate_contract_info(player)
     
-    pay4partner_info = generate_pay4partner_mode_info(player) if player.pay4partner else ''
-    extra_context = extra_short_context(player)
-    contract_info = generate_contract_info(player)
-    
     return f"""
 {player_context}
-
-{pay4partner_info}
-
-{contract_info}
 
 {pay4partner_info}
 
@@ -178,10 +164,8 @@ Example of valid trade:
 }}
 
 2. If you don't want to trade, finish your response with exactly: n
-2. If you don't want to trade, finish your response with exactly: n
 
 Remember:
-- Use EXACTLY the format shown above. It should be JSON using double quotes only. Do not include comments or Python-style dicts.
 - Use EXACTLY the format shown above. It should be JSON using double quotes only. Do not include comments or Python-style dicts.
 - Only ONE resource pair in each array
 - No spaces in color names
@@ -203,8 +187,6 @@ def generate_trade_response_prompt(player, player_context, resources_to_offer, r
 
 def generate_regular_trade_response_prompt(player, player_context, resources_to_offer, resources_to_receive):
     """Generate prompt for regular trade response decisions."""
-    
-    contract_info = generate_contract_info(player)
     contract_info = generate_contract_info(player)
 
     return f"""
@@ -219,8 +201,6 @@ You have been offered a trade:
 The other player wants to give you {resources_to_offer} in exchange for {resources_to_receive}.
 Do you accept this trade? Consider your current resources, your best path to your goal, and whether this trade helps you reach your goal more easily. Also consider whether the trade results in having more resources left over after reaching your goal, and hence a higher score. 
 IMPORTANT: After considering the above, finish your response with EXACTLY one of these two options:
-Do you accept this trade? Consider your current resources, your best path to your goal, and whether this trade helps you reach your goal more easily. Also consider whether the trade results in having more resources left over after reaching your goal, and hence a higher score. 
-IMPORTANT: After considering the above, finish your response with EXACTLY one of these two options:
 - 'yes' to accept the trade
 - 'no' to reject the trade
 """
@@ -230,7 +210,6 @@ def generate_pay4partner_response_prompt(player, player_context, resources_to_of
     pay4partner_info = generate_pay4partner_mode_info(player, short_summary=True)
 
     contract_info = generate_contract_info(player)
-    contract_info = generate_contract_info(player)
     
 
     return f"""
@@ -238,13 +217,9 @@ def generate_pay4partner_response_prompt(player, player_context, resources_to_of
 {pay4partner_info}
 {contract_info}
 
-{pay4partner_info}
-{contract_info}
-
 You have been offered a pay4partner arrangement:
 The other player offers to cover {resources_to_offer} moves for you, and asks you to cover {resources_to_receive} moves for them.
 Do you accept this arrangement?
-IMPORTANT: After considering the above, finish your response with EXACTLY one of these two options:
 IMPORTANT: After considering the above, finish your response with EXACTLY one of these two options:
 - 'yes' to accept the arrangement
 - 'no' to reject the arrangement
@@ -311,9 +286,6 @@ In addition to the information above, please consider any promises you're alread
 \n- So far you have been promised to be covered for these resources by the other player: {promised_resources_to_receive if promised_resources_to_receive else '{}'}
 In order to move onto a tile of a color you have been promised, select that move as normal and the other player will be asked to cover the cost for you.
 """
-            return pay4partner_mode_info
-        else:
-            return ""
             return pay4partner_mode_info
         else:
             return ""
@@ -424,7 +396,6 @@ Consider also the other player's possible routes and resources they will need. C
 
 Your are now going to have a conversation with the other player (ie the user in the chat). You must negotiate a contract with this player whereby you specify how many points you will give them if they help you reach your goal, and how many points they will give you if you help them reach their goal.
 
-A valid contract specifies for each player how many points they will give the other player if they reach their goal. The most points you can give to the other player is {POINTS_FOR_WIN}. The least points you can give is 0. You may not give negative points. You may propose, counter, or modify the terms set out by the other player.
 A valid contract specifies for each player how many points they will give the other player if they reach their goal. The most points you can give to the other player is {POINTS_FOR_WIN}. The least points you can give is 0. You may not give negative points. You may propose, counter, or modify the terms set out by the other player.
 
 You each have up to 5 turns to speak in order to come to an agreement.

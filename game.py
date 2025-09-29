@@ -89,7 +89,6 @@ class Game:
         self.total_trades_accepted = 0
         self.total_trades_rejected = 0
         self.total_trades_failed = 0
-        self.total_trades_failed = 0
         self.amount_received_from_trades = {'0': 0, '1': 0}  
 
         # Initialize contract metrics
@@ -98,7 +97,6 @@ class Game:
         self.num_tiles_in_contract = 0
         self.num_tiles_promised_to_receive_from_contract = {'0': 0, '1': 0}
         self.points_for_completion_promised_to_receive_from_contract = {'0': 0, '1': 0}
-        self.num_unfulfilled_contract_moves = 0
         self.num_unfulfilled_contract_moves = 0
 
         # initialise p4p metrics
@@ -294,7 +292,6 @@ class Game:
             'total_trades_accepted': self.total_trades_accepted,
             'total_trades_rejected': self.total_trades_rejected,
             'total_trades_failed': self.total_trades_failed,
-            'total_trades_failed': self.total_trades_failed,
             'amount_received_by_0_from_trades': self.amount_received_from_trades['0'],
             'amount_received_by_1_from_trades': self.amount_received_from_trades['1'],
             'contract_accepted': self.contract_accepted,
@@ -302,7 +299,6 @@ class Game:
             'num_tiles_in_contract': self.num_tiles_in_contract,
             'num_tiles_promised_to_receive_from_contract_0': self.num_tiles_promised_to_receive_from_contract['0'],
             'num_tiles_promised_to_receive_from_contract_1': self.num_tiles_promised_to_receive_from_contract['1'],
-            'num_unfulfilled_contract_moves': self.num_unfulfilled_contract_moves,
             'num_unfulfilled_contract_moves': self.num_unfulfilled_contract_moves,
             'points_for_completion_promised_to_0': self.points_for_completion_promised_to_receive_from_contract['0'],
             'points_for_completion_promised_to_1': self.points_for_completion_promised_to_receive_from_contract['1'],
@@ -500,12 +496,6 @@ class Game:
         # Record resources after trades (before moves)
         player_turn_data[player.name]['resources_after_trades'] = dict(player.resources)
     
-    def handle_move(self, player, player_turn_data):
-        move_result = None
-        player_label = player.get_player_label(self)
-        old_position = player.position
-        # Record resources after trades (before moves)
-        player_turn_data[player.name]['resources_after_trades'] = dict(player.resources)
     
     def handle_move(self, player, player_turn_data):
         move_result = None
@@ -544,44 +534,6 @@ class Game:
                         player_turn_data[player.name]['move_made'] = move
                         print(f"{player_label} moved to {move} under contract terms.")
 
-            
-            # if it's not covered by contract, see if it can be made normally or via pay4partner
-            if move_result == 'no_move':
-                if player.can_move_to_with_promised(move, self.grid):
-                    
-        move = None
-        move_result = "no_move"
-        
-        # come up with move only if player hasn't finished
-        if not player.has_finished():
-            move = player.come_up_with_move(self, self.grid)
-            
-        if move is None:
-            print(f"{player_label} did not move.")
-            player_turn_data[player.name]['move_type'] = 'no_move'
-        else:
-            if self.contract_type == 'tile_with_judge_implementation' and self.contract is not None:
-                print(f"Consulting judge to see if move is in contract...")
-                move_is_in_contract_according_to_judge = JUDGE.check_if_move_is_in_contract(player, move, self.contract)
-                if move_is_in_contract_according_to_judge:
-                    contract_resource_adjustment =  self.handle_contract_move(player, move)
-                    if contract_resource_adjustment:
-                        player.move(move, self.grid)
-                        move_result = move
-                        player_turn_data[player.name]['move_made'] = move
-                        print(f"{player_label} moved to {move} under contract terms.")
-            
-            elif self.contract_type == 'strict' and self.contract is not None:
-                if move in (tuple(map(int, key.strip("()").split(","))) for key in self.contract.keys() if re.match(r"^\(\d+,\s*\d+\)$", key)):
-                    
-                    contract_resource_adjustment =  self.handle_contract_move(player, move)
-                    if contract_resource_adjustment:
-                        player.move(move, self.grid)
-                        move_result = move
-                        player_turn_data[player.name]['move_made'] = move
-                        print(f"{player_label} moved to {move} under contract terms.")
-
-            
             # if it's not covered by contract, see if it can be made normally or via pay4partner
             if move_result == 'no_move':
                 if player.can_move_to_with_promised(move, self.grid):
@@ -666,18 +618,6 @@ class Game:
                     player_turn_data[player.name]['used_color'] = color
                     print(f"{player_label} moved to {move}.")
                     
-                    
-                elif player.can_move_to(move, self.grid):
-                    player.move(move, self.grid)
-                    move_result = move
-                    player_turn_data[player.name]['move_made'] = move
-                    player_turn_data[player.name]['move_type'] = 'regular'  # Regular move using own resources
-                    # Record which color was used
-                    r, c = move
-                    color = self.grid.get_color(r, c)
-                    player_turn_data[player.name]['used_color'] = color
-                    print(f"{player_label} moved to {move}.")
-                    
                 else:
                     move_result = "invalid_move"
         
@@ -690,24 +630,6 @@ class Game:
             # Get the full response from the player's message history
             response = player.messages[-1]["content"] if player.with_message_history else ""
 
-            # Add the move summary
-            move_summary = {
-                "player": player.name,
-                "from_pos": old_position,
-                "to_pos": move_result if isinstance(move_result, tuple) else None,
-                "success": isinstance(move_result, tuple),
-                "reason": "successful" if isinstance(move_result, tuple) else move_result,
-                "response": response,
-                # Add pay4partner info if relevant
-                "move_type": player_turn_data[player.name].get('move_type', 'regular'),
-                "covered_by": player_turn_data[player.name].get('covered_by'),
-                "covered_color": player_turn_data[player.name].get('covered_color'),
-                "promise_broken_by": player_turn_data[player.name].get('promise_broken_by'),
-                "promised_color": player_turn_data[player.name].get('promised_color')
-            }
-            self.current_turn_summary["moves"].append(move_summary)
-    
-    
             # Add the move summary
             move_summary = {
                 "player": player.name,
@@ -851,30 +773,8 @@ class Game:
                 "player": player.name,
                 "message": propose_trade['message']})
             self.total_trades_failed += 1
-            self.logger.log("trade_validation_failed", {
-                "player": player.name,
-                "message": propose_trade['message']})
-            self.total_trades_failed += 1
-            return False
-
-    def handle_contract(self, n_tries=2):
-        for attempt in range(n_tries):
-            print(f"Attempt {attempt + 1} to come up with a contract...")
             
-            contracts = self.come_up_with_contract(self.players, type=self.contract_type)
-            if contracts:
-                contract = contracts['contract']
-                print(f"contract made! {contract}")
-                self.contract = contract
-                for player in self.players:
-                    if player.id == '0':
-                        player.contract = contracts['contract_for_0']
-                    elif player.id == '1':
-                        player.contract = contracts['contract_for_1']
-                return
-        else:
-            print("Failed to come up with a contract, trying again...")
-        print("All attempts to create a contract have failed.")
+            return False
             
 
     def handle_contract(self, n_tries=2):
@@ -919,7 +819,6 @@ class Game:
             system_player_1 = player_1.generate_contract_for_finishing_prompt(player_1.generate_player_context_message(self, self.grid))
             history_0 = [{"role": "system", "content": system_player_0 }]
             history_1 = [{"role": "system", "content": system_player_1 }]
-        elif type in ('strict', 'tile_with_judge_implementation'):
         elif type in ('strict', 'tile_with_judge_implementation'):
             system_player_0 = player_0.generate_tile_level_contract_prompt(player_0.generate_player_context_message(self, self.grid))
             system_player_1 = player_1.generate_tile_level_contract_prompt(player_1.generate_player_context_message(self, self.grid))
