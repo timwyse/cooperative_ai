@@ -15,8 +15,9 @@ import prompts
 from utils import get_last_alphabetic_word
 
 
+
 class Player:
-    def __init__(self, id, agent, logger, config: GameConfig):
+    def __init__(self, id, agent, logger, config: GameConfig, game = None):
 
         self.config = config
         self.logger = logger
@@ -76,6 +77,9 @@ class Player:
         self.messages = [{"role": "system", "content": self.system_prompt.format(player_name="you",
                                                                                  pay4partner_mode_info=self.pay4partner_mode_sys_prompt,
                                                                                  pay4partner_scoring_info=self.pay4partner_scoring_info)}] if self.with_message_history else []
+        
+        self.game = game
+
 
     def get_readable_board(self):
         if self.fog_of_war is None or not self.fog_of_war:
@@ -281,13 +285,13 @@ class Player:
 
             # Log prompt to verbose logger
             user_prompt = current_messages[-1]["content"]
-            game.logger.log_player_prompt(game.turn, self.name, self.model_name, "move", system_prompt, user_prompt)
+            game.logger.log_player_prompt(self.name, "move", system_prompt, user_prompt)
 
             move = self.get_completion(current_messages)
 
             # Log response to verbose logger with full response
 
-            game.logger.log_player_response(game.turn, self.name, self.model_name, "move", move)
+            game.logger.log_player_response(self.name, "move", move)
 
             if self.with_message_history:
                 self.messages.extend([
@@ -327,6 +331,12 @@ class Player:
                     print("Invalid move: Could not extract a valid position.")
                     
                     game.logger.log_format_error(
+                    self.name,
+                    "move_format_error",
+                    {"error": "Couldn't extract move", "raw_response": str(move)}
+                )
+                    
+                    game.logger.log_format_error(
                     game.turn,
                     self.name,
                     "move_format_error",
@@ -339,7 +349,6 @@ class Player:
                 if not (0 <= r < self.grid_size and 0 <= c < self.grid_size):
                     print("Invalid move: The position is out of bounds.")
                     game.logger.log_format_error(
-                        game.turn,
                         self.name,
                         "move_out_of_bounds",
                         {"error": "Position out of bounds", "attempted_move": str(new_pos), "raw_response": str(move)}
@@ -348,7 +357,6 @@ class Player:
                 if new_pos not in grid.get_adjacent(self.position):
                     print("Invalid move: You can only move to an adjacent tile.")
                     game.logger.log_format_error(
-                        game.turn,
                         self.name,
                         "move_not_adjacent",
                         {"error": "Not an adjacent tile", 
@@ -361,7 +369,6 @@ class Player:
                 return new_pos
             except Exception as e:
                 game.logger.log_format_error(
-                    game.turn,
                     self.name,
                     "move_format_error",
                     {"error": str(e), "raw_response": str(move)}
@@ -456,14 +463,14 @@ class Player:
 
             # Log prompt to verbose logger
             user_prompt = current_messages[-1]["content"]
-            game.logger.log_player_prompt(game.turn, self.name, self.model_name, "trade_proposal", system_prompt,
+            game.logger.log_player_prompt(self.name, "trade_proposal", system_prompt,
                                           user_prompt)
 
             # Make the API call
             trade_proposal = self.get_completion(current_messages, max_completion_tokens=2000)
 
             # Log response to verbose logger with full response
-            game.logger.log_player_response(game.turn, self.name, self.model_name, "trade_proposal", trade_proposal)
+            game.logger.log_player_response(self.name,  "trade_proposal", trade_proposal)
 
             # Save to history if enabled
             if self.with_message_history:
@@ -510,11 +517,10 @@ class Player:
                     except json.JSONDecodeError as e:
                         error_msg = f"Invalid JSON format in trade proposal: {e}"
                         print(error_msg)
-                        game.logger.log_player_response(game.turn, self.name, self.model_name, "trade_proposal_invalid_json", 
+                        game.logger.log_player_response(self.name, "trade_proposal_invalid_json", 
                             f"(AI Agent does not see this)\n{error_msg}")
                         
                         game.logger.log_format_error(
-                            game.turn, 
                             self.name, 
                             "trade_json_parse_error",
                             {"error": str(e), "raw_response": trade_proposal} 
@@ -524,13 +530,12 @@ class Player:
             except Exception as e:
                 error_msg = f"Error parsing trade proposal: {e}"
                 print(error_msg)
-                game.logger.log_player_response(game.turn, self.name, self.model_name, "trade_proposal_error", 
+                game.logger.log_player_response(self.name,  "trade_proposal_error", 
                     f"(AI Agent does not see this)\n{error_msg}")
                 
                 game.logger.log_format_error(
-                    game.turn,
                     self.name,
-                    "trade_parse_error", 
+                    "trade_parse_error",   
                     {"error": str(e), "raw_response": trade_proposal}  
                 )
 
@@ -577,7 +582,7 @@ class Player:
                                                                                        "content": system_prompt}]
             current_messages.append({"role": "user", "content": user_message})
             user_prompt = current_messages[-1]["content"]
-            game.logger.log_player_prompt(game.turn, self.name, self.model_name, "trade_response", system_prompt,
+            game.logger.log_player_prompt(self.name, "trade_response", system_prompt,
                                           user_prompt)
 
             # Make the API call to get rade response
@@ -597,9 +602,14 @@ class Player:
             else:
                 decision_result = "trade_rejected_unclear_response"
                 will_accept = False
+                game.logger.log_format_error(
+                    self.name,
+                    "trade_response_invalid_format",
+                    {"raw_response": accept_trade}
+                )
 
             # Log response to verbose logger with full response
-            game.logger.log_player_response(game.turn, self.name, self.model_name, "trade_response", accept_trade)
+            game.logger.log_player_response(self.name,  "trade_response", accept_trade)
 
             # Save to history if enabled
             if self.with_message_history:
@@ -674,13 +684,13 @@ class Player:
 
             # Log prompt to verbose logger
             user_prompt = message
-            game.logger.log_player_prompt(game.turn, self.name, self.model_name, "pay4partner", system_prompt, user_prompt)
+            game.logger.log_player_prompt(self.name, "pay4partner", system_prompt, user_prompt)
 
             # Make the API call
             agree = self.get_completion(current_messages)
             
             # Log response to verbose logger
-            game.logger.log_player_response(game.turn, self.name, self.model_name, "pay4partner", agree)
+            game.logger.log_player_response(self.name, "pay4partner", agree)
 
             # Save to history if enabled
             if self.with_message_history:
@@ -693,6 +703,11 @@ class Player:
             if "yes" in final_response or "accept" in final_response or "agree" in final_response:
                 return True
             else:
+                game.logger.log_format_error(
+                    self.name,
+                    "pay4partner_response_invalid_format",
+                    {"raw_response": agree}
+                )
                 return False
     
     
@@ -705,6 +720,13 @@ class Player:
         return prompts.generate_contract_for_finishing_prompt(self.system_prompt, player_context)
     
     def get_completion(self, messages, max_completion_tokens=1000):
+        # Log the complete message set before API call
+        if hasattr(self, 'game') and self.game and hasattr(self.game, 'logger'):
+            self.game.logger.log_complete_message_set(
+                self.name,
+                messages,
+                max_completion_tokens
+            )
         if self.model_api == 'anthropic':
             try:
                 system_prompt = ""
@@ -713,7 +735,6 @@ class Player:
                         system_prompt += message['content'] + "\n"
                 # Remove system messages from the list
                 messages = [m for m in messages if m['role'] != 'system']   
-
                 response = self.client.messages.create(model=self.model,
                                                     temperature=self.temperature,
                                                     messages=messages,
@@ -724,11 +745,12 @@ class Player:
                 print(f"Error with Anthropic API: {e}")
                 print(messages)
                 raise e
-        else:   
+        else: 
             response = self.client.chat.completions.create(model=self.model,
                                                            temperature=self.temperature,
                                                            messages=messages,
                                                            max_completion_tokens=max_completion_tokens)
             return response.choices[0].message.content.strip().lower()
+
 
 
