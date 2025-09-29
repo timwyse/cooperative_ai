@@ -493,19 +493,17 @@ class Player:
                 if not matches:
                     raise ValueError("No JSON object found in Together response.")
                 json_str = matches[-1]
-                jd = json.loads(json_str)
+                trade_proposal = json.loads(json_str)
 
-                # fix common key typos
-                if 'resources_to offer' in jd:
-                    jd['resources_to_offer'] = jd.pop('resources_to offer')
-                if 'resources to offer' in jd:
-                    jd['resources_to_offer'] = jd.pop('resources to offer')
-                if 'resources_to receive' in jd:
-                    jd['resources_to_receive'] = jd.pop('resources_to receive')
-                if 'resources to receive' in jd:
-                    jd['resources_to_receive'] = jd.pop('resources to receive')
-
-                trade_proposal = self.clean_trade_proposal(jd, grid, game)
+                # Fix common key errors
+                if 'resources_to offer' in trade_proposal:
+                    trade_proposal['resources_to_offer'] = trade_proposal.pop('resources_to offer')
+                if 'resources to offer' in trade_proposal:
+                    trade_proposal['resources_to_offer'] = trade_proposal.pop('resources to offer')
+                if 'resources_to receive' in trade_proposal:
+                    trade_proposal['resources_to_receive'] = trade_proposal.pop('resources_to receive')
+                if 'resources to receive' in trade_proposal:
+                    trade_proposal['resources_to_receive'] = trade_proposal.pop('resources to receive')
 
             cleaned = self.clean_trade_proposal(trade_proposal, grid, game)
             if not cleaned:
