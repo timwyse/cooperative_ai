@@ -55,6 +55,16 @@ def extra_short_context(player):
     else: 
         extra_context = f", and any resources you have been promised to be covered for by the other player, as well as any contract terms you have agreed to with the other player" 
     return extra_context
+def extra_short_context(player):
+    if not player.pay4partner and player.contract is None:
+        extra_context = ""
+    elif player.pay4partner and player.contract is None:
+        extra_context = ", and any resources you have been promised to be covered for by the other player"
+    elif not player.pay4partner and player.contract is not None:
+        extra_context = ", and any contract terms you have agreed to with the other player"
+    else: 
+        extra_context = f", and any resources you have been promised to be covered for by the other player, as well as any contract terms you have agreed to with the other player" 
+    return extra_context
 
 def generate_trade_system_info(player):
     if not player.pay4partner:
@@ -74,8 +84,16 @@ def generate_move_prompt(player, player_context):
     extra_context = extra_short_context(player)
     
 
+    contract_info = generate_contract_info(player)
+    extra_context = extra_short_context(player)
+    
+
     return f"""
 {player_context}
+
+{pay4partner_info}
+
+{contract_info}
 
 {pay4partner_info}
 
@@ -105,6 +123,7 @@ IMPORTANT: After considering the above, finish your response with EXACTLY one of
 - Your next move in "r,c" format (e.g. "1,2")
 - "n" if you cannot make any valid move toward your goal
 """
+
 
 
 def generate_trade_proposal_prompt(player, player_context):
@@ -172,11 +191,13 @@ def generate_trade_response_prompt(player, player_context, resources_to_offer, r
 
 def generate_regular_trade_response_prompt(player, player_context, resources_to_offer, resources_to_receive):
     """Generate prompt for regular trade response decisions."""
-    
     contract_info = generate_contract_info(player)
 
     return f"""
 {player_context}
+
+{contract_info}
+
 
 {contract_info}
 
@@ -245,6 +266,30 @@ In addition to the information above, please consider any promises you're alread
 \n- So far you have promised to cover these resources for the other player: {promised_resources_to_give if promised_resources_to_give else '{}'}"
 \n- So far you have been promised to be covered for these resources by the other player: {promised_resources_to_receive if promised_resources_to_receive else '{}'}
 In order to move onto a tile of a color you have been promised, select that move as normal and the other player will be asked to cover the cost for you.
+
+IMPORTANT: After considering the above, finish your response with EXACTLY one of these two options:
+- 'yes' if you agree to pay
+- 'no' if you want to keep those resources
+"""
+
+
+def generate_pay4partner_mode_info(player, short_summary=False):
+        if player.pay4partner:
+            promised_resources_to_receive = {color: amt for color, amt in player.promised_resources_to_receive.items() if amt > 0}
+            promised_resources_to_give = {color: amt for color, amt in player.promised_resources_to_give.items() if amt > 0}
+            pay4partner_mode_info = """
+Important Note: The game is in 'pay for other' mode. This means that trades are not made by directly swapping resources. Instead, when a trade agreement is reached, each player commits to covering the cost of the other’s movement on the agreed tile colors. In practice:
+	•	If the other player steps onto a tile of a color you agreed to cover, you pay the resource cost for that move.
+	•	If you step onto a tile of a color the other player agreed to cover, they pay the resource cost for you.
+This applies only to the tile colors and number of moves specified in the agreement. If at the end of the game a promised resource has not been used, it remains in your inventory and counts towards your final score."""
+            if short_summary:
+                return pay4partner_mode_info
+            else:
+                pay4partner_mode_info += f"""
+In addition to the information above, please consider any promises you're already involved in:
+\n- So far you have promised to cover these resources for the other player: {promised_resources_to_give if promised_resources_to_give else '{}'}"
+\n- So far you have been promised to be covered for these resources by the other player: {promised_resources_to_receive if promised_resources_to_receive else '{}'}
+In order to move onto a tile of a color you have been promised, select that move as normal and the other player will be asked to cover the cost for you.
 """
             return pay4partner_mode_info
         else:
@@ -285,6 +330,32 @@ Example of a snippet of a valid contract:
 
 When you have both agreed to a contract, a judge will summarise the contract in JSON format and present it back to you for you both to agree one last time.
 """
+
+def generate_contract_info(player):
+    """
+    Generates a prompt section summarising the current contract (if any).
+    """
+    if player.contract_type in ['strict', 'tile_with_judge_implementation'] and player.contract is not None:
+
+        contract_info = f"""
+Additionally, you have agreed upon the following contract with the other player. When you try to move onto one of the tiles for which they have agreed to pay on your behalf, the resource will leave their resources and you will be able to move onto that tile:
+{player.contract}
+
+Thus if you move onto one of these tiles, you do not need to have the resource in your inventory to move onto that tile, nor do you need to trade for it. The same is true for the other player.
+""" 
+
+    elif player.contract_type == 'contract_for_finishing' and player.contract is not None:
+        contract_info = f"""
+Additionally, you have agreed upon the following contract with the other player. When either of you reach your goal, you will give them the agreed points:
+{player.contract}.
+
+Keep this in mind when deciding your next move or proposing/accepting trades, as you may be incentivised to help the other player to finish.
+"""
+    
+    else:
+        contract_info = ""
+
+    return contract_info
 
 def generate_contract_info(player):
     """
