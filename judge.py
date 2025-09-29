@@ -242,6 +242,14 @@ IMPORTANT RULES:
             return False
         else:
             print(f"⚠️ Judge returned unexpected response: {response}. Treating as 'N'.")
+
+            if hasattr(self, 'logger'):
+                self.logger.log_format_error(
+                    player.name,
+                    "judge_move_cover_check_invalid_format",
+                    {"raw_response": response, "move": move, "player": player.name}
+                )
+
             return False
         
     

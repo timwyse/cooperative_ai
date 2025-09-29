@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 import json
+import prompts
 
 from pathlib import Path
 
@@ -22,19 +23,23 @@ class Logger(BaseLogger):
     
     def log(self, event: str, details: dict):
         """Log system events (errors, validations, etc.) to the verbose log."""
-        turn = str(self.turn) if hasattr(self, 'turn') else '0'
+        turn = str(self.turn)
         
-        # Initialize events section if not exists
-        if "events" not in self.verbose_log_data["game"]["turns"][turn]:
-            self.verbose_log_data["game"]["turns"][turn]["events"] = {}
-        
-        # Add event with timestamp
+        self.verbose_log_data["game"]["turns"].setdefault(turn, {})
+        self.verbose_log_data["game"]["turns"][turn].setdefault("events", {})
         self.verbose_log_data["game"]["turns"][turn]["events"][event] = {
             "timestamp": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
             **details
         }
-        
         self._save_verbose_log()
+
+        self.log_data["game"]["turns"].setdefault(turn, {"players": {}})
+        self.log_data["game"]["turns"][turn].setdefault("events", {})
+        self.log_data["game"]["turns"][turn]["events"][event] = {
+            "timestamp": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+            **details
+        }
+        self._save_event_log()
             
     def __init__(self, game_id=None, base_log_dir: str = "logs", skip_default_logs=False):
         if game_id is None:
@@ -79,6 +84,7 @@ class Logger(BaseLogger):
         # Write initial logs
         self._save_event_log()  # Write initial event log
         self._save_verbose_log()  # Write initial verbose log
+        self.turn = 0
     
     def _generate_unique_game_id(self):
         """Game id based on timestamp."""
@@ -119,61 +125,76 @@ class Logger(BaseLogger):
             "player_details": player_details
         }
     
-    def log_turn_start(self, turn_number):
+    def log_turn_start(self):
         """Start a new turn in both event and verbose logs."""
-        # Initialize turn in event log
-        self.log_data["game"]["turns"][str(turn_number)] = {
-            "players": {}
-        }
+        turn = str(self.turn)
+        # create buckets if missing
+        self.log_data["game"]["turns"].setdefault(turn, {"players": {}})
+        self.verbose_log_data["game"]["turns"].setdefault(turn, {})
         
-        # Initialize turn in verbose log
-        self.verbose_log_data["game"]["turns"][str(turn_number)] = {}
+        self._save_event_log()
         self._save_verbose_log()
     
-    def log_player_prompt(self, turn_number, player_name, player_model, decision_type, system_prompt, user_prompt):
+    def log_player_prompt(self, player_name, decision_type, system_prompt, user_prompt):
         """Log the complete prompt sent to a player (verbose only)."""
         player_id = player_name.split()[-1] if "Player" in player_name else player_name
-        turn = str(turn_number)
-        
-        # Initialize player data if not exists
-        if f"player_{player_id}" not in self.verbose_log_data["game"]["turns"][turn]:
-            self.verbose_log_data["game"]["turns"][turn][f"player_{player_id}"] = {}
-        
+        turn = str(self.turn)
+        player_key = f"player_{player_id}"
+
+        # ensure turn bucket exists
+        self.verbose_log_data["game"]["turns"].setdefault(turn, {})
+        # ensure player bucket exists
+        player_bucket = self.verbose_log_data["game"]["turns"][turn].setdefault(player_key, {})
+
         # Add action entry
+        action_key = decision_type.lower()
         action_data = {
             "timestamp": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
             "action": decision_type.upper(),
             "system_prompt": system_prompt,
             "user_prompt": user_prompt,
-            "agent_response": None  # Will be filled by log_player_response
+            "agent_response": None  # will be filled by log_player_response
         }
-        
-        # Add the action entry
-        action_key = decision_type.lower()
-        self.verbose_log_data["game"]["turns"][turn][f"player_{player_id}"][action_key] = action_data
+
+        actions = player_bucket.setdefault(action_key, [])
+        actions.append(action_data)
+
         self._save_verbose_log()
+
     
-    def log_player_response(self, turn_number, player_name, player_model, decision_type, response):
+    def log_player_response(self, player_name, decision_type, response):
         """Log the complete response from a player (verbose only)."""
-        player_id = player_name.split()[-1] if "Player" in player_name else player_name
-        turn = str(turn_number)
-        
-        # Update the existing action entry with the response
-        if f"player_{player_id}" in self.verbose_log_data["game"]["turns"][turn]:
-            # Get the action entry key from the data
-            action_key = decision_type.lower()
-            if action_key in self.verbose_log_data["game"]["turns"][turn][f"player_{player_id}"]:
-                self.verbose_log_data["game"]["turns"][turn][f"player_{player_id}"][action_key]["agent_response"] = response
-                self._save_verbose_log()
+        turn = str(self.turn)
+        player_id  = player_name.split()[-1] if "Player" in player_name else player_name
+        player_key = f"player_{player_id}"
+        action_key = decision_type.lower()
+
+        # ensure turn & player buckets exist (covers edge case: response without prompt)
+        turn_bucket = self.verbose_log_data["game"]["turns"].setdefault(turn, {})
+        pl = turn_bucket.setdefault(player_key, {})
+        actions = pl.setdefault(action_key, [])
+        if not actions:
+            actions.append({
+                "timestamp": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+                "action": decision_type.upper(),
+                "system_prompt": None,
+                "user_prompt": None
+            })
+
+        # attach response to the last action of this type
+        actions[-1]["agent_response"] = response
+        self._save_verbose_log()
+
     
-    def log_player_turn_summary(self, turn_number, player_name, player_data):
+    def log_player_turn_summary(self, player_name, player_data):
         """Log a player's turn data in JSON format (event log only)."""
         # Extract player ID from name (e.g., "Player 0" -> "0")
         player_id = player_name.split()[-1] if "Player" in player_name else player_name
+        turn = str(self.turn)
         
         # Initialize turn if not exists
-        if str(turn_number) not in self.log_data["game"]["turns"]:
-            self.log_data["game"]["turns"][str(turn_number)] = {
+        if turn not in self.log_data["game"]["turns"]:
+            self.log_data["game"]["turns"][turn] = {
                 "players": {}
             }
         
@@ -237,9 +258,25 @@ class Logger(BaseLogger):
                 }
         
         # Add to turn data
-        self.log_data["game"]["turns"][str(turn_number)]["players"][player_id] = player_turn_data
+        players_bucket = self.log_data["game"]["turns"][turn]["players"]
+        existing_entry = players_bucket.get(player_id, {})
+
+        # keep any format_errors that were logged earlier in the turn
+        if "format_errors" in existing_entry and "format_errors" not in player_turn_data:
+            player_turn_data["format_errors"] = existing_entry["format_errors"]
+        elif "format_errors" in existing_entry and "format_errors" in player_turn_data:
+            # both exist (paranoia): concatenate
+            if not isinstance(player_turn_data["format_errors"], list):
+                player_turn_data["format_errors"] = [player_turn_data["format_errors"]]
+            prev = existing_entry["format_errors"]
+            if not isinstance(prev, list):
+                prev = [prev]
+            player_turn_data["format_errors"] = prev + player_turn_data["format_errors"]
+
+        existing_entry.update(player_turn_data)
+        players_bucket[player_id] = existing_entry
     
-    def log_turn_end(self, turn_number):
+    def log_turn_end(self):
         """End the current turn in both event and verbose logs."""
         # Save both logs
         self._save_event_log()
@@ -250,7 +287,7 @@ class Logger(BaseLogger):
         with open(self.verbose_filepath, "w") as f:
             json.dump(self.verbose_log_data, f, indent=2, ensure_ascii=False)
     
-    def log_game_end(self, players, total_turns, additional_metrics=None):
+    def log_game_end(self, players, additional_metrics=None):
         """Log final game state and metrics."""
         # Set end timestamp for both logs
         end_time = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
@@ -275,7 +312,7 @@ class Logger(BaseLogger):
         # Add final state section with metrics
         self.log_data["game"]["final_state"] = {
             "players": {},
-            "total_turns": total_turns,
+            "total_turns": str(self.turn),
             "scores": scores,
             "metrics": {
                 "total_scores": total_scores,
@@ -307,14 +344,58 @@ class Logger(BaseLogger):
         # Add to metrics
         self.log_data["game"]["final_state"]["metrics"]["format_errors_total"] = format_error_count
 
+
+        # Count format errors (total + breakdowns)
+        format_errors_total = 0
+        format_errors_by_type = {}
+        format_errors_by_player = {}
+        format_errors_by_turn = {}
+
+        for turn, turn_data in self.log_data["game"]["turns"].items():
+            turn_counts = {}
+            for player_id, player_data in turn_data.get("players", {}).items():
+                errors = player_data.get("format_errors", [])
+                for e in errors:
+                    etype = e.get("type", "unknown")
+                    format_errors_total += 1
+
+                    # by type
+                    format_errors_by_type[etype] = format_errors_by_type.get(etype, 0) + 1
+
+                    # by player
+                    if player_id not in format_errors_by_player:
+                        format_errors_by_player[player_id] = {}
+                    format_errors_by_player[player_id][etype] = (
+                        format_errors_by_player[player_id].get(etype, 0) + 1
+                    )
+
+                    # by turn (aggregate per turn regardless of player)
+                    turn_counts[etype] = turn_counts.get(etype, 0) + 1
+
+            if turn_counts:
+                format_errors_by_turn[turn] = turn_counts
+
+        # Add to metrics (keep the old total and add new breakdowns)
+        metrics = self.log_data["game"]["final_state"]["metrics"]
+        metrics["format_errors_total"] = format_errors_total
+        metrics["format_errors_by_type"] = dict(sorted(format_errors_by_type.items()))
+        metrics["format_errors_by_player"] = {
+            pid: dict(sorted(cts.items())) for pid, cts in format_errors_by_player.items()
+        }
+        metrics["format_errors_by_turn"] = {
+            t: dict(sorted(cts.items())) for t, cts in format_errors_by_turn.items()
+        }
+
+
         # Save final JSON
         self._save_event_log()
+        self._save_verbose_log()
     
     def _save_event_log(self):
         with open(self.event_filepath, "w") as f:
             json.dump(self.log_data, f, indent=2, ensure_ascii=False)
 
-    def log_contract_negotiation(self, turn_number, history_0,
+    def log_contract_negotiation(self, history_0,
                 history_1,
                 agree_0,
                 agree_1,    
@@ -324,7 +405,9 @@ class Logger(BaseLogger):
         Log the conversation between players and the outcome of the contract negotiation.
         
         """
-        turn = str(turn_number)
+        print("Warning: method log_contract_negotiation wasn't properly tested\n")
+
+        turn = str(self.turn)
 
         # Initialize turn in verbose log if not already present
         if turn not in self.verbose_log_data["game"]["turns"]:
@@ -343,9 +426,83 @@ class Logger(BaseLogger):
         # Save the verbose log
         self._save_verbose_log()
 
-    def log_format_error(self, turn_number, player_name, error_type, error_details):
+    def log_contract_system_prompt(self, player_id, contract_type, system_prompt):
+        """Log system prompts used for contract negotiation"""
+        
+        #FIXME AS: It has to be implemented
+        #below commented code proposed by Clode 
+        #I'm not testing contracts yet
+        #So I'm leaving it as a place holder for future. 
+        """
+        turn = str(self.turn)
+        
+        # Initialize turns if not exists (following existing pattern)
+        if turn not in self.verbose_log_data["game"]["turns"]:
+            self.verbose_log_data["game"]["turns"][turn] = {}
+        
+        # Initialize contract prompts section if not exists
+        if "contract_prompts" not in self.verbose_log_data["game"]["turns"][turn]:
+            self.verbose_log_data["game"]["turns"][turn]["contract_prompts"] = {}
+        
+        self.verbose_log_data["game"]["turns"][turn]["contract_prompts"][f"player_{player_id}"] = {
+            "contract_type": contract_type,
+            "system_prompt": system_prompt,
+            "timestamp": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+        }
+        self._save_verbose_log() """
+
+    def log_judge_prompt(self, judge_action, system_prompt, user_prompt):
+        """Log prompts sent to the judge"""
+
+        #FIXME It has to be implemented
+        #below commented code proposed by Clode 
+        #I'm not testing contracts yet
+        #So I'm leaving it as a place holder for future. 
+
+        """ turn = str(self.turn)
+        
+        # Initialize turn if not exists
+        if turn not in self.verbose_log_data["game"]["turns"]:
+            self.verbose_log_data["game"]["turns"][turn] = {}
+        
+        # Initialize judge section if not exists
+        if "judge_actions" not in self.verbose_log_data["game"]["turns"][turn]:
+            self.verbose_log_data["game"]["turns"][turn]["judge_actions"] = []
+        
+        judge_entry = {
+            "action": judge_action,
+            "system_prompt": system_prompt,
+            "user_prompt": user_prompt,
+            "response": None,  # Will be filled by log_judge_response
+            "timestamp": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+        }
+        
+        self.verbose_log_data["game"]["turns"][turn]["judge_actions"].append(judge_entry)
+        self._save_verbose_log()
+        
+        # Return the index so we can update it later with the response
+        return len(self.verbose_log_data["game"]["turns"][turn]["judge_actions"]) - 1 """
+
+    def log_judge_response(self, judge_action_index, response):
+
+        #FIXME It has to be implemented
+        #below commented code proposed by Clode 
+        #I'm not testing contracts yet
+        #So I'm leaving it as a place holder for future. 
+
+        """Log judge responses"""
+        """ 
+        turn = str(self.turn)
+        
+        if turn in self.verbose_log_data["game"]["turns"]:
+            if "judge_actions" in self.verbose_log_data["game"]["turns"][turn]:
+                if judge_action_index < len(self.verbose_log_data["game"]["turns"][turn]["judge_actions"]):
+                    self.verbose_log_data["game"]["turns"][turn]["judge_actions"][judge_action_index]["response"] = response
+                    self._save_verbose_log()  """
+
+    def log_format_error(self, player_name, error_type, error_details):
         """Log format errors to both event and verbose logs."""
-        turn = str(turn_number)
+        turn = str(self.turn)
         player_id = player_name.split()[-1] if "Player" in player_name else player_name
         
         # Log to verbose log
@@ -377,6 +534,90 @@ class Logger(BaseLogger):
         })
         
         self._save_event_log()
+        self._save_verbose_log()
+
+    def log_system_prompts(self, prompt_config):
+        """Log all system prompt templates and configuration at game start"""
+#        self.log_data["system_prompts"] = prompt_config
+        self.verbose_log_data["system_prompts"] = prompt_config
+#        self._save_event_log()
+        self._save_verbose_log() 
+
+    def log_complete_message_set(self, player, messages, max_tokens):
+        """Log complete message set before any API call"""
+        turn = str(self.turn)
+        
+        # Initialize turn if not exists
+        if turn not in self.verbose_log_data["game"]["turns"]:
+            self.verbose_log_data["game"]["turns"][turn] = {}
+        
+        # Initialize raw_api_calls section if not exists
+        if "raw_api_calls" not in self.verbose_log_data["game"]["turns"][turn]:
+            self.verbose_log_data["game"]["turns"][turn]["raw_api_calls"] = []
+        
+        api_call_entry = {
+            "player": player,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "timestamp": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+        }
+        
+        self.verbose_log_data["game"]["turns"][turn]["raw_api_calls"].append(api_call_entry)
+        self._save_verbose_log()    
+    
+    def log_system_prompt_config(self, config, players):
+        """Log the base system prompts and configuration at game start"""
+        
+        # Log which base prompt is being used
+        base_prompt_name = "DEFAULT" if "selfish" not in config.system_prompt.lower() else "SELFISH"
+        
+        # Log the actual template
+        self.log_data["system_prompts"] = {
+            "base_template": config.system_prompt,
+            "template_type": base_prompt_name,
+            "constants": {
+                "POINTS_FOR_WIN": POINTS_FOR_WIN,
+                "POINTS_FOR_EXTRA_RESOURCE": POINTS_FOR_EXTRA_RESOURCE
+            },
+            "pay4partner_enabled": config.pay4partner,
+            "contract_type": config.contract_type
+        }
+        
+        # Log per-player system prompt variations
+        for player in players:
+            player_key = f"player_{player.id}"
+            self.log_data["system_prompts"][player_key] = {
+                "pay4partner_mode_info": player.pay4partner_mode_sys_prompt if hasattr(player, 'pay4partner_mode_sys_prompt') else None,
+                "pay4partner_scoring_info": player.pay4partner_scoring_info if hasattr(player, 'pay4partner_scoring_info') else None
+            }
+
+
+    def log_prompt_components(self, player):
+        """Log the dynamic components that fill system prompt templates"""
+        
+        turn = str(self.turn)
+        
+        # Initialize turn if not exists
+        if turn not in self.verbose_log_data["game"]["turns"]:
+            self.verbose_log_data["game"]["turns"][turn] = {}
+        
+        components = {
+            "player_id": player.id,
+            "player_name": player.name,
+            "pay4partner_mode_info": prompts.generate_pay4partner_mode_info(player) if player.pay4partner else "",
+            "promised_resources_to_give": dict(player.promised_resources_to_give),
+            "promised_resources_to_receive": dict(player.promised_resources_to_receive),
+            "current_position": list(player.position),  # Convert tuple to list for JSON
+            "goal": list(player.goal),  # Convert tuple to list for JSON
+            "resources": dict(player.resources),
+            "contract": player.contract,
+            "contract_type": player.contract_type
+        }
+        
+        if "prompt_components" not in self.verbose_log_data["game"]["turns"][turn]:
+            self.verbose_log_data["game"]["turns"][turn]["prompt_components"] = {}
+        
+        self.verbose_log_data["game"]["turns"][turn]["prompt_components"][player.name] = components
         self._save_verbose_log()
 
 def preprocess_details(details):
