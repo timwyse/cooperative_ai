@@ -9,15 +9,34 @@ from openai import OpenAI
 from together import Together
 
 from config import GameConfig
-from constants import ANTHROPIC_API_KEY, OPENAI_API_KEY, TOGETHER_API_KEY, AVAILABLE_COLORS, POINTS_FOR_WIN, POINTS_FOR_EXTRA_RESOURCE
+from constants import (
+    ANTHROPIC_API_KEY,
+    OPENAI_API_KEY,
+    TOGETHER_API_KEY,
+    AVAILABLE_COLORS,
+    POINTS_FOR_WIN,
+    POINTS_FOR_EXTRA_RESOURCE,
+)
 from grid import Grid
 import prompts
 from utils import get_last_alphabetic_word
 
+# Structured-output schemas & tool defs
+from schemas import (
+    MOVE_DECISION_SCHEMA,
+    TRADE_PROPOSAL_SCHEMA,
+    YES_NO_SCHEMA,
+    ANTHROPIC_MOVE_TOOL,
+    ANTHROPIC_TRADE_TOOL,
+    ANTHROPIC_YESNO_TOOL,
+)
+
+# work with API calls to llm agents
+from model_adapter import ModelAdapter
 
 
 class Player:
-    def __init__(self, id, agent, logger, config: GameConfig, game = None):
+    def __init__(self, id, agent, logger, config: GameConfig, game=None):
 
         self.config = config
         self.logger = logger
@@ -39,6 +58,9 @@ class Player:
         else:
             self.client = None
 
+
+        self.api_llm_model = ModelAdapter(self.model_api, self.model, self.temperature)
+
         self.start_pos = (random.randint(0, config.random_start_block_size - 1),
                           random.randint(0, config.random_start_block_size - 1))
         self.goal = (random.randint(config.grid_size - config.random_goal_block_size, config.grid_size - 1),
@@ -59,22 +81,24 @@ class Player:
         self.contract = None
         self.score = 0
         self.grid = Grid(self.grid_size, self.colors, grid=self.config.grid)
-        self.fog_of_war = False # set in game.py based on config.fog_of_war
+        self.fog_of_war = False  # set in game.py based on config.fog_of_war
         self.non_cooperative_baseline = 0
         self.show_paths = config.show_paths
 
         # init pay4partner settings
         self.pay4partner = config.pay4partner
         self.pay4partner_log = []
-        self.pay4partner_mode_sys_prompt = prompts.generate_pay4partner_mode_info(self, short_summary=True) 
+        self.pay4partner_mode_sys_prompt = prompts.generate_pay4partner_mode_info(self, short_summary=True)
         self.trading_rules = prompts.generate_trade_system_info(self)
-        self.system_prompt = config.system_prompt.format(pay4partner_mode_info=self.pay4partner_mode_sys_prompt,
-                                                         trading_rules=self.trading_rules)
+        self.system_prompt = config.system_prompt.format(
+            pay4partner_mode_info=self.pay4partner_mode_sys_prompt,
+            trading_rules=self.trading_rules
+        )
 
         # Init message history settings
         self.with_message_history = config.with_message_history
         self.messages = [{"role": "system", "content": self.system_prompt}] if self.with_message_history else []
-        
+
         self.game = game
 
     def get_readable_board(self):
@@ -99,7 +123,7 @@ class Player:
             return POINTS_FOR_WIN + POINTS_FOR_EXTRA_RESOURCE * (sum(self.resources.values()) - path_length)
         else:
             return 0
-    
+
     ## Core Gameplay
     def distance_to_goal(self):
         distance = abs(self.position[0] - self.goal[0]) + abs(self.position[1] - self.goal[1])
@@ -126,19 +150,16 @@ class Player:
 
     ## Player Anonymization Methods
     def get_player_label(self, game):
-        """Get display label for this player for user/console output"""
-        # Just use the standard player name (Player 0, Player 1, etc.)
         return self.name
 
     ## Pathfinding and Strategy
     def best_routes(self, grid):
         """
-        Runs a BFS to find the top n paths to the player's goal, given their current resources.
-        Returns two paths:
-        1) The path that requires the fewest additional resources (i.e. the path with the least shortfall)
-        2) The shortest path (in steps) that requires the fewest additional resources (i.e. the shortest path with the least shortfall)
-        """
-
+         Runs a BFS to find the top n paths to the player's goal, given their current resources.
+         Returns two paths:
+         1) The path that requires the fewest additional resources (i.e. the path with the least shortfall)
+         2) The shortest path (in steps) that requires the fewest additional resources (i.e. the shortest path with the least shortfall)
+         """
         def _neighbors(pos, rows, cols):
             r, c = pos
             nbrs = []
@@ -197,19 +218,19 @@ class Player:
                 })
             scored.sort(key=lambda x: (sum(x["resources_missing_due_to_insufficient_inventory"].values()),
                                        x["path_length_in_steps"]))
-            
+
             fewest_resources_needed_path = scored[0]
 
-            scored.sort(key=lambda x: (x["path_length_in_steps"], sum(x["resources_missing_due_to_insufficient_inventory"].values())))
+            scored.sort(key=lambda x: (x["path_length_in_steps"],
+                                       sum(x["resources_missing_due_to_insufficient_inventory"].values())))
 
             shortest_path_with_fewest_resources_needed = scored[0]
-            
+
             return [fewest_resources_needed_path, shortest_path_with_fewest_resources_needed]
 
         best = top_n_paths(grid, self.position, self.goal, self.resources)
 
         return best
-
 
     def format_turn_summary(self, turn_summary, turn_number, with_message_history=False):
         """Format turn summary with anonymized player names for AI prompts"""
@@ -225,15 +246,16 @@ class Player:
 
         from turn_context import generate_turn_context
         return generate_turn_context(game, self)
-    
 
     ## Decision-Making
     def come_up_with_move(self, game, grid):
+        # TODO: potentially take HUman stuff out
         if self.model_name == 'human':
             print(f"{self.name}, it's your turn to make a move.")
             while True:
                 move = input(
-                    "Enter your move: type row and column as 'row,col' (e.g., 2,1 to move to row 2 column 1. Note that rows and columns are 0-indexed), or use W/A/S/D for directions, or type 'n' to skip: ").strip().lower()
+                    "Enter your move: type row and column as 'row,col' (e.g., 2,1 to move to row 2 column 1. Note that rows and columns are 0- indexed), or use W/A/S/D for directions, or type 'n' to skip: "
+                ).strip().lower()
                 if move == 'n':
                     return None
                 elif move in ['w', 'a', 's', 'd']:
@@ -262,7 +284,7 @@ class Player:
                     return new_pos
                 except (ValueError, IndexError):
                     print("Invalid input: Please enter the new tile in r,c format. Try again.")
-        # LLM Player
+        # LLM player
         else:
 
             player_context = self.generate_player_context_message(game, grid)
@@ -270,7 +292,7 @@ class Player:
             user_message = prompts.generate_move_prompt(self,
                 player_context=player_context
             )
-            
+
             current_messages = list(self.messages) if self.with_message_history else [{"role": "system",
                                                                                        "content": self.system_prompt}]
             current_messages.append({"role": "user", "content": user_message})
@@ -278,98 +300,90 @@ class Player:
             # Log prompt to verbose logger
             user_prompt = current_messages[-1]["content"]
 
-            game.logger.log_player_prompt(self.name, "move", self.system_prompt, user_prompt)
+            self.game.logger.log_player_prompt(self.name, "move", self.system_prompt, user_prompt)
 
-            move = self.get_completion(current_messages)
+            # --- Structured for Anthropic/OpenAI; regex for Together ---
+            if self.model_api == 'anthropic':
+                move_obj = self.api_llm_model.anthropic_structured(current_messages, ANTHROPIC_MOVE_TOOL, max_tokens=1024)
+                move_raw = json.dumps(move_obj)
+            elif self.model_api == 'open_ai':
+                move_raw = self.api_llm_model.chat_completion(
+                    current_messages,
+                    max_completion_tokens=1000,
+                    response_format={"type": "json_schema", "json_schema": MOVE_DECISION_SCHEMA}
+                )
+                move_obj = json.loads(move_raw)
+            else:
+                # Together (free text)
+                move_text = self.api_llm_model.chat_completion(current_messages)
+                move_raw = move_text  # for logging
+                move_obj = None
 
-            # Log response to verbose logger with full response
-
-            game.logger.log_player_response(self.name, "move", move)
+            # Log response
+            payload = {"raw": move_raw}
+            if move_obj is not None:
+                payload["parsed"] = move_obj
+            self.game.logger.log_player_response(self.name, "move", payload)
 
             if self.with_message_history:
                 self.messages.extend([
                     {"role": "user", "content": user_message},
-                    {"role": "assistant", "content": move}
+                    {"role": "assistant", "content": move_raw}
                 ])
-            player_label = self.get_player_label(game)
-            print(f"""{player_label} proposed a move:
-                    {move}""")
 
-            def ends_with_n(text: str) -> bool:
-                """
-                Returns True if the last alphanumeric 'word' in the text
-                is exactly 'n' or 'N'.
-                """
-                # Find all alphanumeric words
-                words = re.findall(r"[A-Za-z0-9]+", text)
-                if not words:
-                    return False
-                return words[-1].lower() == "n"
-
-            if ends_with_n(move):
-                return None
+            # Validate + return
             try:
-                def extract_move(text: str):
-                    '''
-                    Finds the last occurrence of a pair of integers in the text formatted as "int,int"
-                    '''
-                    pair_matches = re.findall(r'(-?\d+)\s*,\s*(-?\d+)', text)
-                    if pair_matches:
-                        r, c = map(int, pair_matches[-1])
-                        return r, c
-                    return None
-                
-                extracted_move = extract_move(move)
-                if extracted_move is None:
-                    print("Invalid move: Could not extract a valid position.")
-                    
-                    game.logger.log_format_error(
-                    self.name,
-                    "move_format_error",
-                    {"error": "Couldn't extract move", "raw_response": str(move)}
-                )
-                    
-                    game.logger.log_format_error(
-                    game.turn,
-                    self.name,
-                    "move_format_error",
-                    {"error": "Couldn't extract move", "raw_response": str(move)}
-                )
-                    return None
+                if self.model_api in ('anthropic', 'open_ai'):
+                    decision = move_obj.get("decision")
+                    if decision == "n":
+                        return None
+                    if decision != "move":
+                        raise ValueError("Missing/invalid 'decision'")
 
-                r, c = extract_move(move)
+                    move_str = move_obj["move"].strip()
+                    r_str, c_str = [s.strip() for s in move_str.split(",")]
+                    r, c = int(r_str), int(c_str)
+                else:
+                    # Together regex fallback
+                    def extract_move(text: str):
+                        pair_matches = re.findall(r'(-?\d+)\s*,\s*(-?\d+)', text)
+                        if pair_matches:
+                            rr, cc = map(int, pair_matches[-1])
+                            return rr, cc
+                        return None
+
+                    if move_raw.strip().lower().endswith('n'):
+                        return None
+                    extracted = extract_move(move_raw)
+                    if not extracted:
+                        self.game.logger.log_format_error(
+                            self.name, "move_format_error",
+                            {"error": "Couldn't extract move", "raw_response": str(move_raw)}
+                        )
+                        return None
+                    r, c = extracted
+
                 new_pos = (r, c)
                 if not (0 <= r < self.grid_size and 0 <= c < self.grid_size):
-                    print("Invalid move: The position is out of bounds.")
-                    game.logger.log_format_error(
-                        self.name,
-                        "move_out_of_bounds",
-                        {"error": "Position out of bounds", "attempted_move": str(new_pos), "raw_response": str(move)}
-                    )
+                    self.game.logger.log_format_error(self.name, "move_out_of_bounds",
+                                                      {"attempted_move": str(new_pos), "raw_response": str(move_raw)})
                     return None
                 if new_pos not in grid.get_adjacent(self.position):
-                    print("Invalid move: You can only move to an adjacent tile.")
-                    game.logger.log_format_error(
-                        self.name,
-                        "move_not_adjacent",
-                        {"error": "Not an adjacent tile", 
-                         "attempted_move_from": str(self.position),
-                         "attempted_move_to": str(new_pos), "raw_response": str(move)}
-                    )
+                    self.game.logger.log_format_error(self.name, "move_not_adjacent", {
+                        "attempted_move_from": str(self.position),
+                        "attempted_move_to": str(new_pos),
+                        "raw_response": str(move_raw)
+                    })
                     return None
-                tile_color = grid.get_color(r, c)
-
                 return new_pos
+
             except Exception as e:
-                game.logger.log_format_error(
-                    self.name,
-                    "move_format_error",
-                    {"error": str(e), "raw_response": str(move)}
-                )
+                self.game.logger.log_format_error(self.name, "move_format_error",
+                                                  {"error": str(e), "raw_response": str(move_raw)})
                 return None
 
     def propose_trade(self, grid, game):
-
+        # Potentially take Human stuff out into separate file
         if self.model_name == 'human':
             trade_message_for_human = f"{self.name}, it's your turn to propose a trade."
             if self.pay4partner:
@@ -379,28 +393,13 @@ class Player:
             if make_trade != 'y':
                 return None
 
-            def get_valid_player(prompt):
-                available_players = [p.id for p in game.players if p.id != self.id]
-                print(f"Available players: {available_players}")
-                while True:
-                    value = input(prompt).strip().lower()
-                    if value.strip().lower() == 'n':
-                        return value
-                    try:
-                        if value in available_players:
-                            return value
-                        else:
-                            print(f"Please enter a valid player. The options are {available_players}.")
-                    except ValueError:
-                        print(f"Invalid input. Please enter a valid player ID from {available_players}.")
-
-            def get_resource_list(prompt):
+            def get_resource_list(prompt_text):
                 resources = []
                 i = 1
                 while True:
                     message = f"{i}st resource:" if i == 1 else "next resource:"
                     print(message)
-                    resource = input(prompt).strip()
+                    resource = input(prompt_text).strip()
                     if resource == '.':
                         break
                     if resource in self.colors:
@@ -416,7 +415,6 @@ class Player:
                             print("Invalid quantity. Please enter a valid integer.")
                     else:
                         print(f"Invalid resource. Available resources: {self.colors}.")
-
                 return resources
 
             print("Enter the resources you want to offer (type '.' if you have finished):")
@@ -435,102 +433,121 @@ class Player:
                 "resources_to_offer": resources_to_offer,
                 "resources_to_receive": resources_to_receive
             }
-
             return self.clean_trade_proposal(trade_proposal, grid, game)
 
-        # LLM Player
-        else:
+        # LLM
+        player_context = self.generate_player_context_message(game, grid)
+        user_message = prompts.generate_trade_proposal_prompt(self, player_context=player_context)
 
-            player_context = self.generate_player_context_message(game, grid)
-            user_message = prompts.generate_trade_proposal_prompt(self,
-                player_context=player_context
+        current_messages = list(self.messages) if self.with_message_history else [
+            {"role": "system", "content": self.system_prompt}
+        ]
+        current_messages.append({"role": "user", "content": user_message})
+
+        # Log prompt to verbose logger
+        game.logger.log_player_prompt(self.name, "trade_proposal", self.system_prompt, current_messages[-1]["content"])
+
+        # Structured for Anthropic/OpenAI; regex for Together
+        if self.model_api == 'anthropic':
+            obj = self.api_llm_model.anthropic_structured(current_messages, ANTHROPIC_TRADE_TOOL, max_tokens=2000)
+            trade_raw = json.dumps(obj)
+        elif self.model_api == 'open_ai':
+            trade_raw = self.api_llm_model.chat_completion(
+                current_messages,
+                max_completion_tokens=2000,
+                response_format={"type": "json_schema", "json_schema": TRADE_PROPOSAL_SCHEMA}
             )
+            obj = json.loads(trade_raw)
+        else:
+            # Together (free text)
+            trade_raw = self.api_llm_model.chat_completion(current_messages, max_completion_tokens=2000)
+            obj = None
 
-            current_messages = list(self.messages) if self.with_message_history else [{"role": "system",
-                                                                                       "content": self.system_prompt}]
-            current_messages.append({"role": "user", "content": user_message})
+        # Log response
+        payload = {"raw": trade_raw}
+        if obj is not None:
+            payload["parsed"] = obj
+        game.logger.log_player_response(self.name, "trade_proposal", payload)
 
-            # Log prompt to verbose logger
-            user_prompt = current_messages[-1]["content"]
-            game.logger.log_player_prompt(self.name, "trade_proposal", self.system_prompt,
-                                          user_prompt)
+        if self.with_message_history:
+            self.messages.extend([
+                {"role": "user", "content": user_message},
+                {"role": "assistant", "content": trade_raw}
+            ])
 
-            # Make the API call
-            trade_proposal = self.get_completion(current_messages, max_completion_tokens=2000)
-
-            # Log response to verbose logger with full response
-            game.logger.log_player_response(self.name,  "trade_proposal", trade_proposal)
-
-            # Save to history if enabled
-            if self.with_message_history:
-                self.messages.extend([
-                    {"role": "user", "content": user_message},
-                    {"role": "assistant", "content": trade_proposal}
-                ])
-            if trade_proposal[-1].lower() == 'n':
+        if self.model_api not in ('anthropic', 'open_ai'):
+            # Together only: allow raw 'n' to cancel
+            if trade_raw and trade_raw.strip().lower().endswith('n'):
                 return None
+
+        # Normalize/validate + attach message
+        try:
+            if self.model_api in ('anthropic', 'open_ai'):
+                def coerce_side(v):
+                    out = []
+                    for item in v:
+                        if isinstance(item, dict) and "color" in item and "quantity" in item:
+                            out.append((item["color"], int(item["quantity"])))
+                        elif isinstance(item, (list, tuple)) and len(item) == 2:
+                            out.append((item[0], int(item[1])))
+                    return out
+
+                offer = coerce_side(obj.get("resources_to_offer", []))
+                receive = coerce_side(obj.get("resources_to_receive", []))
+                if not offer or not receive:
+                    raise ValueError("Missing offer/receive arrays")
+
+                trade_proposal = {
+                    "resources_to_offer": offer,
+                    "resources_to_receive": receive
+                }
+
+            else:
+                # Together: regex scrape last JSON object
+                matches = re.findall(r"\{.*?\}", trade_raw, re.DOTALL)
+                if not matches:
+                    raise ValueError("No JSON object found in Together response.")
+                json_str = matches[-1]
+                trade_proposal = json.loads(json_str)
+
+                # Fix common key errors
+                if 'resources_to offer' in trade_proposal:
+                    trade_proposal['resources_to_offer'] = trade_proposal.pop('resources_to offer')
+                if 'resources to offer' in trade_proposal:
+                    trade_proposal['resources_to_offer'] = trade_proposal.pop('resources to offer')
+                if 'resources_to receive' in trade_proposal:
+                    trade_proposal['resources_to_receive'] = trade_proposal.pop('resources_to receive')
+                if 'resources to receive' in trade_proposal:
+                    trade_proposal['resources_to_receive'] = trade_proposal.pop('resources to receive')
+
+            cleaned = self.clean_trade_proposal(trade_proposal, grid, game)
+            if not cleaned:
+                print("- Invalid trade proposal")
+                return None
+            trade_proposal = cleaned
+
+            # attach a concise summary for downstream logs/UI
+            offer_str = ", ".join(f"{c}:{q}" for c, q in trade_proposal["resources_to_offer"])
+            recv_str = ", ".join(f"{c}:{q}" for c, q in trade_proposal["resources_to_receive"])
+            trade_proposal["message"] = f"{self.name} offers [{offer_str}] for [{recv_str}]"
 
             player_label = self.get_player_label(game)
             if self.pay4partner:
                 print(f"\n{player_label} proposes Pay for Partner trade:")
+                print(f"- Offering to cover: {trade_proposal['resources_to_offer']}")
+                print(f"- Requesting to be covered for: {trade_proposal['resources_to_receive']}")
             else:
                 print(f"\n{player_label} proposes trade:")
-            try:
-                matches = re.findall(r"\{.*?\}", trade_proposal, re.DOTALL)
-                if matches:
-                    json_str = matches[-1]
-                    try:
-                        trade_proposal = json.loads(json_str)
-
-                        # Fix common key errors
-                        if 'resources_to offer' in trade_proposal:
-                            trade_proposal['resources_to_offer'] = trade_proposal.pop('resources_to offer')
-                        if 'resources to offer' in trade_proposal:
-                            trade_proposal['resources_to_offer'] = trade_proposal.pop('resources to offer')
-                        if 'resources_to receive' in trade_proposal:
-                            trade_proposal['resources_to_receive'] = trade_proposal.pop('resources_to receive')
-                        if 'resources to receive' in trade_proposal:
-                            trade_proposal['resources_to_receive'] = trade_proposal.pop('resources to receive')
-                        
-                        cleaned = self.clean_trade_proposal(trade_proposal, grid, game)
-                        if cleaned:
-                            trade_proposal = cleaned
-                            if self.pay4partner:
-                                print(f"- Offering to cover: {trade_proposal['resources_to_offer']}")
-                                print(f"- Requesting to be covered for: {trade_proposal['resources_to_receive']}")
-                            else:
-                                print(f"- Offering: {trade_proposal['resources_to_offer']}")
-                                print(f"- Requesting: {trade_proposal['resources_to_receive']}")
-                        else:
-                            print("- Invalid trade proposal")
-                    except json.JSONDecodeError as e:
-                        error_msg = f"Invalid JSON format in trade proposal: {e}"
-                        print(error_msg)
-                        game.logger.log_player_response(self.name, "trade_proposal_invalid_json", 
-                            f"(AI Agent does not see this)\n{error_msg}")
-                        
-                        game.logger.log_format_error(
-                            self.name, 
-                            "trade_json_parse_error",
-                            {"error": str(e), "raw_response": trade_proposal} 
-                        )
-
-                        trade_proposal = None
-            except Exception as e:
-                error_msg = f"Error parsing trade proposal: {e}"
-                print(error_msg)
-                game.logger.log_player_response(self.name,  "trade_proposal_error", 
-                    f"(AI Agent does not see this)\n{error_msg}")
-                
-                game.logger.log_format_error(
-                    self.name,
-                    "trade_parse_error",   
-                    {"error": str(e), "raw_response": trade_proposal}  
-                )
-
-                trade_proposal = None
-
+                print(f"- Offering: {trade_proposal['resources_to_offer']}")
+                print(f"- Requesting: {trade_proposal['resources_to_receive']}")
             return trade_proposal
+
+        except Exception as e:
+            error_msg = f"Trade proposal parse/validation error: {e}"
+            print(error_msg)
+            game.logger.log_player_response(self.name, "trade_proposal_error", f"(AI Agent does not see this)\n{error_msg}")
+            game.logger.log_format_error(self.name, "trade_parse_error", {"error": str(e), "raw_response": str(trade_raw)})
+            return None
 
     def accept_trade(self, grid, game, trade):
         resources_to_offer = trade['resources_to_offer']
@@ -542,7 +559,6 @@ class Player:
         if self.model_name == 'human':
             print(f"""You have been approached for the following trade:
                 The other player is offering you {resources_to_offer} in exchange for {resources_to_receive}.""")
-
             while True:
                 accept_trade = input("Do you accept this trade? y/n").strip().lower()
                 if accept_trade.strip().lower() not in ('y', 'n'):
@@ -551,7 +567,7 @@ class Player:
                 if accept_trade.strip().lower() == 'y':
                     print(accept_message)
                     return True
-                elif accept_trade.strip().lower() == 'n':
+                else:
                     print(reject_message)
                     return False
         else:
@@ -563,50 +579,61 @@ class Player:
                 resources_to_receive=resources_to_receive
             )
 
-            current_messages = list(self.messages) if self.with_message_history else [{"role": "system",
-                                                                                       "content": self.system_prompt}]
+            current_messages = list(self.messages) if self.with_message_history else [
+                {"role": "system", "content": self.system_prompt}
+            ]
             current_messages.append({"role": "user", "content": user_message})
-            user_prompt = current_messages[-1]["content"]
-            game.logger.log_player_prompt(self.name, "trade_response", self.system_prompt,
-                                          user_prompt)
 
-            # Make the API call to get rade response
+            # Log prompt
+            game.logger.log_player_prompt(self.name, "trade_response", self.system_prompt, current_messages[-1]["content"])
 
-            accept_trade = self.get_completion(current_messages)
-            
-            # Determine the actual decision made
-            first_word = accept_trade.split()[0] if accept_trade.split() else ""
-
-            last_word = get_last_alphabetic_word(accept_trade)
-            if first_word == "yes" or accept_trade == "yes" or last_word == "yes":
-                decision_result = "trade_accepted"
-                will_accept = True
-            elif first_word == "no" or accept_trade == "no" or last_word == "no":
-                decision_result = "trade_rejected"
-                will_accept = False
-            else:
-                decision_result = "trade_rejected_unclear_response"
-                will_accept = False
-                game.logger.log_format_error(
-                    self.name,
-                    "trade_response_invalid_format",
-                    {"raw_response": accept_trade}
+            # Structured for Anthropic/OpenAI; plain for Together
+            if self.model_api == 'anthropic':
+                obj = self.api_llm_model.anthropic_structured(current_messages, ANTHROPIC_YESNO_TOOL, max_tokens=512)
+                resp_raw = json.dumps(obj)
+                answer = (obj.get("answer", "") or "").lower()
+                reasoning = obj.get("rationale", "")
+            elif self.model_api == 'open_ai':
+                resp_raw = self.api_llm_model.chat_completion(
+                    current_messages,
+                    max_completion_tokens=256,
+                    response_format={"type": "json_schema", "json_schema": YES_NO_SCHEMA}
                 )
+                # Robust parse: pure JSON or extract last JSON object; fallback to last alphabetic word
+                try:
+                    parsed = json.loads(resp_raw)
+                except Exception:
+                    match = re.findall(r"\{.*?\}", resp_raw, re.DOTALL)
+                    if match:
+                        parsed = json.loads(match[-1])
+                    else:
+                        parsed = {"answer": get_last_alphabetic_word(resp_raw).lower(), "rationale": resp_raw}
+                answer = (parsed.get("answer") or "").lower()
+                reasoning = parsed.get("rationale", "")
+            else:
+                resp_raw = self.api_llm_model.chat_completion(current_messages, max_completion_tokens=512)
+                answer = get_last_alphabetic_word(resp_raw).lower()
+                reasoning = resp_raw
 
-            # Log response to verbose logger with full response
-            game.logger.log_player_response(self.name,  "trade_response", accept_trade)
+            will_accept = (answer == "yes")
 
-            # Save to history if enabled
+            # Log response
+            game.logger.log_player_response(self.name, "trade_response",
+                                            {"raw": resp_raw, "parsed": {"answer": answer, "rationale": reasoning}})
+
             if self.with_message_history:
                 self.messages.extend([
                     {"role": "user", "content": user_message},
-                    {"role": "assistant", "content": accept_trade}
+                    {"role": "assistant", "content": resp_raw}
                 ])
 
-            # Return the decision we already determined
-            if not will_accept and decision_result == "trade_rejected_unclear_response":
-                print(f"Unclear response: '{accept_trade}', defaulting to NO")
+            if not will_accept and answer not in ("yes", "no"):
+                print(f"Unclear response: '{resp_raw}', defaulting to NO")
 
+            if will_accept:
+                print(accept_message)
+            else:
+                print(reject_message)
             return will_accept
 
     ## Utility Functions
@@ -617,19 +644,15 @@ class Player:
         2. Prevent trading with self
         3. Return None for invalid trades
         """
-        # First clean the strings
         if isinstance(trade_proposal, dict):
             cleaned = {key: self.clean_trade_proposal(value, grid, game) for key, value in trade_proposal.items()}
-
-            # Validate the cleaned proposal
             if game and game.players:
-                # Prevent trading with self
+                # Prevent trading with self (assumes 2 players; adapt if >2)
                 other_player = next((p for p in game.players if p.name != self.name), None)
                 if not other_player:
                     print(f"Invalid trade: Cannot trade with self")
                     return None
             return cleaned
-
         elif isinstance(trade_proposal, list):
             return [self.clean_trade_proposal(item) for item in trade_proposal]
         elif isinstance(trade_proposal, tuple):
@@ -640,18 +663,16 @@ class Player:
             return trade_proposal
 
     def agree_to_pay4partner(self, other_player, color, game, grid):
-        
         player_context = self.generate_player_context_message(game, grid)
         agreements = [agreement['text_summary'] for agreement in self.pay4partner_log if agreement['with'] == other_player.name]
         message = prompts.generate_pay4partner_prompt(
-            self, 
+            self,
             player_context=player_context,
             color=color,
             agreements=agreements
         )
         if self.model_name == 'human':
-            print(
-                f"{self.name}, {other_player.name} is invoking 'pay for partner' and asking you to pay for their move onto a {color} tile.")
+            print(f"{self.name}, {other_player.name} is invoking 'pay for partner' and asking you to pay for their move onto a {color} tile.")
             while True:
                 agree = input("Do you agree to this? y/n ").strip().lower()
                 if agree not in ('y', 'n'):
@@ -659,22 +680,17 @@ class Player:
                     continue
                 return agree == 'y'
         else:
-            current_messages = list(self.messages) if self.with_message_history else [{"role": "system",
-                                                                                       "content": self.system_prompt}]
+            current_messages = list(self.messages) if self.with_message_history else [
+                {"role": "system", "content": self.system_prompt}
+            ]
             current_messages.append({"role": "user", "content": message})
 
-            # Log prompt to verbose logger
-            user_prompt = message
-            game.logger.log_player_prompt(self.name, "pay4partner", self.system_prompt, user_prompt)
+            game.logger.log_player_prompt(self.name, "pay4partner", self.system_prompt, message)
 
+            agree = self.api_llm_model.chat_completion(current_messages)
 
-            # Make the API call
-            agree = self.get_completion(current_messages)
-            
-            # Log response to verbose logger
             game.logger.log_player_response(self.name, "pay4partner", agree)
 
-            # Save to history if enabled
             if self.with_message_history:
                 self.messages.extend([
                     {"role": "user", "content": message},
@@ -685,53 +701,24 @@ class Player:
             if "yes" in final_response or "accept" in final_response or "agree" in final_response:
                 return True
             else:
-                game.logger.log_format_error(
-                    self.name,
-                    "pay4partner_response_invalid_format",
-                    {"raw_response": agree}
-                )
+                game.logger.log_format_error(self.name, "pay4partner_response_invalid_format",
+                                             {"raw_response": agree})
                 return False
-    
-    
+
     def generate_tile_level_contract_prompt(self, player_context):
         return prompts.generate_tile_level_contract_prompt(self.system_prompt, player_context)
-    
+
     def generate_contract_for_finishing_prompt(self, player_context):
-        
         return prompts.generate_contract_for_finishing_prompt(self.system_prompt, player_context)
-    
-    def get_completion(self, messages, max_completion_tokens=1000):
-        # Log the complete message set before API call
-        if hasattr(self, 'game') and self.game and hasattr(self.game, 'logger'):
-            self.game.logger.log_complete_message_set(
-                self.name,
-                messages,
-                max_completion_tokens
-            )
-        if self.model_api == 'anthropic':
-            try:
-                system_prompt = ""
-                for message in messages:
-                    if message['role'] == 'system':
-                        system_prompt += message['content'] + "\n"
-                # Remove system messages from the list
-                messages = [m for m in messages if m['role'] != 'system']   
-                response = self.client.messages.create(model=self.model,
-                                                    temperature=self.temperature,
-                                                    messages=messages,
-                                                    system=system_prompt,
-                                                    max_tokens=max_completion_tokens)
-                return response.content[0].text.strip().lower()
-            except Exception as e:
-                print(f"Error with Anthropic API: {e}")
-                print(messages)
-                raise e
-        else: 
-            response = self.client.chat.completions.create(model=self.model,
-                                                           temperature=self.temperature,
-                                                           messages=messages,
-                                                           max_completion_tokens=max_completion_tokens)
-            return response.choices[0].message.content.strip().lower()
 
+    # Optional: keep this wrapper so older call sites still work without changes
+    def get_completion(self, messages, max_completion_tokens=1000, response_format=None):
+        """
+        Generic model call.
+        - For OpenAI, if response_format is provided (e.g., structured outputs), it will be used.
+        - Anthropic/Together paths ignore response_format here (Anthropic structured is handled via adapter.anthropic_structured).
+        """
+        if hasattr(self, 'game') and self.game and hasattr(self.game, 'logger') and hasattr(self.game.logger, 'log_complete_message_set'):
+            self.game.logger.log_complete_message_set(self.name, messages, max_completion_tokens)
 
-
+        return self.api_llm_model.chat_completion(messages, max_completion_tokens, response_format)
