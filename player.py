@@ -79,7 +79,7 @@ class Player:
         self.non_cooperative_baseline = 0
         self.show_paths = config.show_paths
 
-        # pay4partner
+        # init pay4partner settings
         self.pay4partner = config.pay4partner
         self.pay4partner_log = []
         self.pay4partner_mode_sys_prompt = prompts.generate_pay4partner_mode_info(self, short_summary=True)
@@ -89,7 +89,7 @@ class Player:
             trading_rules=self.trading_rules
         )
 
-        # message history
+        # Init message history settings
         self.with_message_history = config.with_message_history
         self.messages = [{"role": "system", "content": self.system_prompt}] if self.with_message_history else []
 
@@ -301,15 +301,17 @@ class Player:
                     return new_pos
                 except (ValueError, IndexError):
                     print("Invalid input: Please enter the new tile in r,c format. Try again.")
+        # LLM player
         else:
-            # LLM players
+
             player_context = self.generate_player_context_message(game, grid)
             print(player_context)
-            user_message = prompts.generate_move_prompt(self, player_context=player_context)
+            user_message = prompts.generate_move_prompt(self,
+                player_context=player_context
+            )
 
-            current_messages = list(self.messages) if self.with_message_history else [
-                {"role": "system", "content": self.system_prompt}
-            ]
+            current_messages = list(self.messages) if self.with_message_history else [{"role": "system",
+                                                                                       "content": self.system_prompt}]
             current_messages.append({"role": "user", "content": user_message})
 
             # Log prompt to verbose logger
@@ -458,7 +460,7 @@ class Player:
         ]
         current_messages.append({"role": "user", "content": user_message})
 
-        # Log prompt
+        # Log prompt to verbose logger
         game.logger.log_player_prompt(self.name, "trade_proposal", self.system_prompt, current_messages[-1]["content"])
 
         # Structured for Anthropic/OpenAI; regex for Together
