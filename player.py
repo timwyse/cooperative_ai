@@ -215,9 +215,9 @@ class Player:
 
         def top_n_paths(grid, start, goal, resources):
             """Return up to n best paths sorted by:
-              1) resource shortfall ascending
-              2) path length descending
-              Each result item includes: path, length, shortfall, required_counts, resources.
+            1) resource shortfall ascending
+            2) path length descending
+            Each result item includes: path, length, shortfall, required_counts, resources.
             """
             all_paths = _enumerate_paths(grid, start, goal)
             scored = []
@@ -236,17 +236,23 @@ class Player:
                 })
             scored.sort(key=lambda x: (sum(x["resources_missing_due_to_insufficient_inventory"].values()),
                                        x["path_length_in_steps"]))
+
             fewest_resources_needed_path = scored[0]
 
             scored.sort(key=lambda x: (x["path_length_in_steps"],
                                        sum(x["resources_missing_due_to_insufficient_inventory"].values())))
+
             shortest_path_with_fewest_resources_needed = scored[0]
 
             return [fewest_resources_needed_path, shortest_path_with_fewest_resources_needed]
 
-        return top_n_paths(grid, self.position, self.goal, self.resources)
+        best = top_n_paths(grid, self.position, self.goal, self.resources)
+
+        return best
 
     def format_turn_summary(self, turn_summary, turn_number, with_message_history=False):
+        """Format turn summary with anonymized player names for AI prompts"""
+
         from turn_context import format_turn_summary_for_player
         return format_turn_summary_for_player(turn_summary, turn_number, self.name, self.pay4partner, with_message_history)
 
@@ -255,6 +261,7 @@ class Player:
         Generates a reusable message about the board state, player's resources, position, and goal.
         Also includes recent turn history for context.
         """
+
         from turn_context import generate_turn_context
         return generate_turn_context(game, self)
 
