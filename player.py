@@ -304,6 +304,7 @@ class Player:
         else:
             # LLM players
             player_context = self.generate_player_context_message(game, grid)
+            print(player_context)
             user_message = prompts.generate_move_prompt(self, player_context=player_context)
 
             current_messages = list(self.messages) if self.with_message_history else [
@@ -311,8 +312,10 @@ class Player:
             ]
             current_messages.append({"role": "user", "content": user_message})
 
-            # Log prompt
-            self.game.logger.log_player_prompt(self.name, "move", self.system_prompt, current_messages[-1]["content"])
+            # Log prompt to verbose logger
+            user_prompt = current_messages[-1]["content"]
+
+            game.logger.log_player_prompt(self.name, "move", self.system_prompt, user_prompt)
 
             # --- Structured for Anthropic/OpenAI; regex for Together ---
             if self.model_api == 'anthropic':
