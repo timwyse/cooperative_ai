@@ -172,6 +172,12 @@ class Player:
 
     ## Pathfinding and Strategy
     def best_routes(self, grid):
+        """
+             Runs a BFS to find the top n paths to the player's goal, given their current resources.
+             Returns two paths:
+             1) The path that requires the fewest additional resources (i.e. the path with the least shortfall)
+             2) The shortest path (in steps) that requires the fewest additional resources (i.e. the shortest path with the least shortfall)
+             """
         def _neighbors(pos, rows, cols):
             r, c = pos
             nbrs = []
@@ -182,9 +188,13 @@ class Player:
             return nbrs
 
         def _path_colors(path, grid):
+            """Colors paid along a path; you pay when you move ONTO a tile, i.e. path[1:]."""
             return [grid.get_color(r, c) for (r, c) in path[1:]]
 
         def _enumerate_paths(grid, start, goal):
+            """Enumerate paths from start to goal.
+            generates all simple paths (no revisits) via DFS.
+            """
             rows = cols = grid.size
             paths = []
 
@@ -204,6 +214,11 @@ class Player:
             return paths
 
         def top_n_paths(grid, start, goal, resources):
+            """Return up to n best paths sorted by:
+              1) resource shortfall ascending
+              2) path length descending
+              Each result item includes: path, length, shortfall, required_counts, resources.
+            """
             all_paths = _enumerate_paths(grid, start, goal)
             scored = []
             for p in all_paths:
@@ -236,6 +251,10 @@ class Player:
         return format_turn_summary_for_player(turn_summary, turn_number, self.name, self.pay4partner, with_message_history)
 
     def generate_player_context_message(self, game, grid):
+        """
+        Generates a reusable message about the board state, player's resources, position, and goal.
+        Also includes recent turn history for context.
+        """
         from turn_context import generate_turn_context
         return generate_turn_context(game, self)
 
