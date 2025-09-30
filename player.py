@@ -31,6 +31,9 @@ from schemas import (
     ANTHROPIC_YESNO_TOOL,
 )
 
+# NEW: adapter
+from model_adapter import ModelAdapter
+
 
 class Player:
     def __init__(self, id, agent, logger, config: GameConfig, game=None):
@@ -54,6 +57,9 @@ class Player:
             self.client = Anthropic(api_key=ANTHROPIC_API_KEY)
         else:
             self.client = None
+
+        # NEW: adapter instance
+        self.api_llm_model = ModelAdapter(self.model_api, self.model, self.temperature)
 
         self.start_pos = (random.randint(0, config.random_start_block_size - 1),
                           random.randint(0, config.random_start_block_size - 1))
@@ -94,29 +100,6 @@ class Player:
         self.messages = [{"role": "system", "content": self.system_prompt}] if self.with_message_history else []
 
         self.game = game
-
-    # ---------- helper for Anthropic structured tool calls ----------
-    def _anthropic_structured(self, messages, tool_def, max_tokens=1024):
-        """
-        Ask Claude to return a single tool call matching tool_def.input_schema.
-        Returns the tool 'input' dict (already parsed).
-        """
-        system_text = "\n".join(m["content"] for m in messages if m["role"] == "system")
-        msgs_wo_system = [m for m in messages if m["role"] != "system"]
-
-        resp = self.client.messages.create(
-            model=self.model,
-            temperature=self.temperature,
-            system=system_text or None,
-            messages=msgs_wo_system,
-            tools=[tool_def],
-            tool_choice={"type": "tool", "name": tool_def["name"]},
-            max_tokens=max_tokens,
-        )
-        for block in resp.content:
-            if getattr(block, "type", None) == "tool_use" and getattr(block, "name", None) == tool_def["name"]:
-                return block.input
-        raise RuntimeError("Claude did not return the expected tool call.")
 
     # ---------- general helpers ----------
     def get_readable_board(self):
@@ -317,14 +300,14 @@ class Player:
             # Log prompt to verbose logger
             user_prompt = current_messages[-1]["content"]
 
-            game.logger.log_player_prompt(self.name, "move", self.system_prompt, user_prompt)
+            self.game.logger.log_player_prompt(self.name, "move", self.system_prompt, user_prompt)
 
             # --- Structured for Anthropic/OpenAI; regex for Together ---
             if self.model_api == 'anthropic':
-                move_obj = self._anthropic_structured(current_messages, ANTHROPIC_MOVE_TOOL, max_tokens=1024)
+                move_obj = self.api_llm_model.anthropic_structured(current_messages, ANTHROPIC_MOVE_TOOL, max_tokens=1024)
                 move_raw = json.dumps(move_obj)
             elif self.model_api == 'open_ai':
-                move_raw = self.get_completion(
+                move_raw = self.api_llm_model.chat_completion(
                     current_messages,
                     max_completion_tokens=1000,
                     response_format={"type": "json_schema", "json_schema": MOVE_DECISION_SCHEMA}
@@ -332,7 +315,7 @@ class Player:
                 move_obj = json.loads(move_raw)
             else:
                 # Together (free text)
-                move_text = self.get_completion(current_messages)
+                move_text = self.api_llm_model.chat_completion(current_messages)
                 move_raw = move_text  # for logging
                 move_obj = None
 
@@ -465,10 +448,10 @@ class Player:
 
         # Structured for Anthropic/OpenAI; regex for Together
         if self.model_api == 'anthropic':
-            obj = self._anthropic_structured(current_messages, ANTHROPIC_TRADE_TOOL, max_tokens=2000)
+            obj = self.api_llm_model.anthropic_structured(current_messages, ANTHROPIC_TRADE_TOOL, max_tokens=2000)
             trade_raw = json.dumps(obj)
         elif self.model_api == 'open_ai':
-            trade_raw = self.get_completion(
+            trade_raw = self.api_llm_model.chat_completion(
                 current_messages,
                 max_completion_tokens=2000,
                 response_format={"type": "json_schema", "json_schema": TRADE_PROPOSAL_SCHEMA}
@@ -476,7 +459,7 @@ class Player:
             obj = json.loads(trade_raw)
         else:
             # Together (free text)
-            trade_raw = self.get_completion(current_messages, max_completion_tokens=2000)
+            trade_raw = self.api_llm_model.chat_completion(current_messages, max_completion_tokens=2000)
             obj = None
 
         # Log response
@@ -605,12 +588,12 @@ class Player:
 
             # Structured for Anthropic/OpenAI; plain for Together
             if self.model_api == 'anthropic':
-                obj = self._anthropic_structured(current_messages, ANTHROPIC_YESNO_TOOL, max_tokens=512)
+                obj = self.api_llm_model.anthropic_structured(current_messages, ANTHROPIC_YESNO_TOOL, max_tokens=512)
                 resp_raw = json.dumps(obj)
-                answer = obj.get("answer", "").lower()
+                answer = (obj.get("answer", "") or "").lower()
                 reasoning = obj.get("rationale", "")
             elif self.model_api == 'open_ai':
-                resp_raw = self.get_completion(
+                resp_raw = self.api_llm_model.chat_completion(
                     current_messages,
                     max_completion_tokens=256,
                     response_format={"type": "json_schema", "json_schema": YES_NO_SCHEMA}
@@ -627,7 +610,7 @@ class Player:
                 answer = (parsed.get("answer") or "").lower()
                 reasoning = parsed.get("rationale", "")
             else:
-                resp_raw = self.get_completion(current_messages, max_completion_tokens=512)
+                resp_raw = self.api_llm_model.chat_completion(current_messages, max_completion_tokens=512)
                 answer = get_last_alphabetic_word(resp_raw).lower()
                 reasoning = resp_raw
 
@@ -703,7 +686,7 @@ class Player:
 
             game.logger.log_player_prompt(self.name, "pay4partner", self.system_prompt, message)
 
-            agree = self.get_completion(current_messages)
+            agree = self.api_llm_model.chat_completion(current_messages)
 
             game.logger.log_player_response(self.name, "pay4partner", agree)
 
@@ -727,54 +710,14 @@ class Player:
     def generate_contract_for_finishing_prompt(self, player_context):
         return prompts.generate_contract_for_finishing_prompt(self.system_prompt, player_context)
 
+    # Optional: keep this wrapper so older call sites still work without changes
     def get_completion(self, messages, max_completion_tokens=1000, response_format=None):
         """
         Generic model call.
         - For OpenAI, if response_format is provided (e.g., structured outputs), it will be used.
-        - Anthropic/Together paths ignore response_format here (Anthropic structured is handled via _anthropic_structured).
+        - Anthropic/Together paths ignore response_format here (Anthropic structured is handled via adapter.anthropic_structured).
         """
-        # Optional: log full message set if your logger supports it
         if hasattr(self, 'game') and self.game and hasattr(self.game, 'logger') and hasattr(self.game.logger, 'log_complete_message_set'):
             self.game.logger.log_complete_message_set(self.name, messages, max_completion_tokens)
 
-        if self.model_api == 'anthropic':
-            # Free-text path for Anthropic (structured handled elsewhere)
-            try:
-                system_prompt = "\n".join(m['content'] for m in messages if m['role'] == 'system')
-                msg_wo_sys = [m for m in messages if m['role'] != 'system']
-                response = self.client.messages.create(
-                    model=self.model,
-                    temperature=self.temperature,
-                    messages=msg_wo_sys,
-                    system=system_prompt or None,
-                    max_tokens=max_completion_tokens
-                )
-                for block in response.content:
-                    if getattr(block, "type", None) == "text":
-                        return block.text.strip()
-                return ""
-            except Exception as e:
-                print(f"Error with Anthropic API: {e}")
-                print(messages)
-                raise e
-        elif self.model_api == 'open_ai':
-            kwargs = {
-                "model": self.model,
-                "temperature": self.temperature,
-                "messages": messages,
-                "max_completion_tokens": max_completion_tokens
-            }
-            if response_format is not None:
-                kwargs["response_format"] = response_format
-            response = self.client.chat.completions.create(**kwargs)
-            content = response.choices[0].message.content
-            return content.strip() if isinstance(content, str) else content
-        else:
-            # Together
-            response = self.client.chat.completions.create(
-                model=self.model,
-                temperature=self.temperature,
-                messages=messages,
-                max_tokens=max_completion_tokens
-            )
-            return response.choices[0].message.content.strip()
+        return self.api_llm_model.chat_completion(messages, max_completion_tokens, response_format)
