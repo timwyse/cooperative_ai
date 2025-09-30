@@ -31,7 +31,7 @@ from schemas import (
     ANTHROPIC_YESNO_TOOL,
 )
 
-# NEW: adapter
+# work with API calls to llm agents
 from model_adapter import ModelAdapter
 
 
@@ -58,7 +58,7 @@ class Player:
         else:
             self.client = None
 
-        # NEW: adapter instance
+
         self.api_llm_model = ModelAdapter(self.model_api, self.model, self.temperature)
 
         self.start_pos = (random.randint(0, config.random_start_block_size - 1),
@@ -101,7 +101,6 @@ class Player:
 
         self.game = game
 
-    # ---------- general helpers ----------
     def get_readable_board(self):
         if self.fog_of_war is None or not self.fog_of_war:
             readable_board = '\n'.join([f'Row {i}: ' + ' '.join(row) for i, row in enumerate(self.grid.tile_colors)])
@@ -156,11 +155,11 @@ class Player:
     ## Pathfinding and Strategy
     def best_routes(self, grid):
         """
-             Runs a BFS to find the top n paths to the player's goal, given their current resources.
-             Returns two paths:
-             1) The path that requires the fewest additional resources (i.e. the path with the least shortfall)
-             2) The shortest path (in steps) that requires the fewest additional resources (i.e. the shortest path with the least shortfall)
-             """
+         Runs a BFS to find the top n paths to the player's goal, given their current resources.
+         Returns two paths:
+         1) The path that requires the fewest additional resources (i.e. the path with the least shortfall)
+         2) The shortest path (in steps) that requires the fewest additional resources (i.e. the shortest path with the least shortfall)
+         """
         def _neighbors(pos, rows, cols):
             r, c = pos
             nbrs = []
@@ -250,6 +249,7 @@ class Player:
 
     ## Decision-Making
     def come_up_with_move(self, game, grid):
+        # TODO: potentially take HUman stuff out
         if self.model_name == 'human':
             print(f"{self.name}, it's your turn to make a move.")
             while True:
@@ -383,6 +383,7 @@ class Player:
                 return None
 
     def propose_trade(self, grid, game):
+        # Potentially take Human stuff out into separate file
         if self.model_name == 'human':
             trade_message_for_human = f"{self.name}, it's your turn to propose a trade."
             if self.pay4partner:
