@@ -38,7 +38,8 @@ class Player:
             self.client = Anthropic(api_key=ANTHROPIC_API_KEY)
         else:
             self.client = None
-
+        
+        self.n_api_calls = 0
         self.start_pos = (random.randint(0, config.random_start_block_size - 1),
                           random.randint(0, config.random_start_block_size - 1))
         self.goal = (random.randint(config.grid_size - config.random_goal_block_size, config.grid_size - 1),
@@ -701,6 +702,7 @@ class Player:
         return prompts.generate_contract_for_finishing_prompt(self.system_prompt, player_context)
     
     def get_completion(self, messages, max_completion_tokens=1000):
+        self.n_api_calls += 1
         # Log the complete message set before API call
         if hasattr(self, 'game') and self.game and hasattr(self.game, 'logger'):
             self.game.logger.log_complete_message_set(
@@ -731,6 +733,7 @@ class Player:
                                                            temperature=self.temperature,
                                                            messages=messages,
                                                            max_completion_tokens=max_completion_tokens)
+            
             return response.choices[0].message.content.strip().lower()
 
 

@@ -26,7 +26,7 @@ class GameConfig:
 
     # RESOURCE SETTINGS
     surplus: float = 1.5 # Multiplier of the minimum steps required to complete the game. Used to determine how many resources each player starts with.
-    resource_mode: str = 'single_type_each'
+    resource_mode: str = 'manual'
     # Options:
     #   - 'single_type_each': each player has only one resource type, each player gets num_resources = surplus * 2 * (grid_size - 1)
     #   - 'random': random distribution, each player gets num_resources = surplus * 2 * (grid_size - 1)
@@ -35,7 +35,7 @@ class GameConfig:
     # eg. [{'R':2, 'B':2}, {'R':2, 'B':2}]
 
     # GRID SETTINGS
-    grid_size: int = 3  # grid is square, size grid_size x grid_size
+    grid_size: int = 4  # grid is square, size grid_size x grid_size
     colors: List[str] = field(default_factory=list)  # list of colors from constants.AVAILABLE_COLORS
     grid: Optional[List[List[str]]] = None  # explicit grid (list of lists of colors); if None, a random one is generated with equal distribution of colors from colors
     random_start_block_size: int = 1  # top-left block within which start positions are generated
