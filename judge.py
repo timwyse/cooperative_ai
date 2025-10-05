@@ -18,8 +18,10 @@ class Judge:
         elif self.model_api == 'anthropic':
             self.client = Anthropic(api_key=ANTHROPIC_API_KEY)
         self.temperature = temperature
+        self.n_api_calls = 0
 
     def get_completion(self, messages, max_completion_tokens=1000):
+        self.n_api_calls += 1
         if self.model_api == 'anthropic':
             try:
                 system_prompt = ""

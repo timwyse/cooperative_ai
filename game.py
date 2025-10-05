@@ -38,8 +38,6 @@ class Game:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             self.logger = Logger(game_id=timestamp)
 
-        JUDGE.logger = self.logger
-
         # Grid Setup
         self.grid_size = self.config.grid_size
         self.colors = self.config.colors
@@ -64,6 +62,9 @@ class Game:
         # trade version
         self.pay4partner = self.config.pay4partner
         self.contract_type = self.config.contract_type
+        if self.contract_type is not None:
+            self.judge = JUDGE
+            self.judge.logger = self.logger
         self.contract = None
 
         # Game State Initialization
@@ -307,7 +308,7 @@ class Game:
         }
         
         # Log final game state and metrics to combined logger
-        self.logger.log_game_end(self.players, additional_metrics=final_metrics)
+        self.logger.log_game_end(self, self.players, additional_metrics=final_metrics)
 
         # for player in self.players:
         #     print(f"message history for player {player.name}: {player.messages}")
@@ -515,7 +516,7 @@ class Game:
         else:
             if self.contract_type == 'tile_with_judge_implementation' and self.contract is not None:
                 print(f"Consulting judge to see if move is in contract...")
-                move_is_in_contract_according_to_judge = JUDGE.check_if_move_is_in_contract(player, move, self.contract)
+                move_is_in_contract_according_to_judge = self.judge.check_if_move_is_in_contract(player, move, self.contract)
                 if move_is_in_contract_according_to_judge:
                     contract_resource_adjustment =  self.handle_contract_move(player, move)
                     if contract_resource_adjustment:
@@ -859,7 +860,7 @@ class Game:
             print(f"Player 1's messages: {history_1}")
             
 
-            conversation_formatted = JUDGE.format_conversation_for_contract(history_0, players, history_pov=0)
+            conversation_formatted = self.judge.format_conversation_for_contract(history_0, players, history_pov=0)
             print(f"Formatted conversation for judge based off player 0:\n{conversation_formatted}")
             
             if self.contract_type == 'tile_with_judge_implementation':
@@ -873,13 +874,13 @@ class Game:
                 contract_status = True
             else:
                 # Get the judge to create a formal contract
-                judge_contract = JUDGE.create_contract(conversation_formatted, type=type)
+                judge_contract = self.judge.create_contract(conversation_formatted, type=type)
                 print(f"Raw judge contract: {judge_contract}")
                 try: 
-                    contract_for_0 = JUDGE.format_contract_for_player(judge_contract, player_0)
+                    contract_for_0 = self.judge.format_contract_for_player(judge_contract, player_0)
                     print(f"Contract for player 0:\n{contract_for_0}")
                     
-                    contract_for_1 = JUDGE.format_contract_for_player(judge_contract, player_1)
+                    contract_for_1 = self.judge.format_contract_for_player(judge_contract, player_1)
                     print(f"Contract for player 1:\n{contract_for_1}")
                 
                     history_0.append({"role": "user", "content": prompts.generate_agree_to_final_contract_prompt(contract_for_0)})

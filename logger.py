@@ -287,7 +287,7 @@ class Logger(BaseLogger):
         with open(self.verbose_filepath, "w") as f:
             json.dump(self.verbose_log_data, f, indent=2, ensure_ascii=False)
     
-    def log_game_end(self, players, additional_metrics=None):
+    def log_game_end(self, game, players, additional_metrics=None):
         """Log final game state and metrics."""
         # Set end timestamp for both logs
         end_time = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
@@ -308,6 +308,7 @@ class Logger(BaseLogger):
         cumulative_sum = sum((i + 1) * score for i, score in enumerate(scores_list))
         total_sum = sum(scores_list)
         gini = (2 * cumulative_sum) / (n * total_sum) - (n + 1) / n if total_sum > 0 else 0
+        judge_api_calls = game.judge.n_api_calls if hasattr(game, 'judge') else 0
         
         # Add final state section with metrics
         self.log_data["game"]["final_state"] = {
@@ -319,8 +320,16 @@ class Logger(BaseLogger):
                 "total_accuracy": total_accuracy,
                 "gini_coefficient": gini,
                 "max_possible_score": max_score
+            },
+            "api_calls": {
+                "total": sum(p.n_api_calls for p in players) + judge_api_calls,
+                "by_player": {f"player_{i}": p.n_api_calls for i, p in enumerate(players)
+                              }, 
+                "judge": judge_api_calls
             }
         }
+        
+
 
         # Add additional metrics if provided
         if additional_metrics:
