@@ -101,7 +101,6 @@ class Player:
         self.n_api_calls += 1
         return self.api_llm_model.chat_completion(messages, max_completion_tokens)
 
-    # ---------- Board presentation ----------
     def get_readable_board(self):
         if self.fog_of_war is None or not self.fog_of_war:
             return '\n'.join([f'Row {i}: ' + ' '.join(row) for i, row in enumerate(self.grid.tile_colors)])
@@ -146,7 +145,7 @@ class Player:
         return self.name
 
     def best_routes(self, grid):
-        """Thin wrapper to extracted helper."""
+        """wrapper to player_helper"""
         return compute_best_routes(grid, self.position, self.goal, self.resources)
 
     def format_turn_summary(self, turn_summary, turn_number, with_message_history=False):
