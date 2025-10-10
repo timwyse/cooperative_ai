@@ -320,25 +320,51 @@ class Player:
             [{"role": "system", "content": self.system_prompt}]
         current_messages.append({"role": "user", "content": user_message})
 
+        # Log the prompt first to ensure we have an action to attach the response to
         self.game.logger.log_player_prompt(self.name, "trade_response", self.system_prompt, current_messages[-1]["content"])
 
-        # Structured call (counts via _structured)
+        # Make API call - retries in case of trade response parsing error happen in model_adapter.py
         schema_or_tool = ANTHROPIC_YESNO_TOOL if self.model_api == "anthropic" else YES_NO_SCHEMA
-        parsed, resp_raw = self._structured(current_messages, schema_or_tool=schema_or_tool, max_tokens=256)
+        try:
+            parsed, resp_raw = self._structured(current_messages, schema_or_tool=schema_or_tool, max_tokens=256)
+            if not parsed:
+                raise ValueError("Failed to parse structured response")
 
-        answer = (parsed.get("answer") or "").lower()
-        reasoning = parsed.get("rationale", "")
-        will_accept = (answer == "yes")
+            answer = parsed.get("answer", "").lower()
+            if answer not in ["yes", "no"]:
+                raise ValueError(f"Invalid answer value: {answer}")
+            
+            status = "accepted" if answer == "yes" else "rejected"
+            reasoning = parsed.get("rationale", "No rationale provided")
+            will_accept = (answer == "yes")
 
-        self.game.logger.log_player_response(self.name, "trade_response",
-                                             {"raw": resp_raw, "parsed": {"answer": answer, "rationale": reasoning}})
+            response_data = {
+                "raw": resp_raw,
+                "parsed": {
+                    "status": status,
+                    "rationale": reasoning
+                }
+            }
+
+        except Exception as e:
+            print(f"Error handling trade response: {e}, defaulting to rejected")
+            will_accept = False
+            response_data = {
+                "raw": resp_raw if 'resp_raw' in locals() else str(e),
+                "parsed": {
+                    "status": "rejected",
+                    "rationale": f"Failed to handle response: {str(e)}"
+                }
+            }
+
+        # Log the response only after we have both prompt and response
+        self.game.logger.log_player_response(self.name, "trade_response", response_data)
 
         if self.with_message_history:
-            self.messages.extend([{"role": "user", "content": user_message},
-                                  {"role": "assistant", "content": resp_raw}])
-
-        if not will_accept and answer not in ("yes", "no"):
-            print(f"Unclear response: '{resp_raw}', defaulting to NO")
+            self.messages.extend([
+                {"role": "user", "content": user_message},
+                {"role": "assistant", "content": response_data["raw"]}
+            ])
 
         # Display rationale if provided
         if reasoning:
