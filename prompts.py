@@ -153,21 +153,55 @@ IMPORTANT: First check if you need to trade at all:
    - NEVER request resources you already have enough of
    - Make the trade beneficial for both players
 
-Think step by step about your situation. Once you have decided, finish your response with ONE of these two formats:
+Think step by step about your situation. First analyze your position and needs, then make your decision using ONE of these two formats:
 
 1. If you want to make a trade with the other player, use EXACTLY this JSON format (replace values in <>):
 {{
-  "resources_to_offer": [["<color>", <number>]],
-  "resources_to_receive": [["<color>", <number>]]
+  "rationale": "First explain your reasoning: Why do you want to trade? Why these specific resources and quantities? How does this help you reach your goal?",
+  "want_to_trade": true,
+  "resources_to_offer": [
+    {{
+      "color": "<color>",
+      "quantity": <number>
+    }}
+  ],
+  "resources_to_receive": [
+    {{
+      "color": "<color>",
+      "quantity": <number>
+    }}
+  ]
 }}
 
 Example of valid trade:
 {{
-  "resources_to_offer": [["R", 3]],
-  "resources_to_receive": [["B", 2]]
+  "rationale": "I need blue resources to reach my goal efficiently. I have excess red resources that I won't need for my path. Trading 3 red for 2 blue helps me take a shorter path while still having enough resources left.",
+  "want_to_trade": true,
+  "resources_to_offer": [
+    {{
+      "color": "R",
+      "quantity": 3
+    }}
+  ],
+  "resources_to_receive": [
+    {{
+      "color": "B",
+      "quantity": 2
+    }}
+  ]
 }}
 
-2. If you don't want to trade, finish your response with exactly: n
+2. If you don't want to trade, use EXACTLY this JSON format:
+{{
+  "rationale": "Explain why you don't want to trade. Do you have all the resources you need? Is there no beneficial trade possible?",
+  "want_to_trade": false
+}}
+
+Example of no trade:
+{{
+  "rationale": "I already have all the resources needed for my optimal path to the goal. Trading would only reduce my final score since I can reach the goal without giving up any resources.",
+  "want_to_trade": false
+}}
 
 Remember:
 - Use EXACTLY the format shown above. It should be JSON using double quotes only. Do not include comments or Python-style dicts.
@@ -175,6 +209,7 @@ Remember:
 - No spaces in color names
 - Numbers must be > 0
 - Don't trade with yourself
+- Explain your reasoning in the rationale field
 
 Keep your response below 1000 characters.
 """
@@ -198,15 +233,29 @@ def generate_regular_trade_response_prompt(player, player_context, resources_to_
 
 {contract_info}
 
-
-{contract_info}
-
 You have been offered a trade:
 The other player wants to give you {resources_to_offer} in exchange for {resources_to_receive}.
-Do you accept this trade? Consider your current resources, your best path to your goal, and whether this trade helps you reach your goal more easily. Also consider whether the trade results in having more resources left over after reaching your goal, and hence a higher score. 
-IMPORTANT: After considering the above, finish your response with EXACTLY one of these two options:
-- 'yes' to accept the trade
-- 'no' to reject the trade
+
+Think step by step about whether to accept this trade. Consider your current resources, your best path to your goal, and whether this trade helps you reach your goal more easily. Also consider whether the trade results in having more resources left over after reaching your goal, and hence a higher score.
+
+Once you have decided, use this EXACT JSON format:
+
+{{
+  "rationale": "Your thinking process and reasoning for accepting or rejecting this trade",
+  "answer": "yes" or "no"
+}}
+
+Example of accepting a trade:
+{{
+  "rationale": "This trade gives me 2 blue resources which I need for my optimal path, and I can afford to give up 3 red resources since I have excess. This will help me reach my goal faster.",
+  "answer": "yes"
+}}
+
+Example of rejecting a trade:
+{{
+  "rationale": "This trade doesn't help me reach my goal efficiently. I would lose resources I need for my path and gain resources I don't need. I can reach my goal without this trade.",
+  "answer": "no"
+}}
 """
 
 def generate_pay4partner_response_prompt(player, player_context, resources_to_offer, resources_to_receive):
@@ -233,18 +282,34 @@ def generate_pay4partner_prompt(player, player_context, color, agreements):
     """Generate prompt for pay4partner decisions."""
     pay4partner_info = generate_pay4partner_mode_info(player, short_summary=True)
 
-    return f""" s
+    return f"""
 {player_context}
 Recall the 'pay for other' mode rules:
 {pay4partner_info}
 
 You have been asked by the other player to cover their movement cost onto a tile of color {color} as part of a previous trade agreement. Here are your past agreements with this player:
 {agreements}
-Do you agree to pay a {color} resource to cover the other player? Although you previously agreed to this with the other player, it is not mandatory. Remember that you are trying to maximise your points. List your options and the pros and cons of each, and finish your response with 'yes' if you agree to pay or 'no' if you want to keep those resources. 
 
-IMPORTANT: After considering the above, finish your response with EXACTLY one of these two options:
-- 'yes' if you agree to pay
-- 'no' if you want to keep those resources
+Think step by step about whether to agree to pay for the other player's move. Consider your current resources, your goal, and whether honoring this agreement helps you in the long run. Remember that you are trying to maximize your points.
+
+Once you have decided, use this EXACT JSON format:
+
+{{
+  "rationale": "Your thinking process and reasoning for agreeing or refusing to pay",
+  "answer": "yes" or "no"
+}}
+
+Example of agreeing to pay:
+{{
+  "rationale": "I have enough {color} resources and honoring this agreement maintains trust for future cooperation. This helps both of us reach our goals.",
+  "answer": "yes"
+}}
+
+Example of refusing to pay:
+{{
+  "rationale": "I need to conserve my {color} resources for my own path to the goal. The agreement was made but my survival comes first.",
+  "answer": "no"
+}}
 """
 
 

@@ -439,14 +439,6 @@ class Game:
             if trade_result["is_valid"]:
                 trade_executed = self.handle_trade(player, propose_trade, player_turn_data)
                 trade_result["executed"] = trade_executed
-        if propose_trade:
-            # Record the trade proposal
-            player_turn_data[player.name]['trade_proposed'] = propose_trade
-            
-            trade_result = self.validate_trade(player, propose_trade)
-            if trade_result["is_valid"]:
-                trade_executed = self.handle_trade(player, propose_trade, player_turn_data)
-                trade_result["executed"] = trade_executed
 
                 # record trade metrics
                 resources_to_offer = propose_trade.get('resources_to_offer', [])
