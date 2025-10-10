@@ -6,10 +6,6 @@ MOVE_DECISION_SCHEMA = {
         "type": "object",
         "additionalProperties": False,
         "properties": {
-            "rationale": {
-                "type": "string",
-                "description": "Your thinking process and reasoning for this move decision"
-            },
             "decision": {"type": "string", "enum": ["move", "n"]},
             # Required always; content rules:
             # - if decision == "move": must be "r,c"
@@ -19,7 +15,7 @@ MOVE_DECISION_SCHEMA = {
                 "pattern": r"^(?:-?\d+\s*,\s*-?\d+)?$"
             }
         },
-        "required": ["rationale", "decision", "move"]
+        "required": ["decision", "move"]
     },
     "strict": True
 }
@@ -33,38 +29,34 @@ TRADE_PROPOSAL_SCHEMA = {
         "type": "object",
         "additionalProperties": False,
         "properties": {
-            "rationale": {
-                "type": "string",
-                "description": "Your thinking process and reasoning for this trade proposal"
-            },
+            "rationale": {"type": "string", "maxLength": 400},
+            "want_to_trade": {"type": "boolean"},
             "resources_to_offer": {
                 "type": "array",
-                "minItems": 1,
                 "items": {
                     "type": "object",
                     "additionalProperties": False,
                     "properties": {
                         "color": {"type": "string"},
-                        "quantity": {"type": "integer", "minimum": 0}
+                        "quantity": {"type": "integer", "minimum": 1}
                     },
                     "required": ["color", "quantity"]
                 }
             },
             "resources_to_receive": {
                 "type": "array",
-                "minItems": 1,
                 "items": {
                     "type": "object",
                     "additionalProperties": False,
                     "properties": {
                         "color": {"type": "string"},
-                        "quantity": {"type": "integer", "minimum": 0}
+                        "quantity": {"type": "integer", "minimum": 1}
                     },
                     "required": ["color", "quantity"]
                 }
             }
         },
-        "required": ["rationale", "resources_to_offer", "resources_to_receive"]
+        "required": ["rationale", "want_to_trade"]
     },
     "strict": True
 }
@@ -77,7 +69,7 @@ ANTHROPIC_MOVE_TOOL = {
 
 ANTHROPIC_TRADE_TOOL = {
     "name": "propose_trade",
-    "description": "Propose resources to offer and receive.",
+    "description": "Propose a trade or respond with 'n' if you don't want to trade.",
     "input_schema": TRADE_PROPOSAL_SCHEMA["schema"],
 }
 
@@ -88,11 +80,11 @@ YES_NO_SCHEMA = {
         "type": "object",
         "additionalProperties": False,
         "properties": {
-            "rationale": {"type": "string", "maxLength": 400},
-            "answer": {"type": "string", "enum": ["yes", "no"]}
+            "answer": {"type": "string", "enum": ["yes", "no"]},
+            "rationale": {"type": "string", "maxLength": 400}
         },
         # IMPORTANT: OpenAI structured outputs requires ALL properties to be in `required`
-        "required": ["rationale", "answer"]
+        "required": ["answer", "rationale"]
     },
     "strict": True
 }

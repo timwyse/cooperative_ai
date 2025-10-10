@@ -153,21 +153,55 @@ IMPORTANT: First check if you need to trade at all:
    - NEVER request resources you already have enough of
    - Make the trade beneficial for both players
 
-Think step by step about your situation. Once you have decided, finish your response with ONE of these two formats:
+Think step by step about your situation. First analyze your position and needs, then make your decision using ONE of these two formats:
 
 1. If you want to make a trade with the other player, use EXACTLY this JSON format (replace values in <>):
 {{
-  "resources_to_offer": [["<color>", <number>]],
-  "resources_to_receive": [["<color>", <number>]]
+  "rationale": "First explain your reasoning: Why do you want to trade? Why these specific resources and quantities? How does this help you reach your goal?",
+  "want_to_trade": true,
+  "resources_to_offer": [
+    {{
+      "color": "<color>",
+      "quantity": <number>
+    }}
+  ],
+  "resources_to_receive": [
+    {{
+      "color": "<color>",
+      "quantity": <number>
+    }}
+  ]
 }}
 
 Example of valid trade:
 {{
-  "resources_to_offer": [["R", 3]],
-  "resources_to_receive": [["B", 2]]
+  "rationale": "I need blue resources to reach my goal efficiently. I have excess red resources that I won't need for my path. Trading 3 red for 2 blue helps me take a shorter path while still having enough resources left.",
+  "want_to_trade": true,
+  "resources_to_offer": [
+    {{
+      "color": "R",
+      "quantity": 3
+    }}
+  ],
+  "resources_to_receive": [
+    {{
+      "color": "B",
+      "quantity": 2
+    }}
+  ]
 }}
 
-2. If you don't want to trade, finish your response with exactly: n
+2. If you don't want to trade, use EXACTLY this JSON format:
+{{
+  "rationale": "Explain why you don't want to trade. Do you have all the resources you need? Is there no beneficial trade possible?",
+  "want_to_trade": false
+}}
+
+Example of no trade:
+{{
+  "rationale": "I already have all the resources needed for my optimal path to the goal. Trading would only reduce my final score since I can reach the goal without giving up any resources.",
+  "want_to_trade": false
+}}
 
 Remember:
 - Use EXACTLY the format shown above. It should be JSON using double quotes only. Do not include comments or Python-style dicts.
@@ -175,6 +209,7 @@ Remember:
 - No spaces in color names
 - Numbers must be > 0
 - Don't trade with yourself
+- Explain your reasoning in the rationale field
 
 Keep your response below 1000 characters.
 """
