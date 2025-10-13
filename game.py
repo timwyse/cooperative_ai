@@ -170,7 +170,6 @@ class Game:
             if not all(color in AVAILABLE_COLORS for color in resources):
                 raise ValueError(f"Invalid colors in manual resources. Available colors are: {AVAILABLE_COLORS}")
             print(f"Distributing manual resources: {self.config.manual_resources}.")
-            print(f"Distributing manual resources: {self.config.manual_resources}.")
             if len(self.config.manual_resources) != self.n_players:
                 raise ValueError(f"Number of dicts of resources must match number of players. There are {self.n_players} players but {len(self.config.manual_resources)} dicts of resources.")
             for player, resources in zip(self.players, self.config.manual_resources):
