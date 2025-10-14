@@ -112,7 +112,7 @@ def generate_turn_context(game, player):
     recent_history = ""
     if game.with_context and game.turn_summaries:
         history_entries = []
-        recent_turns = game.turn_summaries[-3:]  # Get last 3 turns
+        recent_turns = game.turn_summaries[-5:]  # Get last 5 turns
         for turn_idx, turn in enumerate(recent_turns):
             turn_num = game.turn - (len(recent_turns) - turn_idx)
             history_entries.append(format_turn_summary_for_player(turn, turn_num, player.name, player.pay4partner, player.with_message_history))
