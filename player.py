@@ -372,6 +372,48 @@ class Player:
         
         print(accept_message if will_accept else reject_message)
         return will_accept
+    
+    def agree_to_final_contract(self, contract_conversation):
+        self.game.logger.log_player_prompt(self.name, "contract_agreement", self.system_prompt, contract_conversation[-1]["content"])
+
+        # Make API call - retries in case of trade response parsing error happen in model_adapter.py
+        schema_or_tool = ANTHROPIC_YESNO_TOOL if self.model_api == "anthropic" else YES_NO_SCHEMA
+        try:
+            parsed, resp_raw = self._structured(contract_conversation, schema_or_tool=schema_or_tool, max_tokens=256)
+            if not parsed:
+                raise ValueError("Failed to parse structured response")
+
+            answer = parsed.get("answer", "").lower()
+            if answer not in ["yes", "no"]:
+                raise ValueError(f"Invalid answer value: {answer}")
+            
+            status = "accepted" if answer == "yes" else "rejected"
+            reasoning = parsed.get("rationale", "No rationale provided")
+            will_accept = (answer == "yes")
+
+            response_data = {
+                "raw": resp_raw,
+                "parsed": {
+                    "status": status,
+                    "rationale": reasoning
+                }
+            }
+
+        except Exception as e:
+            print(f"Error handling contract agreement: {e}, defaulting to rejected")
+            will_accept = False
+            response_data = {
+                "raw": resp_raw if 'resp_raw' in locals() else str(e),
+                "parsed": {
+                    "status": "rejected",
+                    "rationale": f"Failed to handle response: {str(e)}"
+                }
+            }
+
+        # Log the response only after we have both prompt and response
+        self.game.logger.log_player_response(self.name, "contract_agreement", response_data)
+
+        return will_accept
 
     # ---------- Utility ----------
     def clean_trade_proposal(self, trade_proposal, grid=None, game=None):
