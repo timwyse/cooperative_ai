@@ -606,31 +606,32 @@ class Logger(BaseLogger):
 
     def log_prompt_components(self, player):
         """Log the dynamic components that fill system prompt templates"""
+        # Commented out for now as we're evaluating if this logging is needed
+        # turn = str(self.turn)
         
-        turn = str(self.turn)
+        # # Initialize turn if not exists
+        # if turn not in self.verbose_log_data["game"]["turns"]:
+        #     self.verbose_log_data["game"]["turns"][turn] = {}
         
-        # Initialize turn if not exists
-        if turn not in self.verbose_log_data["game"]["turns"]:
-            self.verbose_log_data["game"]["turns"][turn] = {}
+        # components = {
+        #     "player_id": player.id,
+        #     "player_name": player.name,
+        #     "pay4partner_mode_info": prompts.generate_pay4partner_mode_info(player) if player.pay4partner else "",
+        #     "promised_resources_to_give": dict(player.promised_resources_to_give),
+        #     "promised_resources_to_receive": dict(player.promised_resources_to_receive),
+        #     "current_position": list(player.position),  # Convert tuple to list for JSON
+        #     "goal": list(player.goal),  # Convert tuple to list for JSON
+        #     "resources": dict(player.resources),
+        #     "contract": player.contract,
+        #     "contract_type": player.contract_type
+        # }
         
-        components = {
-            "player_id": player.id,
-            "player_name": player.name,
-            "pay4partner_mode_info": prompts.generate_pay4partner_mode_info(player) if player.pay4partner else "",
-            "promised_resources_to_give": dict(player.promised_resources_to_give),
-            "promised_resources_to_receive": dict(player.promised_resources_to_receive),
-            "current_position": list(player.position),  # Convert tuple to list for JSON
-            "goal": list(player.goal),  # Convert tuple to list for JSON
-            "resources": dict(player.resources),
-            "contract": player.contract,
-            "contract_type": player.contract_type
-        }
+        # if "prompt_components" not in self.verbose_log_data["game"]["turns"][turn]:
+        #     self.verbose_log_data["game"]["turns"][turn]["prompt_components"] = {}
         
-        if "prompt_components" not in self.verbose_log_data["game"]["turns"][turn]:
-            self.verbose_log_data["game"]["turns"][turn]["prompt_components"] = {}
-        
-        self.verbose_log_data["game"]["turns"][turn]["prompt_components"][player.name] = components
-        self._save_verbose_log()
+        # self.verbose_log_data["game"]["turns"][turn]["prompt_components"][player.name] = components
+        # self._save_verbose_log()
+        pass
 
 def preprocess_details(details):
     """Preprocess details for logging, converting non-serializable objects."""
