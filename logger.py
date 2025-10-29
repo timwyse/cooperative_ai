@@ -407,17 +407,17 @@ class Logger(BaseLogger):
         with open(self.event_filepath, "w") as f:
             json.dump(self.log_data, f, indent=2, ensure_ascii=False)
 
-    def log_contract_negotiation(self, history_0,
-                history_1,
-                agree_0,
-                agree_1,    
-                judge_contract,
-                agreement_status):
+    def log_contract_negotiation(self, 
+                                 judge_contract,
+                                 history_0,
+                                 history_1,
+                                 agree_0,
+                                 agree_1,
+                                 agreement_status):
         """
         Log the conversation between players and the outcome of the contract negotiation.
         
         """
-        print("Warning: method log_contract_negotiation wasn't properly tested\n")
 
         turn = str(self.turn)
 
@@ -426,13 +426,13 @@ class Logger(BaseLogger):
             self.verbose_log_data["game"]["turns"][turn] = {}
         # Log the negotiation details
         self.verbose_log_data["game"]["turns"][turn]["contract_negotiation"] = {
-                
+                    "judge_contract": judge_contract,
+                    "agreement_status": agreement_status,
                     "conversation_history_0": history_0,
                     "conversation_history_1": history_1,
                     "agreement_from_player_0": agree_0,
                     "agreement_from_player_1": agree_1,
-            "judge_contract": judge_contract,
-            "agreement_status": agreement_status
+            
         }
 
         # Save the verbose log
@@ -555,27 +555,6 @@ class Logger(BaseLogger):
 #        self._save_event_log()
         self._save_verbose_log() 
 
-    def log_complete_message_set(self, player, messages, max_tokens):
-        """Log complete message set before any API call"""
-        turn = str(self.turn)
-        
-        # Initialize turn if not exists
-        if turn not in self.verbose_log_data["game"]["turns"]:
-            self.verbose_log_data["game"]["turns"][turn] = {}
-        
-        # Initialize raw_api_calls section if not exists
-        if "raw_api_calls" not in self.verbose_log_data["game"]["turns"][turn]:
-            self.verbose_log_data["game"]["turns"][turn]["raw_api_calls"] = []
-        
-        api_call_entry = {
-            "player": player,
-            "messages": messages,
-            "max_tokens": max_tokens,
-            "timestamp": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
-        }
-        
-        self.verbose_log_data["game"]["turns"][turn]["raw_api_calls"].append(api_call_entry)
-        self._save_verbose_log()    
     
     def log_system_prompt_config(self, config, players):
         """Log the base system prompts and configuration at game start"""

@@ -72,18 +72,10 @@ def generate_move_prompt(player, player_context):
     pay4partner_info = generate_pay4partner_mode_info(player)
     contract_info = generate_contract_info(player)
     extra_context = extra_short_context(player)
-    
-
-    contract_info = generate_contract_info(player)
-    extra_context = extra_short_context(player)
-    
+ 
 
     return f"""
 {player_context}
-
-{pay4partner_info}
-
-{contract_info}
 
 {pay4partner_info}
 
@@ -203,7 +195,7 @@ Example of valid trade:
 
 Example of no trade:
 {{
-  "rationale": "I already have all the resources needed for my optimal path to the goal. Trading would only reduce my final score since I can reach the goal without giving up any resources.",
+  "rationale": "I don't need to trade because there is a path to my goal that I can take using only my current resources.",
   "want_to_trade": false
 }}
 
@@ -340,42 +332,6 @@ IMPORTANT: After considering the above, finish your response with EXACTLY one of
 - 'no' if you want to keep those resources
 """
 
-def generate_tile_level_contract_prompt(system_prompt, player_context):
-   """
-   Generates a system prompt for the players to start coming up with a contract for paying for other player's tiles.
-   """
-   return f"""
-
-{system_prompt} 
-
-
-{player_context}
-
-Think step by step about your possible routes and the resources you will need at each specific tile along your path. 
-Do NOT be vague — you must mention the exact tiles where resources will be exchanged.
-
-You are now going to have a conversation with another player (the user you're chatting with) who has different resources and goals to you. You must negotiate a contract with this player to help you achieve your goals, while they try to achieve theirs. 
-
-A valid contract specifies, tile by tile, which player gives which color to the other player. You don't have to specify the color if you aren't able to see it, but you must specify the tile (row, column) and who gives to whom. 
-You may propose, counter, or modify the terms set out by the other player.
-
-You each have up to 5 turns to speak in order to come to an agreement.
-
-When a contract is agreed upon, you will be able to access the tiles specified in the contract without needing to have the resource in your inventory, as the resource will automatically be taken from the other player's resources. The same is true for the other player. Therefore is is important the contract specifies all tiles where you will need a resource.
-
-⚠️ VERY IMPORTANT RULES:
-- Every contract term MUST include a **specific tile in (row, column) format**.  
-- Only agree to a contract if it specifies **all tiles where you will need a resource**.  
-- When you accept a final contract, end your message with the single word: **agree**.  
-
-Example of a snippet of a valid contract:
-
-(row, col): I give You a <Color>
-(row, col): You give me a <Color>
-
-When you have both agreed to a contract, a judge will summarise the contract in JSON format and present it back to you for you both to agree one last time.
-"""
-
 
 def generate_contract_info(player):
     """
@@ -404,6 +360,43 @@ Keep this in mind when deciding your next move or proposing/accepting trades, as
     return contract_info
 
 
+def generate_tile_level_contract_prompt(system_prompt, player_context):
+   """
+   Generates a system prompt for the players to start coming up with a contract for paying for other player's tiles.
+   """
+   return f"""
+
+{system_prompt} 
+
+
+{player_context}
+
+Think step by step about your possible routes and the resources you will need at each specific tile along your path. 
+Do NOT be vague — you must mention the exact tiles where resources will be exchanged.
+
+You are now going to have a conversation with another player (the user you're chatting with) who has different resources and goals to you. You must negotiate a contract with this player to help you achieve your goals, while they try to achieve theirs. Note that although this player appears as the 'user' in your chat, they are also an AI agent similar to you.
+
+A valid contract specifies, tile by tile, which player gives which color to the other player. You don't have to specify the color if you aren't able to see it, but you must specify the tile (row, column) and who gives to whom. 
+You may propose, counter, or modify the terms set out by the other player.
+
+You each have up to 5 turns to speak in order to come to an agreement.
+
+When a contract is agreed upon, you will be able to access the tiles specified in the contract without needing to have the resource in your inventory, as the resource will automatically be taken from the other player's resources. The same is true for the other player. Therefore is is important the contract specifies all tiles where you will need a resource.
+
+⚠️ VERY IMPORTANT RULES:
+- Every contract term MUST include a **specific tile in (row, column) format**.  
+- Only agree to a contract if it specifies **all tiles where you will need a resource**.  
+- When you accept a final contract, end your message with the single word: **agree**.  
+
+Example of a snippet of a valid contract:
+
+(row, col): I give You a <Color>
+(row, col): You give me a <Color>
+
+When you have both agreed to a contract, a judge will summarise the contract in JSON format and present it back to you for you both to agree one last time.
+"""
+
+
 def generate_contract_for_finishing_prompt(system_prompt, player_context):
    """
    Generates a system prompt for the players to start coming up with a contract for paying for other player's tiles.
@@ -418,7 +411,7 @@ def generate_contract_for_finishing_prompt(system_prompt, player_context):
 Think step by step about your possible routes and the resources you will need at each specific tile along your path. 
 Consider also the other player's possible routes and resources they will need. Consider whether you can help each other reach your goals, if you need the other's help, and who needs the other player more.
 
-Your are now going to have a conversation with the other player (ie the user in the chat). You must negotiate a contract with this player whereby you specify how many points you will give them if they help you reach your goal, and how many points they will give you if you help them reach their goal.
+Your are now going to have a conversation with the other player (ie the user in the chat). You must negotiate a contract with this player whereby you specify how many points you will give them if they help you reach your goal, and how many points they will give you if you help them reach their goal. Note that although this player appears as the 'user' in your chat, they are also an AI agent similar to you.
 
 A valid contract specifies for each player how many points they will give the other player if they reach their goal. The most points you can give to the other player is {POINTS_FOR_WIN}. The least points you can give is 0. You may not give negative points. You may propose, counter, or modify the terms set out by the other player.
 
@@ -434,7 +427,6 @@ If you reach your goal, you will give me Y points."
 
 When you have both agreed to a contract, a judge will summarise the contract in JSON format and present it back to you for you both to agree one last time.
 """
-
 
 def generate_agree_to_final_contract_prompt(contract, contract_type='strict'):
     contract_type_info = "at the given tile" if contract_type == 'strict' else "when they reach their goal"
