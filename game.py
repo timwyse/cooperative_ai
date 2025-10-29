@@ -664,7 +664,6 @@ class Game:
         if partner.resources[color] <= 0:
             print(f"Contract move failed: partner {partner.name} does not have enough {color} resources.")
             self.num_unfulfilled_contract_moves += 1
-            self.num_unfulfilled_contract_moves += 1
             return False
         else:
             partner.resources[color] -= 1
