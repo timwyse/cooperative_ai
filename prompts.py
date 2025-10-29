@@ -55,16 +55,6 @@ def extra_short_context(player):
     else: 
         extra_context = f", and any resources you have been promised to be covered for by the other player, as well as any contract terms you have agreed to with the other player" 
     return extra_context
-def extra_short_context(player):
-    if not player.pay4partner and player.contract is None:
-        extra_context = ""
-    elif player.pay4partner and player.contract is None:
-        extra_context = ", and any resources you have been promised to be covered for by the other player"
-    elif not player.pay4partner and player.contract is not None:
-        extra_context = ", and any contract terms you have agreed to with the other player"
-    else: 
-        extra_context = f", and any resources you have been promised to be covered for by the other player, as well as any contract terms you have agreed to with the other player" 
-    return extra_context
 
 def generate_trade_system_info(player):
     if not player.pay4partner:
@@ -117,14 +107,28 @@ Choose your next move:
 Remember:
 - It only costs 1 resource of the tile's color to move to that tile
 - Missing resources for the entire path doesn't prevent you from making individual moves
-- Try to move toward your goal even if you can't complete the entire journey yet
+- Try to move toward your goal even if you don't have all the resources to complete the entire journey yet
 
-IMPORTANT: After considering the above, finish your response with EXACTLY one of these two options:
+IMPORTANT: use EXACTLY this JSON format (replace values in <>):
+- Your rationale: Explain your reasoning for your next move
 - Your next move in "r,c" format (e.g. "1,2")
 - "n" if you cannot make any valid move toward your goal
+
+
+{{
+  "rationale": "First explain your reasoning: Why do you want to move (or not move) to this particular place on the board? How will it fit with your later moves? How does this help you reach your goal?",
+  "decision": <either "move" or "n">,
+  "move": <if decision is "move", the move in "r,c" format (e.g. "1,2"); if decision is "n", this should be an empty string "">
+}}
+
+Example of valid move:
+{{
+  "rationale": "i am at (0, 0).  \nmy goal is at (3, 3).  \ni have: {{'b': 10, 'g': 1, 'r': 0}}\n\ngiven my resources, \n(0,0) → (1,0) → (2,0) → (3,0) → (3,1) → (3,2) → (3,3)  \ncorresponding tile colours for each step:  \nrow 0: (0,0) = g (starting spot), (1,0) = b, (2,0) = r  (3,0) = b, (3,1)=b, (3,2)=b, (3,3)=g seems like a good plan. \n\nfirst step: move to (1,0), which is colour **b**.  \ni have **10** blue resources.\n\ncheck other adjacent moves from (0,0) to be safe: \n(0,1) = r, which I don't have any of, so let's stick with my first plan, moving to (1,0).",
+  "decision": "move",
+  "move": "1,0"
+  }}
+
 """
-
-
 
 def generate_trade_proposal_prompt(player, player_context):
     """Generate prompt for regular trade proposal decisions."""
@@ -153,21 +157,55 @@ IMPORTANT: First check if you need to trade at all:
    - NEVER request resources you already have enough of
    - Make the trade beneficial for both players
 
-Think step by step about your situation. Once you have decided, finish your response with ONE of these two formats:
+Think step by step about your situation. First analyze your position and needs, then make your decision using ONE of these two formats:
 
 1. If you want to make a trade with the other player, use EXACTLY this JSON format (replace values in <>):
 {{
-  "resources_to_offer": [["<color>", <number>]],
-  "resources_to_receive": [["<color>", <number>]]
+  "rationale": "First explain your reasoning: Why do you want to trade? Why these specific resources and quantities? How does this help you reach your goal?",
+  "want_to_trade": true,
+  "resources_to_offer": [
+    {{
+      "color": "<color>",
+      "quantity": <number>
+    }}
+  ],
+  "resources_to_receive": [
+    {{
+      "color": "<color>",
+      "quantity": <number>
+    }}
+  ]
 }}
 
 Example of valid trade:
 {{
-  "resources_to_offer": [["R", 3]],
-  "resources_to_receive": [["B", 2]]
+  "rationale": "I need blue resources to reach my goal efficiently. I have excess red resources that I won't need for my path. Trading 3 red for 2 blue helps me take a shorter path while still having enough resources left.",
+  "want_to_trade": true,
+  "resources_to_offer": [
+    {{
+      "color": "R",
+      "quantity": 3
+    }}
+  ],
+  "resources_to_receive": [
+    {{
+      "color": "B",
+      "quantity": 2
+    }}
+  ]
 }}
 
-2. If you don't want to trade, finish your response with exactly: n
+2. If you don't want to trade, use EXACTLY this JSON format:
+{{
+  "rationale": "Explain why you don't want to trade. Do you have all the resources you need? Is there no beneficial trade possible?",
+  "want_to_trade": false
+}}
+
+Example of no trade:
+{{
+  "rationale": "I already have all the resources needed for my optimal path to the goal. Trading would only reduce my final score since I can reach the goal without giving up any resources.",
+  "want_to_trade": false
+}}
 
 Remember:
 - Use EXACTLY the format shown above. It should be JSON using double quotes only. Do not include comments or Python-style dicts.
@@ -175,10 +213,10 @@ Remember:
 - No spaces in color names
 - Numbers must be > 0
 - Don't trade with yourself
+- Explain your reasoning in the rationale field
 
 Keep your response below 1000 characters.
 """
-
 
 
 def generate_trade_response_prompt(player, player_context, resources_to_offer, resources_to_receive):
@@ -198,15 +236,31 @@ def generate_regular_trade_response_prompt(player, player_context, resources_to_
 
 {contract_info}
 
-
-{contract_info}
-
 You have been offered a trade:
 The other player wants to give you {resources_to_offer} in exchange for {resources_to_receive}.
-Do you accept this trade? Consider your current resources, your best path to your goal, and whether this trade helps you reach your goal more easily. Also consider whether the trade results in having more resources left over after reaching your goal, and hence a higher score. 
-IMPORTANT: After considering the above, finish your response with EXACTLY one of these two options:
-- 'yes' to accept the trade
-- 'no' to reject the trade
+
+Think step by step about whether to accept this trade. Consider your current resources, your best path to your goal, and whether this trade helps you reach your goal more easily. Also consider whether the trade results in having more resources left over after reaching your goal, and hence a higher score.
+
+Once you have decided, use this EXACT JSON format:
+
+{{
+  "rationale": "Your thinking process and reasoning for accepting or rejecting this trade",
+  "answer": "yes" or "no"
+}}
+
+Example of accepting a trade:
+{{
+  "rationale": "This trade gives me 2 blue resources which I need for my optimal path, and I can afford to give up 3 red resources since I have excess. This will help me reach my goal faster.",
+  "answer": "yes"
+}}
+
+Example of rejecting a trade:
+{{
+  "rationale": "This trade doesn't help me reach my goal efficiently. I would lose resources I need for my path and gain resources I don't need. I can reach my goal without this trade.",
+  "answer": "no"
+}}
+
+Keep your response below 500 tokens.
 """
 
 def generate_pay4partner_response_prompt(player, player_context, resources_to_offer, resources_to_receive):
@@ -233,20 +287,35 @@ def generate_pay4partner_prompt(player, player_context, color, agreements):
     """Generate prompt for pay4partner decisions."""
     pay4partner_info = generate_pay4partner_mode_info(player, short_summary=True)
 
-    return f""" s
+    return f"""
 {player_context}
 Recall the 'pay for other' mode rules:
 {pay4partner_info}
 
 You have been asked by the other player to cover their movement cost onto a tile of color {color} as part of a previous trade agreement. Here are your past agreements with this player:
 {agreements}
-Do you agree to pay a {color} resource to cover the other player? Although you previously agreed to this with the other player, it is not mandatory. Remember that you are trying to maximise your points. List your options and the pros and cons of each, and finish your response with 'yes' if you agree to pay or 'no' if you want to keep those resources. 
 
-IMPORTANT: After considering the above, finish your response with EXACTLY one of these two options:
-- 'yes' if you agree to pay
-- 'no' if you want to keep those resources
+Think step by step about whether to agree to pay for the other player's move. Consider your current resources, your goal, and whether honoring this agreement helps you in the long run. Remember that you are trying to maximize your points.
+
+Once you have decided, use this EXACT JSON format:
+
+{{
+  "rationale": "Your thinking process and reasoning for agreeing or refusing to pay",
+  "answer": "yes" or "no"
+}}
+
+Example of agreeing to pay:
+{{
+  "rationale": "I have enough {color} resources and honoring this agreement maintains trust for future cooperation. This helps both of us reach our goals.",
+  "answer": "yes"
+}}
+
+Example of refusing to pay:
+{{
+  "rationale": "I need to conserve my {color} resources for my own path to the goal. The agreement was made but my survival comes first.",
+  "answer": "no"
+}}
 """
-
 
 def generate_pay4partner_mode_info(player, short_summary=False):
         if player.pay4partner:
@@ -256,8 +325,7 @@ def generate_pay4partner_mode_info(player, short_summary=False):
 Important Note: The game is in 'pay for other' mode. This means that trades are not made by directly swapping resources. Instead, when a trade agreement is reached, each player commits to covering the cost of the other’s movement on the agreed tile colors. In practice:
 	•	If the other player steps onto a tile of a color you agreed to cover, you pay the resource cost for that move.
 	•	If you step onto a tile of a color the other player agreed to cover, they pay the resource cost for you.
-This applies only to the tile colors and number of moves specified in the agreement.
-If at the end of the game a resource that you promised has not been used, it remains in your inventory and counts towards your final score. The same applies to resources promised to you by the other player."""
+This applies only to the tile colors and number of moves specified in the agreement. If at the end of the game a resource that you promised has not been used, it remains in your inventory and counts towards your final score. The same applies to resources promised to you by the other player."""
             if short_summary:
                 return pay4partner_mode_info
             else:
@@ -271,29 +339,6 @@ IMPORTANT: After considering the above, finish your response with EXACTLY one of
 - 'yes' if you agree to pay
 - 'no' if you want to keep those resources
 """
-
-
-def generate_pay4partner_mode_info(player, short_summary=False):
-        if player.pay4partner:
-            promised_resources_to_receive = {color: amt for color, amt in player.promised_resources_to_receive.items() if amt > 0}
-            promised_resources_to_give = {color: amt for color, amt in player.promised_resources_to_give.items() if amt > 0}
-            pay4partner_mode_info = """
-Important Note: The game is in 'pay for other' mode. This means that trades are not made by directly swapping resources. Instead, when a trade agreement is reached, each player commits to covering the cost of the other’s movement on the agreed tile colors. In practice:
-	•	If the other player steps onto a tile of a color you agreed to cover, you pay the resource cost for that move.
-	•	If you step onto a tile of a color the other player agreed to cover, they pay the resource cost for you.
-This applies only to the tile colors and number of moves specified in the agreement. If at the end of the game a promised resource has not been used, it remains in your inventory and counts towards your final score."""
-            if short_summary:
-                return pay4partner_mode_info
-            else:
-                pay4partner_mode_info += f"""
-In addition to the information above, please consider any promises you're already involved in:
-\n- So far you have promised to cover these resources for the other player: {promised_resources_to_give if promised_resources_to_give else '{}'}"
-\n- So far you have been promised to be covered for these resources by the other player: {promised_resources_to_receive if promised_resources_to_receive else '{}'}
-In order to move onto a tile of a color you have been promised, select that move as normal and the other player will be asked to cover the cost for you.
-"""
-            return pay4partner_mode_info
-        else:
-            return ""
 
 def generate_tile_level_contract_prompt(system_prompt, player_context):
    """
@@ -331,31 +376,6 @@ Example of a snippet of a valid contract:
 When you have both agreed to a contract, a judge will summarise the contract in JSON format and present it back to you for you both to agree one last time.
 """
 
-def generate_contract_info(player):
-    """
-    Generates a prompt section summarising the current contract (if any).
-    """
-    if player.contract_type in ['strict', 'tile_with_judge_implementation'] and player.contract is not None:
-
-        contract_info = f"""
-Additionally, you have agreed upon the following contract with the other player. When you try to move onto one of the tiles for which they have agreed to pay on your behalf, the resource will leave their resources and you will be able to move onto that tile:
-{player.contract}
-
-Thus if you move onto one of these tiles, you do not need to have the resource in your inventory to move onto that tile, nor do you need to trade for it. The same is true for the other player.
-""" 
-
-    elif player.contract_type == 'contract_for_finishing' and player.contract is not None:
-        contract_info = f"""
-Additionally, you have agreed upon the following contract with the other player. When either of you reach your goal, you will give them the agreed points:
-{player.contract}.
-
-Keep this in mind when deciding your next move or proposing/accepting trades, as you may be incentivised to help the other player to finish.
-"""
-    
-    else:
-        contract_info = ""
-
-    return contract_info
 
 def generate_contract_info(player):
     """
@@ -424,7 +444,11 @@ This is a summary of the contract, and what each player will do {contract_type_i
 
 {contract}.
 
-Do you agree to this? Respond only with "agree" or "disagree".
+Do you agree to this contract? Answer in the following EXACT format:
+{{
+  "rationale": "Your thinking process and reasoning for agreeing or refusing to pay",
+  "answer": "yes" or "no"
+}}
 """
 
     return agree_to_final_contract

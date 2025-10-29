@@ -5,6 +5,10 @@ from openai import OpenAI
 
 from agents import SONNET_4, FOUR_0
 from constants import ANTHROPIC_API_KEY, OPENAI_API_KEY, POINTS_FOR_WIN
+from model_adapter import ModelAdapter
+from schemas import (STRICT_JUDGE_SCHEMA, ANTHROPIC_STRICT_JUDGE_TOOL, 
+                     FINISHING_JUDGE_SCHEMA, ANTHROPIC_FINISHING_JUDGE_TOOL,
+                     YES_NO_SCHEMA, ANTHROPIC_YESNO_TOOL)
 from utils import get_last_alphabetic_word
 
 JUDGE_SYSTEM_PROMPT = "You are a judge whose goal is to summaries a contract created between two players. Your response must only include the contract, nothing else."
@@ -18,6 +22,7 @@ class Judge:
         elif self.model_api == 'anthropic':
             self.client = Anthropic(api_key=ANTHROPIC_API_KEY)
         self.temperature = temperature
+        self.api_llm_model = ModelAdapter(self.model_api, self.model, self.temperature)
         self.n_api_calls = 0
 
     def get_completion(self, messages, max_completion_tokens=1000):
@@ -49,6 +54,10 @@ class Judge:
                                                            max_completion_tokens=max_completion_tokens)
             return response.choices[0].message.content.strip().lower()
 
+    def _structured(self, messages, schema_or_tool, max_tokens=1000):
+        """Wrapper for adapter.structured that increments n_api_calls."""
+        self.n_api_calls += 1
+        return self.api_llm_model.structured(messages, schema_or_tool=schema_or_tool, max_tokens=max_tokens)
     
     def format_conversation_for_contract(self, conversation, players, history_pov=0):
 
@@ -62,11 +71,10 @@ class Judge:
         
         return conversation_formatted
         
-    def create_contract(self, conversation_formatted, type='strict'):
+    def create_contract(self, conversation_formatted, contract_type='strict'):
 
     
-
-        if type == 'strict':
+        if contract_type == 'strict':
             contract_type_instructions = """Each entry should specify the tile coordinate, the giving player, the receiving player, and the resource color.  
 Make sure to read the entire discussion, and determine for each player which tiles they are asking for resources for, and what the other player is asking for in return. If the players don't specify the color of a tile, you can leave it blank or put "unknown".
 
@@ -98,7 +106,7 @@ Example:
 }}
 }}
 """
-        elif type == 'contract_for_finishing':
+        elif contract_type == 'contract_for_finishing':
             contract_type_instructions = """Each entry should should specify how many points each player will give the other player if they reach their goal. The maximum points a player can give the other player is {POINTS_FOR_WIN} points. If a player picks a value higher than this, reduce it to {POINTS_FOR_WIN}.
 If a player is not giving any points to the other player, this should be specified as 0 points.
 
@@ -149,26 +157,29 @@ Your task:
         {"role": "system", "content": JUDGE_SYSTEM_PROMPT},
             {"role": "user", "content": judge_message}
         ]
-
-        contract = self.get_completion(judge_conversation)
-        contract = contract.replace("```", "").replace("json", "")
-
-        if contract.lower() == 'n':
-            print("Judge determined that a contract was not established")
-            return None
         
-
-        try:
-            contract = json.loads(contract)
-            return contract
-        except json.JSONDecodeError as e:
-            print("⚠️ Failed to parse JSON:", e)
-            print(f"contract put forward by judge: {contract}")
+        if contract_type == 'strict':
+            schema_or_tool = ANTHROPIC_STRICT_JUDGE_TOOL if self.model_api == "anthropic" else STRICT_JUDGE_SCHEMA
+        elif contract_type == 'contract_for_finishing':
+            schema_or_tool = ANTHROPIC_FINISHING_JUDGE_TOOL if self.model_api == "anthropic" else FINISHING_JUDGE_SCHEMA
+        
+        contract_parsed, contract_raw = self._structured(judge_conversation, schema_or_tool=schema_or_tool, max_tokens=1000)
+        
+        # if contract.lower() == 'n':
+        #     print("Judge determined that a contract was not established")
+        #     return None
+        
+        if type(contract_parsed) == dict:
+            return contract_parsed
+            
+        else:
+            print("⚠️ Contract of wrong type:")
+            print(f"contract put forward by judge: {contract_parsed}")
             if hasattr(self, 'logger'):
                 self.logger.log_format_error(
                     "Judge",
                     "contract_json_parse_error",
-                    {"error": str(e), "raw_response": contract}
+                    {"error": 'structured_output_error', "raw_response": contract_parsed}
                 )
 
     
@@ -220,39 +231,58 @@ Task:
    - Tile: {move}
 
    Answer: 
-   - If this tile is NOT in the contract, reply with "N".
-   - If this tile is in the contract **but** {player.name} is the **giver** of a color for this tile, reply with "N".  
-   - If this tile is in the contract **and** {player.name} is the **receiver** of a color for this tile, reply with "Y". 
+   - If this tile is NOT in the contract, reply with "no".
+   - If this tile is in the contract **but** {player.name} is the **giver** of a color for this tile, reply with "no".  
+   - If this tile is in the contract **and** {player.name} is the **receiver** of a color for this tile, reply with "yes". 
 
 IMPORTANT RULES:  
-- You may reason internally about the move and the contract.  
-- Your final output must be exactly one letter, either "Y" or "N". No other text.
+- You may reason about the move and the contract.  
+- After your reasoning, respond with either "yes" or "no". No other text.
 """
-        response = self.get_completion(
-                [
-                    {"role": "system", "content": JUDGE_SYSTEM_PROMPT},
-                    {"role": "user", "content": message_for_judge}
-                ],
-                max_completion_tokens=1000
-            ).strip().upper()
-        response = get_last_alphabetic_word(response)  # Extract the last alphabetic word
-        if response.lower() == 'y':
-            print(f"Judge determined that move {move} by {player.name} is covered by the contract.")
-            return True
-        elif response.lower() == 'n':
-            print(f"Judge determined that move {move} by {player.name} is NOT covered by the contract.")
-            return False
-        else:
-            print(f"⚠️ Judge returned unexpected response: {response}. Treating as 'N'.")
+        message_for_judge = [
+            {"role": "system", "content": JUDGE_SYSTEM_PROMPT},
+            {"role": "user", "content": message_for_judge}
+        ]
 
-            if hasattr(self, 'logger'):
-                self.logger.log_format_error(
-                    player.name,
-                    "judge_move_cover_check_invalid_format",
-                    {"raw_response": response, "move": move, "player": player.name}
+        schema_or_tool = ANTHROPIC_YESNO_TOOL if self.model_api == "anthropic" else YES_NO_SCHEMA
+        try:
+            parsed, resp_raw = self._structured(message_for_judge, schema_or_tool=schema_or_tool, max_tokens=1000)
+            print(f"Judge response: {resp_raw}")
+            if not parsed:
+                raise ValueError("Failed to parse structured response")
+
+            answer = parsed.get("answer", "").lower()
+            if answer not in ["yes", "no"]:
+                raise ValueError(f"Invalid answer value: {answer}")
+            
+            move_in_contract = True if answer == "yes" else False
+            reasoning = parsed.get("rationale", "No rationale provided")
+            
+            response_data = {
+                "raw": resp_raw,
+                "parsed": {
+                    "move_in_contract": move_in_contract,
+                    "rationale": reasoning
+                }
+            }
+
+        except Exception as e:
+            print(f"Error handling contract agreement: {e}, defaulting to rejected")
+            move_in_contract = False
+            response_data = {
+                "raw": resp_raw if 'resp_raw' in locals() else str(e),
+                "parsed": {
+                    "move_in_contract": move_in_contract,
+                    "rationale": f"Failed to handle response: {str(e)}"
+                }
+            }
+            self.logger.log_format_error(
+                    "Judge",
+                    "check_if_move_is_in_contract_error",
+                    {"error": 'structured_output_error', "raw_response": response_data}
                 )
 
-            return False
+        return move_in_contract
         
     
 JUDGE = Judge(model=SONNET_4)
