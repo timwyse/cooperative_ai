@@ -518,8 +518,8 @@ class Game:
                         print(f"{player_label} moved to {move} under contract terms.")
             
             elif self.contract_type == 'strict' and self.contract is not None:
-                if move in (tuple(map(int, key.strip("()").split(","))) for key in self.contract.keys() if re.match(r"^\(\d+,\s*\d+\)$", key)):
-                    
+                move_key = f"({move[0]}, {move[1]})"
+                if move_key in self.contract and self.contract[move_key]['receiver'] == player.name:
                     contract_resource_adjustment =  self.handle_contract_move(player, move)
                     if contract_resource_adjustment:
                         player.move(move, self.grid)
