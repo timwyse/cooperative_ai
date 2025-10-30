@@ -374,7 +374,6 @@ class Player:
         return will_accept
     
     def agree_to_final_contract(self, contract_conversation):
-        self.game.logger.log_player_prompt(self.name, "contract_agreement", self.system_prompt, contract_conversation[-1]["content"])
 
         # Make API call - retries in case of trade response parsing error happen in model_adapter.py
         schema_or_tool = ANTHROPIC_YESNO_TOOL if self.model_api == "anthropic" else YES_NO_SCHEMA
@@ -410,10 +409,7 @@ class Player:
                 }
             }
 
-        # Log the response only after we have both prompt and response
-        self.game.logger.log_player_response(self.name, "contract_agreement", response_data)
-
-        return will_accept
+        return {'result': will_accept, 'data': response_data}
 
     # ---------- Utility ----------
     def clean_trade_proposal(self, trade_proposal, grid=None, game=None):
@@ -478,6 +474,4 @@ class Player:
         return prompts.generate_contract_for_finishing_prompt(self.system_prompt, player_context)
 
     def get_completion(self, messages, max_completion_tokens=1000):
-        if hasattr(self, 'game') and self.game and hasattr(self.game, 'logger'):
-            self.game.logger.log_complete_message_set(self.name, messages, max_completion_tokens)
         return self._chat(messages, max_completion_tokens)
