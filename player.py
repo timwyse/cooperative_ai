@@ -58,6 +58,7 @@ class Player:
         self.goal = (random.randint(config.grid_size - config.random_goal_block_size, config.grid_size - 1),
                      random.randint(config.grid_size - config.random_goal_block_size, config.grid_size - 1))
         self.position = self.start_pos
+        self.route = [self.start_pos]
 
         self.n_total_players = len(config.players)
         self.surplus = config.surplus
@@ -136,6 +137,7 @@ class Player:
         tile_color = grid.get_color(*new_pos)
         self.resources[tile_color] -= 1
         self.position = new_pos
+        self.route.append(new_pos)
 
     def has_finished(self):
         return self.position == self.goal

@@ -1,226 +1,25 @@
-
 # %%
+import openai
 
-
-import pandas as pd
-from itertools import islice
-
-
-# Path to the JSONL file
-jsonl_file = "board_finder/random_boards_and_properties_6_6.jsonl"
-with open(jsonl_file, 'r') as f:
-    df = pd.read_json(
-        "".join(islice(f, 100)),  # take first 1000 lines
-        lines=True
+def get_gpt_response(system_prompt, user_prompt, model="gpt-4.1"):
+    client = openai.OpenAI()  # Assumes your API key is set in the environment
+    response = client.chat.completions.create(
+        model=model,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ],
+        max_tokens=256
     )
-
-# Expand the 'conditions' column into separate columns
-conditions_df = pd.json_normalize(df['conditions'])
-
-# Combine the original DataFrame with the expanded conditions DataFrame
-df = pd.concat([df.drop(columns=['conditions']), conditions_df], axis=1)
-
-# Display the formatted DataFrame
-print(df.head())
-# %%
-df.columns
-# %%
-print(df.shape)
-# %%
-## doesn't doesn't
-print(f"doesn't doesn't:{df[(df['B_10_path'] == True) & (df['R_10_path'] == True)].shape}")
-
-# needs needs
-print(f"needs needs: {df[
-    (df['B_10_path'] == False) & (df['B_12_path'] == False) & (df['B_14_path'] == False) &
-    (df['R_10_path'] == False) & (df['R_12_path'] == False) & (df['R_14_path'] == False)
-].shape}")
-
-# needs benefits
-print(f" needs benefits: {df[
-    (df['B_10_path'] == False) & (df['B_12_path'] == False) & (df['B_14_path'] == False) &
-    (df['R_10_path'] == False) & ((df['R_12_path'] == True) | (df['R_14_path'] == True))
-].shape}")
-
-# needs doesn't
-print(f" needs doesn't: {df[
-    (df['B_10_path'] == False) & (df['B_12_path'] == False) & (df['B_14_path'] == False) &
-    (df['R_10_path'] == True)
-].shape}")
-
-# benefits benefits
-print(f"benefits benefits: {df[
-    (df['B_10_path'] == False) & ((df['B_12_path'] == True) | (df['B_14_path'] == True)) &
-    (df['R_10_path'] == False) & ((df['R_12_path'] == True) | (df['R_14_path'] == True))
-].shape}")
-
-# benefits doesn't
-print(f"benefits doesn't: {df[
-    (df['B_10_path'] == False) & ((df['B_12_path'] == True) | (df['B_14_path'] == True)) &
-    (df['R_10_path'] == True)
-].shape}")
-
-# doesn't doesn't
-print(f"doesn't doesn't: {df[
-    (df['B_10_path'] == True) &
-    (df['R_10_path'] == True)
-].shape}")
-# %%
-# doesn't doesn't:(8055, 13)
-# needs needs: (3509566, 13)
-#  needs benefits: (5452, 13)
-#  needs doesn't: (161890, 13)
-# benefits benefits: (1, 13)
-# benefits doesn't: (116, 13)
-# doesn't doesn't: (8055, 13)
-# %%
-
-# [['G', 'B', 'R', 'B', 'B', 'B'],
-#  ['R', 'B', 'B', 'B', 'R', 'B'],
-#  ['R', 'R', 'B', 'R', 'R', 'B'],
-#  ['R', 'B', 'B', 'B', 'R', 'B'],
-#  ['R', 'B', 'R', 'R', 'R', 'B'],
-#  ['R', 'R', 'R', 'B', 'R', 'G']]
-
-# [['G', 'B', 'R', 'B', 'B', 'B'],
-#  ['R', 'B', 'R', 'B', 'R', 'B'],
-#  ['R', 'B', 'B', 'B', 'R', 'B'],
-#  ['R', 'B', 'R', 'B', 'R', 'B'],
-#  ['R', 'B', 'R', 'R', 'R', 'B'],
-#  ['R', 'R', 'R', 'B', 'R', 'G']]
-
-# [['G', 'B', 'R', 'B', 'B', 'B'],
-#  ['R', 'B', 'R', 'B', 'R', 'B'],
-#  ['R', 'B', 'R', 'B', 'R', 'B'],
-#  ['R', 'B', 'B', 'B', 'R', 'B'],
-#  ['R', 'B', 'R', 'R', 'R', 'B'],
-#  ['R', 'R', 'R', 'B', 'R', 'G']]
-
-# [['G', 'B', 'R', 'B', 'R', 'B'],
-#  ['R', 'B', 'R', 'B', 'B', 'B'],
-#  ['R', 'B', 'R', 'B', 'R', 'B'],
-#  ['R', 'B', 'B', 'B', 'R', 'B'],
-#  ['R', 'B', 'R', 'R', 'R', 'B'],
-#  ['R', 'R', 'R', 'B', 'R', 'G']]
-
-# [['G', 'B', 'R', 'B', 'R', 'B'],
-#  ['R', 'B', 'R', 'B', 'R', 'B'],
-#  ['R', 'B', 'R', 'B', 'B', 'B'],
-#  ['R', 'B', 'B', 'B', 'R', 'B'],
-#  ['R', 'B', 'R', 'R', 'R', 'B'],
-#  ['R', 'R', 'R', 'B', 'R', 'G']]
-
-# [['G', 'B', 'B', 'B', 'B', 'B'],
-#  ['R', 'B', 'R', 'R', 'R', 'B'],
-#  ['R', 'R', 'R', 'B', 'B', 'B'],
-#  ['R', 'B', 'B', 'B', 'B', 'R'],
-#  ['R', 'B', 'R', 'R', 'B', 'B'],
-#  ['R', 'R', 'R', 'B', 'R', 'G']]
-
-# [['G', 'B', 'R', 'B', 'B', 'B'],
-#  ['R', 'B', 'B', 'B', 'R', 'B'],
-#  ['R', 'R', 'B', 'R', 'B', 'B'],
-#  ['R', 'B', 'R', 'R', 'R', 'B'],
-#  ['R', 'B', 'R', 'B', 'R', 'B'],
-#  ['R', 'R', 'R', 'B', 'R', 'G']]
-# %%
-# needs benefits
-df[
-    (df['R_10_path'] == False) & (df['R_12_path'] == False) & (df['R_14_path'] == False) &
-    (df['B_10_path'] == False) & ((df['B_12_path'] == True) | (df['B_14_path'] == True))
-].iloc[:3]['grid'].to_clipboard()
-# %%
-
-# needs doesn't
-df[
-    (df['R_10_path'] == False) & (df['R_12_path'] == False) & (df['R_14_path'] == False) &
-    (df['B_10_path'] == True)
-].iloc[:3]['grid'].to_clipboard()
-# %%
-from anthropic import Anthropic
-import os
-key = os.getenv("ANTHROPIC_API_KEY")
-
-client = Anthropic(api_key=key)  # or leave blank if using env var
-
-# response = client.messages.create(
-#     model="claude-3-5-sonnet-20240620",  # choose a Claude model
-#     max_tokens=200,
-#     messages=[
-#         {"role": "user", "content": "Hello Claude, can you summarize how to use this API?"}
-#     ]
-# )
-
-# print(response.content[0].text)
-# %%
-client.models.list(limit=20)
-
+    return response.choices[0].message.content
 
 
 # %%
-import re
-import json
+system_prompt = """\nYou are a player in a game called Modified Coloured Trails.\n\nObjective:\n- Reach your goal position from your starting position.\n- To have as many chips as possible at the end of the game. \n\nMovement rules:\n1. You can move one tile per turn, either horizontally or vertically.\n2. Each time you move to a tile, you must pay 1 chip of that tile's colour.\n3. You do not pay to remain on your current tile.\n\nTrading rules:\n\n- You are in 'regular' mode: You may trade resources with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for nothing, etc.).\n \n- You may propose trades to other players, or accept / reject trades proposed by others.\n- You may chat with the opponent at any moment.\n\nCRITICAL SCORING RULES - READ CAREFULLY:\n- If you do NOT reach your goal position, you LOSE EVERYTHING and get 0 points total.\n- If you do NOT reach your goal position, ALL your remaining chips are WORTHLESS.\n- If you DO reach your goal, you get 20 points PLUS 5 points for each remaining chip (regardless of color). \n\n- REACHING YOUR GOAL IS MANDATORY - there is no partial credit for getting close.\n\nNote: You have to reach your goal point, this is your ultimate goal. The secondary goal is to have as many chips as you can. You should not care about other players' performance. \n\nCoordinates: (ROW, COLUMN)\n\n"""
+user =  """\n\n=== GAME STATUS FOR YOU - TURN 6 ===\n\n- You are at position (2, 3)\n- Your goal is at (3, 3). \n- Your resources: {'B': 0, 'G': 1, 'R': 7}\n\n\n\n- Considering potential paths to your goal: shorter paths require less resources, but a longer path for which you don't need to trade is also a strong option (as a backup plan or negotiation tool, but it means you finish with less resources than if you take the shorter path). A short path that you don't need to trade for is ideal, and your negotiation strategy should reflect this.\n\n- The other player's goal is also (3, 3). Note that because the other player likely has different resources to you, their best path to the goal may be different to yours.\n- The other player's resources: {'B': 4, 'G': 1, 'R': 0}\n- The other player is at position (3, 1)\n\nBOARD LAYOUT: \nRow 0: G B R R\nRow 1: B R B R\nRow 2: B R R B\nRow 3: B B R G\n\nHISTORY OF EVENTS:\n\nRecent turn history:\n\n=== TURN 1 ===\nMOVE: You moved from (0, 1) to (0, 2)\nMOVE: The other player moved from (1, 0) to (2, 0)\n\nPOSITIONS:\n- You: at (0, 2), resources: {'B': 0, 'G': 1, 'R': 9}\n- The other player: at (2, 0), resources: {'B': 7, 'G': 1, 'R': 0}\n---\n\n=== TURN 2 ===\nMOVE: You moved from (0, 2) to (0, 3)\nMOVE: The other player moved from (2, 0) to (3, 0)\n\nPOSITIONS:\n- You: at (0, 3), resources: {'B': 0, 'G': 1, 'R': 8}\n- The other player: at (3, 0), resources: {'B': 6, 'G': 1, 'R': 0}\n---\n\n=== TURN 3 ===\nMOVE: You moved from (0, 3) to (1, 3)\nMOVE: The other player moved from (3, 0) to (3, 1)\n\nPOSITIONS:\n- You: at (1, 3), resources: {'B': 0, 'G': 1, 'R': 7}\n- The other player: at (3, 1), resources: {'B': 5, 'G': 1, 'R': 0}\n---\n\n=== TURN 4 ===\nMOVE: You did not move\n\nPOSITIONS:\n- You: at (1, 3), resources: {'B': 0, 'G': 1, 'R': 7}\n- The other player: at (3, 1), resources: {'B': 5, 'G': 1, 'R': 0}\n---\n\n=== TURN 5 ===\nMOVE: You moved from (1, 3) to (2, 3)\nMOVE: The other player did not move\n\nPOSITIONS:\n- You: at (2, 3), resources: {'B': 0, 'G': 1, 'R': 7}\n- The other player: at (3, 1), resources: {'B': 4, 'G': 1, 'R': 0}\n\n\n\nAdditionally, you have agreed upon the following contract with the other player. When you try to move onto one of the tiles for which they have agreed to pay on your behalf, the resource will leave their resources and you will be able to move onto that tile:\n{'(0, 1)': {'giver': 'the other player', 'receiver': 'you', 'color': 'B'}, '(2, 3)': {'giver': 'the other player', 'receiver': 'you', 'color': 'B'}, '(0, 2)': {'giver': 'you', 'receiver': 'the other player', 'color': 'R'}, '(0, 3)': {'giver': 'you', 'receiver': 'the other player', 'color': 'R'}, '(1, 3)': {'giver': 'you', 'receiver': 'the other player', 'color': 'R'}}\n\nThus if you move onto one of these tiles, you do not need to have the resource in your inventory to move onto that tile, nor do you need to trade for it. The same is true for the other player.\n\n\nYou have been offered a trade:\nThe other player wants to give you [('B', 3)] in exchange for [('R', 1)].\n\nThink step by step about whether to accept this trade. Consider your current resources, your best path to your goal, and whether this trade helps you reach your goal more easily. Also consider whether the trade results in having more resources left over after reaching your goal, and hence a higher score.\n\nOnce you have decided, use this EXACT JSON format:\n\n{\n  \"rationale\": \"Your thinking process and reasoning for accepting or rejecting this trade\",\n  \"answer\": \"yes\" or \"no\"\n}\n\nExample of accepting a trade:\n{\n  \"rationale\": \"This trade gives me 2 blue resources which I need for my optimal path, and I can afford to give up 3 red resources since I have excess. This will help me reach my goal faster.\",\n  \"answer\": \"yes\"\n}\n\nExample of rejecting a trade:\n{\n  \"rationale\": \"This trade doesn't help me reach my goal efficiently. I would lose resources I need for my path and gain resources I don't need. I can reach my goal without this trade.\",\n  \"answer\": \"no\"\n}\n\nKeep your response below 500 tokens.\n"""
 
-trade_proposal = """looking at my situation:\n- i'm at (0, 1) with resources: {'b': 13, 'g': 1, 'r': 0}\n- my best path requires: {'b': 3, 'r': 1, 'g': 1}\n- i'm missing: {'r': 1}\n\ni need 1 red chip to complete my optimal path. the other player has 13 red chips but needs blue chips (they have 0 blue). i have 13 blue chips, which is more than enough for my path (i only need 3).\n\nthis is a mutually beneficial trade - i can offer some of my excess blue chips for the 1 red chip i need.\n\n{\n  \"resources_to_offer\": [[\"b\", 2]],\n  \"resources_to_receive\": [[\"r\", 1]]\n}
-"""
 
-match = re.search(r"\{.*\}", trade_proposal, re.DOTALL)
-if match:
-    json_str = match.group(-1)
-    try:
-        trade_proposal = json.loads(json_str)
-
-        # Fix common key errors
-        if 'resources_to offer' in trade_proposal:
-            trade_proposal['resources_to_offer'] = trade_proposal.pop('resources_to offer')
-        if 'resources to offer' in trade_proposal:
-            trade_proposal['resources_to_offer'] = trade_proposal.pop('resources to offer')
-        if 'resources_to receive' in trade_proposal:
-            trade_proposal['resources_to_receive'] = trade_proposal.pop('resources_to receive')
-        if 'resources to receive' in trade_proposal:
-            trade_proposal['resources_to_receive'] = trade_proposal.pop('resources to receive')
-        
-        # cleaned = self.clean_trade_proposal(trade_proposal, grid, game)
-        # if cleaned:
-        #     trade_proposal = cleaned
-        #     if self.pay4partner:
-        #         print(f"- Offering to cover: {trade_proposal['resources_to_offer']}")
-        #         print(f"- Requesting to be covered for: {trade_proposal['resources_to_receive']}")
-        #     else:
-        #         print(f"- Offering: {trade_proposal['resources_to_offer']}")
-        #         print(f"- Requesting: {trade_proposal['resources_to_receive']}")
-        # else:
-        #     print("- Invalid trade proposal")
-    except json.JSONDecodeError as e:
-        error_msg = f"Invalid JSON format in trade proposal: {e}"
-        print(error_msg)
-        
-# %%
+print(get_gpt_response(system_prompt, user))
 
 # %%
-matches = re.findall(r'\{.*?\}', trade_proposal, re.DOTALL)
-
-
-# %%
-matches[-1]
-
-# %%
-trade_proposal_2 = """looking at my situation:\n- i'm at (0, 1) with resources: {'b': 13, 'g': 1, 'r': 0}\n- my best path requires: {'b': 3, 'r': 1, 'g': 1}\n- i'm missing: {'r': 1}\n\ni need 1 red chip to complete my optimal path. the other player has 13 red chips but needs blue chips (they have 0 blue). i have 13 blue chips, which is more than enough for my path (i only need 3).\n\nthis is a mutually beneficial trade - i can offer some of my excess blue chips for the 1 red chip i need.\n\n{\n  \"resources_to_offer\": [[\"b\", 2]],\n  \"resources_to_receive\": [[\"r\", 1]]\n}"""
-
-
-matches = re.findall(r'\{.*\}', trade_proposal_2, re.DOTALL)
-# %%
-matches[-1]
-# %%
-
-def test_fn():
-    x= {'a':1}
-        
-    inner(x)
-    return x
-
-def inner(x):
-        x['a'] += 2
-    
-test_fn()
-# %%
+### note how model can't recognise that this is a beneficial trade (The other player wants to give you [('B', 3)] in exchange for [('R', 1)].), it usually rejects it.
