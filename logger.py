@@ -344,7 +344,8 @@ class Logger(BaseLogger):
                 "position": list(player.position),
                 "goal": list(player.goal),
                 "reached_goal": player.has_finished(),
-                "resources": dict(player.resources)
+                "resources": dict(player.resources),
+                "route": player.route
             }
         
         # Count format errors
