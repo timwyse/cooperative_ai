@@ -170,7 +170,6 @@ class Game:
             if not all(color in AVAILABLE_COLORS for color in resources):
                 raise ValueError(f"Invalid colors in manual resources. Available colors are: {AVAILABLE_COLORS}")
             print(f"Distributing manual resources: {self.config.manual_resources}.")
-            print(f"Distributing manual resources: {self.config.manual_resources}.")
             if len(self.config.manual_resources) != self.n_players:
                 raise ValueError(f"Number of dicts of resources must match number of players. There are {self.n_players} players but {len(self.config.manual_resources)} dicts of resources.")
             for player, resources in zip(self.players, self.config.manual_resources):
@@ -439,14 +438,6 @@ class Game:
             if trade_result["is_valid"]:
                 trade_executed = self.handle_trade(player, propose_trade, player_turn_data)
                 trade_result["executed"] = trade_executed
-        if propose_trade:
-            # Record the trade proposal
-            player_turn_data[player.name]['trade_proposed'] = propose_trade
-            
-            trade_result = self.validate_trade(player, propose_trade)
-            if trade_result["is_valid"]:
-                trade_executed = self.handle_trade(player, propose_trade, player_turn_data)
-                trade_result["executed"] = trade_executed
 
                 # record trade metrics
                 resources_to_offer = propose_trade.get('resources_to_offer', [])
@@ -523,16 +514,18 @@ class Game:
                         player.move(move, self.grid)
                         move_result = move
                         player_turn_data[player.name]['move_made'] = move
+                        player_turn_data[player.name]['move_type'] = 'move_under_contract'
                         print(f"{player_label} moved to {move} under contract terms.")
             
             elif self.contract_type == 'strict' and self.contract is not None:
-                if move in (tuple(map(int, key.strip("()").split(","))) for key in self.contract.keys() if re.match(r"^\(\d+,\s*\d+\)$", key)):
-                    
+                move_key = f"({move[0]}, {move[1]})"
+                if move_key in self.contract and self.contract[move_key]['receiver'] == player.name:
                     contract_resource_adjustment =  self.handle_contract_move(player, move)
                     if contract_resource_adjustment:
                         player.move(move, self.grid)
                         move_result = move
                         player_turn_data[player.name]['move_made'] = move
+                        player_turn_data[player.name]['move_type'] = 'move_under_contract'
                         print(f"{player_label} moved to {move} under contract terms.")
 
             # if it's not covered by contract, see if it can be made normally or via pay4partner
@@ -540,7 +533,9 @@ class Game:
                 if player.can_move_to_with_promised(move, self.grid):
                     
                     partner_agrees_to_pay = self.handle_pay4partner_move(player, move)
-                    
+                    partner = next((p for p in self.players if p.name != player.name), None)
+                    r, c = move
+                    color = self.grid.get_color(r, c)
                     
                     if partner_agrees_to_pay:
                         self.total_p4p_promises_kept += 1
@@ -549,11 +544,8 @@ class Game:
                         player_turn_data[player.name]['move_made'] = move
                         player_turn_data[player.name]['move_type'] = 'pay4partner'
                         # Record which player covered the move
-                        partner = next((p for p in self.players if p.name != player.name), None)
                         if partner:
                             player_turn_data[player.name]['covered_by'] = partner.name
-                            r, c = move
-                            color = self.grid.get_color(r, c)
                             player_turn_data[player.name]['covered_color'] = color
                             # Add pay4partner action to turn summary
                             if self.with_context:
@@ -566,47 +558,52 @@ class Game:
                                 })
                         print(f"{player_label} moved to {move} via pay4partner.")
                     
-                    
                     else:
                         self.total_p4p_promises_broken += 1
-                        move_result = "partner declined to fulfill p4p promise"
-                        # Get partner and color info
-                        partner = next((p for p in self.players if p.name != player.name), None)
-                        r, c = move
-                        color = self.grid.get_color(r, c)
-                        
-                        # Record under the player who broke their promise
-                        if partner:
-                            if partner.name not in player_turn_data:
-                                player_turn_data[partner.name] = {
-                                    'position_start': partner.position,
-                                    'position_end': partner.position,
-                                    'resources_start': dict(partner.resources),
-                                    'resources_end': dict(partner.resources),
-                                    'is_pay4partner': self.pay4partner
-                                }
-                            # Record the broken promise but don't affect the move_type
-                            player_turn_data[partner.name]['broke_promise_for'] = player.name
-                            player_turn_data[partner.name]['promised_color'] = color
-                        
-                        # Record in turn summary
-                        if self.with_context:
-                            self.current_turn_summary["pay4partner_actions"].append({
-                                "type": "promise_broken",
-                                "requester": player.name,
-                                "breaker": partner.name if partner else None,
-                                "color": color,
-                                "response": partner.messages[-1]["content"] if partner and partner.with_message_history else ""
-                            })
-                            # Also record the broken promise in the breaker's turn data
+                        # record broken promise but still check if player can move normally
+                        if player.can_move_to(move, self.grid):
+                            player.move(move, self.grid)
+                            move_result = move
+                            player_turn_data[player.name]['move_made'] = move
+                            player_turn_data[player.name]['move_type'] = 'regular'  # Regular move 
+                            player_turn_data[player.name]['used_color'] = color
+                            print(f"{player_label} moved to {move}.")
+
+                        else:
+                            move_result = "partner declined to fulfill p4p promise"
+                            
+                            # Record under the player who broke their promise
                             if partner:
+                                if partner.name not in player_turn_data:
+                                    player_turn_data[partner.name] = {
+                                        'position_start': partner.position,
+                                        'position_end': partner.position,
+                                        'resources_start': dict(partner.resources),
+                                        'resources_end': dict(partner.resources),
+                                        'is_pay4partner': self.pay4partner
+                                    }
+                                # Record the broken promise but don't affect the move_type
+                                player_turn_data[partner.name]['broke_promise_for'] = player.name
+                                player_turn_data[partner.name]['promised_color'] = color
+                            
+                            # Record in turn summary
+                            if self.with_context:
                                 self.current_turn_summary["pay4partner_actions"].append({
-                                    "type": "broke_promise",
-                                    "breaker": partner.name,
-                                    "broke_for": player.name,
+                                    "type": "promise_broken",
+                                    "requester": player.name,
+                                    "breaker": partner.name if partner else None,
                                     "color": color,
                                     "response": partner.messages[-1]["content"] if partner and partner.with_message_history else ""
                                 })
+                                # Also record the broken promise in the breaker's turn data
+                                if partner:
+                                    self.current_turn_summary["pay4partner_actions"].append({
+                                        "type": "broke_promise",
+                                        "breaker": partner.name,
+                                        "broke_for": player.name,
+                                        "color": color,
+                                        "response": partner.messages[-1]["content"] if partner and partner.with_message_history else ""
+                                    })
                     
                 elif player.can_move_to(move, self.grid):
                     player.move(move, self.grid)
@@ -640,7 +637,7 @@ class Game:
                 "reason": "successful" if isinstance(move_result, tuple) else move_result,
                 "response": response,
                 # Add pay4partner info if relevant
-                "move_type": player_turn_data[player.name].get('move_type', 'regular'),
+                "move_type": player_turn_data[player.name].get('move_type'),
                 "covered_by": player_turn_data[player.name].get('covered_by'),
                 "covered_color": player_turn_data[player.name].get('covered_color'),
                 "promise_broken_by": player_turn_data[player.name].get('promise_broken_by'),
@@ -672,7 +669,6 @@ class Game:
         color = self.grid.get_color(r, c)
         if partner.resources[color] <= 0:
             print(f"Contract move failed: partner {partner.name} does not have enough {color} resources.")
-            self.num_unfulfilled_contract_moves += 1
             self.num_unfulfilled_contract_moves += 1
             return False
         else:
@@ -782,7 +778,7 @@ class Game:
         for attempt in range(n_tries):
             print(f"Attempt {attempt + 1} to come up with a contract...")
             
-            contracts = self.come_up_with_contract(self.players, type=self.contract_type)
+            contracts = self.come_up_with_contract(self.players, contract_type=self.contract_type)
             if contracts:
                 contract = contracts['contract']
                 print(f"contract made! {contract}")
@@ -798,7 +794,7 @@ class Game:
         print("All attempts to create a contract have failed.")
             
     
-    def come_up_with_contract(self, players, type='strict'):
+    def come_up_with_contract(self, players, contract_type='strict'):
         """
         Facilitates a contract negotiation between two players, formats the contract using a judge,
         and ensures both players agree to the final contract.
@@ -811,16 +807,15 @@ class Game:
             if words:
                 return words[0] == 'agree' or words[-1] == "agree"
             return False
-        print("attempting to create a contract")
         # Initialize conversation history for both players
         player_0 = players[0]
         player_1 = players[1]
-        if type == 'contract_for_finishing':
+        if contract_type == 'contract_for_finishing':
             system_player_0 = player_0.generate_contract_for_finishing_prompt(player_0.generate_player_context_message(self, self.grid))
             system_player_1 = player_1.generate_contract_for_finishing_prompt(player_1.generate_player_context_message(self, self.grid))
             history_0 = [{"role": "system", "content": system_player_0 }]
             history_1 = [{"role": "system", "content": system_player_1 }]
-        elif type in ('strict', 'tile_with_judge_implementation'):
+        elif contract_type in ('strict', 'tile_with_judge_implementation'):
             system_player_0 = player_0.generate_tile_level_contract_prompt(player_0.generate_player_context_message(self, self.grid))
             system_player_1 = player_1.generate_tile_level_contract_prompt(player_1.generate_player_context_message(self, self.grid))
             history_0 = [{"role": "system", "content": system_player_0}]
@@ -874,7 +869,7 @@ class Game:
                 contract_status = True
             else:
                 # Get the judge to create a formal contract
-                judge_contract = self.judge.create_contract(conversation_formatted, type=type)
+                judge_contract = self.judge.create_contract(conversation_formatted, contract_type=contract_type)
                 print(f"Raw judge contract: {judge_contract}")
                 try: 
                     contract_for_0 = self.judge.format_contract_for_player(judge_contract, player_0)
@@ -887,25 +882,16 @@ class Game:
                     
                     history_1.append({"role": "user", "content": prompts.generate_agree_to_final_contract_prompt(contract_for_1)})
 
-                    agree_0 = player_0.get_completion(history_0)
-                    agree_1 = player_1.get_completion(history_1)
+                    player_0_agreement_response = player_0.agree_to_final_contract(history_0)
+                    agree_0 = player_0_agreement_response['result']
+                    player_0_agreement_data = player_0_agreement_response['data']
                     
-                    contract_status = message_starts_or_ends_with_agree(agree_0) and message_starts_or_ends_with_agree(agree_1)
-
-                    #log invalid-format responses (neither 'agree' nor 'disagree')
-                    #AS: I don't like the implementation, but better than nothing
-                    if not (message_starts_or_ends_with_agree(agree_0) or re.search(r"\bdisagree\b", agree_0.lower())):
-                        self.logger.log_format_error(
-                            player_0.name,
-                            "final_contract_response_invalid_format",
-                            {"raw_response": agree_0}
-                        )
-                    if not (message_starts_or_ends_with_agree(agree_1) or re.search(r"\bdisagree\b", agree_1.lower())):
-                        self.logger.log_format_error(
-                            player_1.name,
-                            "final_contract_response_invalid_format",
-                            {"raw_response": agree_1}
-                        )
+                    player_1_agreement_response = player_1.agree_to_final_contract(history_1)
+                    agree_1 = player_1_agreement_response['result']
+                    player_1_agreement_data = player_1_agreement_response['data']                    
+                    
+                    contract_status = agree_0 and agree_1
+                    
                 except Exception as e:
                     self.logger.log_format_error(
                         "Judge",
@@ -916,11 +902,11 @@ class Game:
                     return None
             
             self.logger.log_contract_negotiation(
+                judge_contract=judge_contract,
                 history_0=history_0,
                 history_1=history_1,
-                agree_0=agree_0,
-                agree_1=agree_1,    
-                judge_contract=judge_contract,
+                agree_0=player_0_agreement_data,
+                agree_1=player_1_agreement_data,    
                 agreement_status=contract_status
             )
 
@@ -940,18 +926,17 @@ class Game:
 
                 return {'contract': judge_contract, 'contract_for_0': contract_for_0, 'contract_for_1': contract_for_1}
             
-            elif not message_starts_or_ends_with_agree(agree_0):
+            elif not agree_0:
                 print(f"{player_0.name} did not agree to the final contract.")
                 print(f"{player_0.name}'s response: {agree_0}")
                 self.contract_negotiaion_length = turn + 1 # in turns
                 return None
-            elif not message_starts_or_ends_with_agree(agree_1):
+            elif not agree_1:
                 print(f"{player_1.name} did not agree to the final contract.")
                 print(f"{player_1.name}'s response: {agree_1}")
                 self.contract_negotiaion_length = turn + 1 # in turns
                 return None
 
-    
     
     def validate_trade(self, player, propose_trade):
         """
