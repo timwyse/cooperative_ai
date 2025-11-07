@@ -1,18 +1,14 @@
 import yaml
 import json
-import sys
-import io
 import uuid
 import traceback
-from contextlib import redirect_stdout
 from datetime import datetime
 from pathlib import Path
 from typing import List, Tuple
-from config import GameConfig, load_config
+from config import GameConfig
 from game import Game
 from agents import *
 from logger import Logger
-from utils import calculate_scores
 import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -24,8 +20,8 @@ PARAM_VARIATIONS = "parameter_variations_yv"
 
 AGENT_LIST = {
     "FOUR_1": FOUR_1,
-    "SONNET_4": SONNET_4,
-    "LLAMA_405B": LLAMA_405B,
+    # "SONNET_4": SONNET_4,
+    # "LLAMA_405B": LLAMA_405B,
 }
 
 def make_pair_name(a, b) -> str:
@@ -71,12 +67,6 @@ def generate_experiment_path(pair_name: str, grid_data, config, run_id=None):
     timestamp = now_ts()
     run_id = run_id or uuid.uuid4().hex[:8]
     base_path = Path("logs") / "experiments" / "per_grid" / pair_name / bucket / grid_id / config_dir / f"{timestamp}_{run_id}"
-    print(f"\nGenerating path for experiment:")
-    print(f"  Pair: {pair_name}")
-    print(f"  Bucket: {bucket}")
-    print(f"  Grid: {grid_id}")
-    print(f"  Config: {config_dir}")
-    print(f"  Path: {base_path}")
     return base_path, f"{timestamp}_{run_id}"
 
 def _run_single_experiment(pair_name: str, agents: List, grid_data, variation):
@@ -139,16 +129,14 @@ def _run_single_experiment(pair_name: str, agents: List, grid_data, variation):
     with open(exp_path / "metadata.json", "w") as f:
         json.dump(metadata, f, indent=2)
 
-    buf = io.StringIO()
     try:
-        with redirect_stdout(buf):
-            logger = Logger(
-                game_id=game_id,
-                base_log_dir=str(exp_path),
-                skip_default_logs=True
-            )
-            game = Game(config=config, logger=logger)
-            game.run()
+        logger = Logger(
+            game_id=game_id,
+            base_log_dir=str(exp_path),
+            skip_default_logs=True
+        )
+        game = Game(config=config, logger=logger)
+        game.run()
 
         scores = {p.name: (10 + 5 * sum(dict(p.resources).values())) if p.has_finished() else 0
                   for p in game.players}
@@ -162,28 +150,20 @@ def _run_single_experiment(pair_name: str, agents: List, grid_data, variation):
             "path": str(exp_path)
         }
 
-        with open(exp_path / "run.log", "w", encoding="utf-8") as flog:
-            flog.write(buf.getvalue())
-
         return True, summary
 
     except Exception as e:
-        err_text = (
-            f"\nRun CRASHED!\nError type: {type(e).__name__}\nError message: {str(e)}\n"
-            f"Traceback:\n{traceback.format_exc()}\n\nLast output before crash:\n{buf.getvalue()}"
-        )
-        with open(exp_path / "run.log", "w", encoding="utf-8") as flog:
-            flog.write(err_text)
         summary = {
             "status": "CRASHED",
             "pair": pair_name,
             "grid_id": grid_id,
             "error": str(e),
+            "traceback": traceback.format_exc(),
             "path": str(exp_path)
         }
         return False, summary
 
-def run_experiments(start_id=None, end_id=None, pair_args: List[str] = None):
+def run_experiments(start_id=None, end_id=None, pair_args: List[str] = None, num_workers=8):
     # Resolve model pairs
     model_pairs = parse_pairs(pair_args or [])
 
@@ -236,10 +216,10 @@ def run_experiments(start_id=None, end_id=None, pair_args: List[str] = None):
                 tasks.append((pair_name, agents, grid_data, variation))
 
     print(f"\nTotal runs to execute: {len(tasks)}")
-    print(f"Using NUM_WORKERS = {NUM_WORKERS}")
+    print(f"Using {num_workers} workers")
 
     # Sequential fallback
-    if NUM_WORKERS <= 1 or len(tasks) <= 1:
+    if num_workers <= 1 or len(tasks) <= 1:
         print("\nRunning sequentially...")
         results = []
         for pair_name, agents, grid_data, variation in tasks:
@@ -254,7 +234,7 @@ def run_experiments(start_id=None, end_id=None, pair_args: List[str] = None):
     # Parallel (threads)
     print("\nRunning in parallel (threads)...")
     results = []
-    with ThreadPoolExecutor(max_workers=NUM_WORKERS) as executor:
+    with ThreadPoolExecutor(max_workers=num_workers) as executor:
         fut_to_task = {
             executor.submit(_run_single_experiment, pair_name, agents, grid_data, variation):
             (pair_name, agents, grid_data, variation)
@@ -276,8 +256,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run grid-based experiments (multi-pair)')
     parser.add_argument('--start-id', type=int, help='Start from this grid ID (inclusive)')
     parser.add_argument('--end-id', type=int, help='Run until this grid ID (inclusive)')
+    parser.add_argument('--workers', type=int, default=8,
+                        help='Number of parallel workers (default: 8, use 1 for sequential)')
     parser.add_argument('--pairs', action='append',
                         help="Model pair as 'A,B'. Repeat for multiple pairs. "
                              "Example: --pairs FOUR_1,FOUR_1 --pairs SONNET_4,SONNET_4")
     args = parser.parse_args()
-    run_experiments(start_id=args.start_id, end_id=args.end_id, pair_args=args.pairs)
+    run_experiments(start_id=args.start_id, end_id=args.end_id, pair_args=args.pairs, num_workers=args.workers)
