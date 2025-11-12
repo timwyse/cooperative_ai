@@ -68,7 +68,6 @@ def generate_move_prompt(player, player_context):
     
     position = player.position,
     goal = player.goal,
-    current_resources = dict(player.resources),
     pay4partner_info = generate_pay4partner_mode_info(player)
     contract_info = generate_contract_info(player)
     extra_context = extra_short_context(player)

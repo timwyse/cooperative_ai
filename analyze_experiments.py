@@ -125,6 +125,7 @@ def load_experiment_data(experiment_dir="logs/experiments/per_grid"):
                 'Pay4Partner': metadata.get('config', {}).get('pay4partner', p4p),
                 'Contract Type': metadata.get('config', {}).get('contract_type', contract),
                 'Total Turns': total_turns,
+                'Format Errors': final_state.get('format_errors_total', 0),
                 'Non-Cooperative Baseline Player 0': data['config']['player_details'][0].get('non_cooperative_baseline',
                                                                                             0),
                 'Non-Cooperative Baseline Player 1': data['config']['player_details'][1].get('non_cooperative_baseline',

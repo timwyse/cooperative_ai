@@ -23,3 +23,8 @@ print(get_gpt_response(system_prompt, user))
 
 # %%
 ### note how model can't recognise that this is a beneficial trade (The other player wants to give you [('B', 3)] in exchange for [('R', 1)].), it usually rejects it.
+
+
+## independent: 0-19
+## MD: 20-29, 40-49, 90-99
+## Needy Player (Blue): 120-139
