@@ -105,7 +105,7 @@ STRICT_JUDGE_SCHEMA = {
     "additionalProperties": False,
     "patternProperties": {
         # Keys must match the format "(row, col)"
-        r"^\(\d+,\s*\d+\)$": {
+        r"^\(\d+,\d+\)$": {
             "type": "object",
             "additionalProperties": False,
             "properties": {

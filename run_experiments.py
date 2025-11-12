@@ -163,7 +163,7 @@ def _run_single_experiment(pair_name: str, agents: List, grid_data, variation):
         }
         return False, summary
 
-def run_experiments(start_id=None, end_id=None, pair_args: List[str] = None, num_workers=8):
+def run_experiments(start_id=None, end_id=None, pair_args: List[str] = None, num_workers=NUM_WORKERS):
     # Resolve model pairs
     model_pairs = parse_pairs(pair_args or [])
 
@@ -256,7 +256,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run grid-based experiments (multi-pair)')
     parser.add_argument('--start-id', type=int, help='Start from this grid ID (inclusive)')
     parser.add_argument('--end-id', type=int, help='Run until this grid ID (inclusive)')
-    parser.add_argument('--workers', type=int, default=8,
+    parser.add_argument('--workers', type=int, default=NUM_WORKERS,
                         help='Number of parallel workers (default: 8, use 1 for sequential)')
     parser.add_argument('--pairs', action='append',
                         help="Model pair as 'A,B'. Repeat for multiple pairs. "
