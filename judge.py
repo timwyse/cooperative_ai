@@ -14,7 +14,7 @@ from utils import get_last_alphabetic_word
 JUDGE_SYSTEM_PROMPT = "You are a judge whose goal is to summaries a contract created between two players. Your response must only include the contract, nothing else."
 
 class Judge:
-    def __init__(self, model=FOUR_0, temperature=1):
+    def __init__(self, model=SONNET_4, temperature=1):
         self.model = model.value
         self.model_api = model.api
         if self.model_api == 'open_ai':
@@ -80,12 +80,12 @@ Make sure to read the entire discussion, and determine for each player which til
 
 The JSON format must be:  
 {{
-"(row, col)": {{
+"(row,col)": {{
 "giver": "Player X",
 "receiver": "Player Y",
 "color": "<Color>"
 }},
-"(row, col)": {{
+"(row,col)": {{
 "giver": "Player X",
 "receiver": "Player Y",
 "color": "<Color>"
@@ -94,12 +94,12 @@ The JSON format must be:
 
 Example:
 {{
-"(1, 1)": {{
+"(1,1)": {{
 "giver": "Player 0",
 "receiver": "Player 1",
 "color": "Red"
 }},
-"(2, 2)": {{
+"(2,2)": {{
 "giver": "Player 0",
 "receiver": "Player 1",
 "color": "Blue"
@@ -284,5 +284,3 @@ IMPORTANT RULES:
 
         return move_in_contract
         
-    
-JUDGE = Judge(model=SONNET_4)

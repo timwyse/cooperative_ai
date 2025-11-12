@@ -11,7 +11,7 @@ from tabulate import tabulate
 
 from constants import AVAILABLE_COLORS, COLOR_MAP, TILE_SIZE, FPS
 from grid import Grid
-from judge import JUDGE, JUDGE_SYSTEM_PROMPT
+from judge import Judge, JUDGE_SYSTEM_PROMPT
 from logger import Logger
 from player import Player
 import prompts
@@ -63,7 +63,7 @@ class Game:
         self.pay4partner = self.config.pay4partner
         self.contract_type = self.config.contract_type
         if self.contract_type is not None:
-            self.judge = JUDGE
+            self.judge = Judge()
             self.judge.logger = self.logger
         self.contract = None
 
@@ -518,7 +518,7 @@ class Game:
                         print(f"{player_label} moved to {move} under contract terms.")
             
             elif self.contract_type == 'strict' and self.contract is not None:
-                move_key = f"({move[0]}, {move[1]})"
+                move_key = f"({move[0]},{move[1]})"
                 if move_key in self.contract and self.contract[move_key]['receiver'] == player.name:
                     contract_resource_adjustment =  self.handle_contract_move(player, move)
                     if contract_resource_adjustment:
