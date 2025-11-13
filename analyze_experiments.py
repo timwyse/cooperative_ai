@@ -149,6 +149,8 @@ def load_experiment_data(experiment_dir="logs/experiments/per_grid"):
                 'num_tiles_in_contract': final_state.get('metrics', {}).get('num_tiles_in_contract', 0),
                 'num_tiles_promised_to_receive_from_contract_0': final_state.get('metrics', {}).get('num_tiles_promised_to_receive_from_contract_0', 0),
                 'num_tiles_promised_to_receive_from_contract_1': final_state.get('metrics', {}).get('num_tiles_promised_to_receive_from_contract_1', 0),
+                'moves_made_under_strict_contract_0': final_state.get('metrics', {}).get('moves_made_under_strict_contract_0', 0),
+                'moves_made_under_strict_contract_1': final_state.get('metrics', {}).get('moves_made_under_strict_contract_1', 0),
                 'points_for_completion_promised_to_0': final_state.get('metrics', {}).get('points_for_completion_promised_to_0', 0),
                 'points_for_completion_promised_to_1': final_state.get('metrics', {}).get('points_for_completion_promised_to_1', 0),
             }

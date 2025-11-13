@@ -346,6 +346,8 @@ Additionally, you have agreed upon the following contract with the other player.
 
 Thus if you move onto one of these tiles, you do not need to have the resource in your inventory to move onto that tile, nor do you need to trade for it. The same is true for the other player.
 """ 
+        if player.contract_type == 'strict':
+            contract_info += "Note that if a tile you have been promised has status 'used', you can no longer move onto that tile without having the resource in your inventory.\n"
 
     elif player.contract_type == 'contract_for_finishing' and player.contract is not None:
         contract_info = f"""

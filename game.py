@@ -16,7 +16,7 @@ from logger import Logger
 from player import Player
 import prompts
 from constants import POINTS_FOR_WIN, POINTS_FOR_EXTRA_RESOURCE
-from utils import freeze, calculate_scores
+from utils import freeze, calculate_scores, mark_tile_in_contract_as_used
 
 
 class Game:
@@ -91,6 +91,7 @@ class Game:
         self.total_trades_rejected = 0
         self.total_trades_failed = 0
         self.amount_received_from_trades = {'0': 0, '1': 0}  
+        
 
         # Initialize contract metrics
         self.contract_accepted = 0
@@ -99,6 +100,7 @@ class Game:
         self.num_tiles_promised_to_receive_from_contract = {'0': 0, '1': 0}
         self.points_for_completion_promised_to_receive_from_contract = {'0': 0, '1': 0}
         self.num_unfulfilled_contract_moves = 0
+        self.moves_made_under_strict_contract = {player.id: 0 for player in self.players}
 
         # initialise p4p metrics
         self.total_p4p_promises_kept = 0
@@ -300,6 +302,8 @@ class Game:
             'num_tiles_promised_to_receive_from_contract_0': self.num_tiles_promised_to_receive_from_contract['0'],
             'num_tiles_promised_to_receive_from_contract_1': self.num_tiles_promised_to_receive_from_contract['1'],
             'num_unfulfilled_contract_moves': self.num_unfulfilled_contract_moves,
+            'moves_made_under_strict_contract_0': self.moves_made_under_strict_contract['0'],
+            'moves_made_under_strict_contract_1': self.moves_made_under_strict_contract['1'],
             'points_for_completion_promised_to_0': self.points_for_completion_promised_to_receive_from_contract['0'],
             'points_for_completion_promised_to_1': self.points_for_completion_promised_to_receive_from_contract['1'],
             'total_p4p_promises_kept': self.total_p4p_promises_kept,
@@ -519,7 +523,7 @@ class Game:
             
             elif self.contract_type == 'strict' and self.contract is not None:
                 move_key = f"({move[0]},{move[1]})"
-                if move_key in self.contract and self.contract[move_key]['receiver'] == player.name:
+                if move_key in self.contract and self.contract[move_key]['receiver'] == player.name and self.contract[move_key]['status'] != 'used':
                     contract_resource_adjustment =  self.handle_contract_move(player, move)
                     if contract_resource_adjustment:
                         player.move(move, self.grid)
@@ -674,8 +678,13 @@ class Game:
         else:
             partner.resources[color] -= 1
             player.resources[color] += 1
+            self.moves_made_under_strict_contract[player.id] += 1
+            
+            mark_tile_in_contract_as_used(self.contract, move, player.name)
+            mark_tile_in_contract_as_used(player.contract, move, 'you')
+            mark_tile_in_contract_as_used(partner.contract, move, 'the other player')
             return True
-        
+
     
     def handle_trade(self, player, propose_trade, player_turn_data):
         """
@@ -923,6 +932,11 @@ class Game:
                                                                 '0': sum(int(v.get('amount', 0)) for v in judge_contract.values() if v.get('receiver', '').lower() == 'player 0'),
                                                                 '1': sum(int(v.get('amount', 0)) for v in judge_contract.values() if v.get('receiver', '').lower() == 'player 1')
                                                             } if self.contract_type == 'contract_for_finishing'else {'0': 0, '1': 0}
+
+                if self.contract_type == 'strict':
+                    for contract in (judge_contract, contract_for_0, contract_for_1):
+                        for tile_dict in contract.values():
+                            tile_dict['status'] = 'unused'
 
                 return {'contract': judge_contract, 'contract_for_0': contract_for_0, 'contract_for_1': contract_for_1}
             

@@ -47,3 +47,10 @@ def get_last_alphabetic_word(text):
     words = re.findall(r"[a-zA-Z]+", text)
     # Return the last word if the list is not empty
     return words[-1] if words else None
+
+def mark_tile_in_contract_as_used(contract, tile, receiver_name):
+    ''' Mark a tile in the contract as void when it is used'''
+    move_key = f"({tile[0]},{tile[1]})"
+    if move_key in contract and contract[move_key]['receiver'] == receiver_name:
+        contract[move_key]['status'] = 'used'
+    
