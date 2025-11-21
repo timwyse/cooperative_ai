@@ -67,7 +67,7 @@ def format_turn_summary_for_player(turn_summary, turn_number, player_name, pay4p
                 # Add pay4partner details if relevant
                 if move.get('move_type') == 'pay4partner':
                     other = "You" if move.get('covered_by') == player_name else "The other player"
-                    move_text += f" ({other} covered the {move.get('covered_color')} resource)"
+                    move_text += f" ({other} covered the {move.get('covered_color')} chip)"
                 
                 summary.append(move_text)
                 if move['player'] == player_name and with_message_history:
@@ -77,7 +77,7 @@ def format_turn_summary_for_player(turn_summary, turn_number, player_name, pay4p
                     summary.append(f"MOVE: {player_ref} did not move")
                 elif move.get('move_type') == 'pay4partner_promise_broken':
                     breaker = "You" if move.get('promise_broken_by') == player_name else "The other player"
-                    summary.append(f"MOVE FAILED: {breaker} declined to cover the promised {move.get('promised_color')} resource")
+                    summary.append(f"MOVE FAILED: {breaker} declined to cover the promised {move.get('promised_color')} chip")
                 
                 if move['player'] == player_name and with_message_history:
                     summary.append(f"You said: {move.get('response', '')}")
@@ -88,7 +88,7 @@ def format_turn_summary_for_player(turn_summary, turn_number, player_name, pay4p
         for state_player_name, state in turn_summary["player_states"].items():
             player_ref = "You" if state_player_name == player_name else "The other player"
             status = "FINISHED!" if state['has_finished'] else f"at {state['position']}"
-            summary.append(f"- {player_ref}: {status}, resources: {state['resources']}")
+            summary.append(f"- {player_ref}: {status}, chips: {state['chips']}")
             if pay4partner:
                 if state_player_name == player_name:
                     # For the current player
@@ -105,7 +105,7 @@ def format_turn_summary_for_player(turn_summary, turn_number, player_name, pay4p
 def generate_turn_context(game, player):
     """
     Generates a complete context message about the current turn, including:
-    - Current game state (position, resources, etc.)
+    - Current game state (position, chips, etc.)
     - Recent turn history (last 3 turns)
     - Board layout
     """
@@ -120,8 +120,8 @@ def generate_turn_context(game, player):
         recent_history = "\nRecent turn history:\n" + "\n---\n".join(history_entries)
 
     current_turn = game.turn
-    promised_resources_to_give_message = f"- Resources you have promised to cover for other player (still yours, not yet covered for them): {player.promised_resources_to_give}" if player.pay4partner else ''
-    promised_resources_to_receive_message = f"- Resources you have been promised to be covered for by other player (still theirs, not yet covered for you): {player.promised_resources_to_receive}" if player.pay4partner else ''
+    promised_resources_to_give_message = f"- Chips you have promised to cover for other player (still yours, not yet covered for them): {player.promised_resources_to_give}" if player.pay4partner else ''
+    promised_resources_to_receive_message = f"- Chips you have been promised to be covered for by other player (still theirs, not yet covered for you): {player.promised_resources_to_receive}" if player.pay4partner else ''
     
     fog_of_war_context = "You are in fog of war mode. You can only see the colors of tiles adjacent to your current position. As you move to other tiles you will be able to see the colors of new adjacent tiles" if player.fog_of_war else ""
 
@@ -139,14 +139,14 @@ def generate_turn_context(game, player):
 
 - You are at position {player.position}
 - Your goal is at {player.goal}. 
-- Your resources: {dict(player.resources)}
+- Your chip inventory: {dict(player.resources)}
 {promised_resources_to_give_message}
 {promised_resources_to_receive_message}
 {best_paths_message}
-- Considering potential paths to your goal: shorter paths require less resources, but a longer path for which you don't need to trade is also a strong option (as a backup plan or negotiation tool, but it means you finish with less resources than if you take the shorter path). A short path that you don't need to trade for is ideal, and your negotiation strategy should reflect this.
+- Considering potential paths to your goal: shorter paths require less chips, but a longer path for which you don't need to trade is also a strong option (as a backup plan or negotiation tool, but it means you finish with less chips than if you take the shorter path). A short path that you don't need to trade for is ideal, and your negotiation strategy should reflect this.
 
-- The other player's goal is also {player.goal}. Note that because the other player likely has different resources to you, their best path to the goal may be different to yours.
-- The other player's resources: {other_resources}
+- The other player's goal is also {player.goal}. Note that because the other player likely has different chips to you, their best path to the goal may be different to yours.
+- The other player's chips: {other_resources}
 - The other player is at position {other_position}
 
 BOARD LAYOUT: {fog_of_war_context}

@@ -237,7 +237,7 @@ class Game:
                 "model": player.model_name,
                 "position": player.position,
                 "goal": player.goal,
-                "resources": dict(player.resources),
+                "chips": dict(player.resources),
                 "promised_to_give": dict(player.promised_resources_to_give) if self.pay4partner else None,
                 "promised_to_receive": dict(player.promised_resources_to_receive) if self.pay4partner else None,
             }
@@ -349,17 +349,17 @@ class Game:
         # Track player data for event logging
         player_turn_data = {
             p.name: {
-                'resources_start': dict(p.resources),
+                'chips_start': dict(p.resources),
                 'position_start': p.position,
                 'trade_proposed': None,
                 'trade_proposal_outcome': 'none',
                 'trade_received': None,
                 'trade_response': 'none',
-                'resources_after_trades': dict(p.resources),
+                'chips_after_trades': dict(p.resources),
                 'move_made': None,
                 'move_type': 'no_move',
                 'position_end': None,
-                'resources_end': None,
+                'chips_end': None,
                 'is_pay4partner': self.pay4partner,
             }
             for p in self.players
@@ -372,7 +372,7 @@ class Game:
             if player.has_finished():
                 if not self.pay4partner or not any(v > 0 for v in player.promised_resources_to_give.values()):
                     print(f"{player_label} ({player.model_name}) has already finished the game.")
-                    player_turn_data[player.name]['resources_after_trades'] = dict(player.resources)
+                    player_turn_data[player.name]['chips_after_trades'] = dict(player.resources)
                     continue
                 print(f"{player_label} ({player.model_name}) has finished but has promised to cover some moves for their partner.")
         
@@ -402,7 +402,7 @@ class Game:
                     "position": p.position,
                     "goal": p.goal,
                     "distance_to_goal": p.distance_to_goal(),
-                    "resources": dict(p.resources),
+                    "chips": dict(p.resources),
                     "has_finished": p.has_finished(),
                     "promised_to_give": dict(p.promised_resources_to_give) if self.pay4partner else None,
                     "promised_to_receive": dict(p.promised_resources_to_receive) if self.pay4partner else None,
@@ -444,13 +444,8 @@ class Game:
                 trade_result["executed"] = trade_executed
 
                 # record trade metrics
-                resources_to_offer = propose_trade.get('resources_to_offer', [])
-                resources_to_receive = propose_trade.get('resources_to_receive', [])
-                if resources_to_offer and resources_to_receive:  # Only count if actual resources specified
-                    self.total_trades_proposed += 1
-                # record trade metrics
-                resources_to_offer = propose_trade.get('resources_to_offer', [])
-                resources_to_receive = propose_trade.get('resources_to_receive', [])
+                resources_to_offer = propose_trade.get('chips_to_offer', [])
+                resources_to_receive = propose_trade.get('chips_to_receive', [])
                 if resources_to_offer and resources_to_receive:  # Only count if actual resources specified
                     self.total_trades_proposed += 1
 
@@ -465,8 +460,8 @@ class Game:
                     trade_summary = {
                         "proposer": player.name,
                         "target": other_player.name,
-                        "offered": propose_trade["resources_to_offer"],
-                        "requested": propose_trade["resources_to_receive"],
+                        "offered": propose_trade["chips_to_offer"],
+                        "requested": propose_trade["chips_to_receive"],
                         "success": trade_executed,
                         "rejected": not trade_executed,
                         "proposer_response": proposer_response,
@@ -490,7 +485,7 @@ class Game:
                 self.total_trades_failed += 1
 
         # Record resources after trades (before moves)
-        player_turn_data[player.name]['resources_after_trades'] = dict(player.resources)
+        player_turn_data[player.name]['chips_after_trades'] = dict(player.resources)
     
     
     def handle_move(self, player, player_turn_data):
@@ -582,8 +577,8 @@ class Game:
                                     player_turn_data[partner.name] = {
                                         'position_start': partner.position,
                                         'position_end': partner.position,
-                                        'resources_start': dict(partner.resources),
-                                        'resources_end': dict(partner.resources),
+                                        'chips_start': dict(partner.resources),
+                                        'chips_end': dict(partner.resources),
                                         'is_pay4partner': self.pay4partner
                                     }
                                 # Record the broken promise but don't affect the move_type
@@ -625,7 +620,7 @@ class Game:
         
         # Record final state
         player_turn_data[player.name]['position_end'] = player.position
-        player_turn_data[player.name]['resources_end'] = dict(player.resources)
+        player_turn_data[player.name]['chips_end'] = dict(player.resources)
         self.logger.log_player_turn_summary(player.name, player_turn_data[player.name])
 
         if self.with_context:
@@ -697,8 +692,8 @@ class Game:
         try:
             # Get the other player (in 2-player game, it's always the non-proposer)
             other_player = next(p for p in self.players if p.name != player.name)
-            resources_to_offer = propose_trade['resources_to_offer']
-            resources_to_receive = propose_trade['resources_to_receive']
+            resources_to_offer = propose_trade['chips_to_offer']
+            resources_to_receive = propose_trade['chips_to_receive']
 
             # Get the other player's response to the trade
             trade_accepted = other_player.accept_trade(self.grid, self, propose_trade)
@@ -743,8 +738,8 @@ class Game:
                     })
 
                 # Update game state immediately after trade execution
-                self.game_state[player.name]["resources"] = dict(player.resources)
-                self.game_state[other_player.name]["resources"] = dict(other_player.resources)
+                self.game_state[player.name]["chips"] = dict(player.resources)
+                self.game_state[other_player.name]["chips"] = dict(other_player.resources)
                 self.game_state[player.name]["promised_to_give"] = dict(player.promised_resources_to_give)
                 self.game_state[player.name]["promised_to_receive"] = dict(player.promised_resources_to_receive)
 
@@ -763,8 +758,8 @@ class Game:
                     print(f"- {target_label} has promised to cover: {dict(other_player.promised_resources_to_give)}")
 
                 # Update both players' resources_after_trades
-                player_turn_data[player.name]['resources_after_trades'] = dict(player.resources)
-                player_turn_data[other_player.name]['resources_after_trades'] = dict(other_player.resources)
+                player_turn_data[player.name]['chips_after_trades'] = dict(player.resources)
+                player_turn_data[other_player.name]['chips_after_trades'] = dict(other_player.resources)
                 
                 return True
             else:
@@ -961,7 +956,7 @@ class Game:
         - player_to_trade_with: The target player if valid
         """
         validation_result = {"is_valid": False, "message": "", "proposed trade": propose_trade}
-        required_fields = ['resources_to_offer', 'resources_to_receive']
+        required_fields = ['chips_to_offer', 'chips_to_receive']
         if not all(field in propose_trade for field in required_fields):
             validation_result['message'] = "Missing required fields in trade proposal."
             return validation_result
@@ -972,8 +967,8 @@ class Game:
             None
         )
 
-        resources_to_offer = propose_trade['resources_to_offer']  # List of tuples [(color, quantity), ...]
-        resources_to_receive = propose_trade['resources_to_receive']  # List of tuples [(color, quantity), ...]
+        resources_to_offer = propose_trade['chips_to_offer']  # List of tuples [(color, quantity), ...]
+        resources_to_receive = propose_trade['chips_to_receive']  # List of tuples [(color, quantity), ...]
 
         # Validate that the proposing player has enough resources to offer
         for resource, quantity in resources_to_offer:
@@ -1004,7 +999,7 @@ class Game:
         """Update the game state after each turn."""
         for player in self.players:
             self.game_state[player.name]["position"] = player.position
-            self.game_state[player.name]["resources"] = dict(player.resources)
+            self.game_state[player.name]["chips"] = dict(player.resources)
             self.game_state[player.name]["promised_to_give"] = dict(player.promised_resources_to_give) if self.pay4partner else None
             self.game_state[player.name]["promised_to_receive"] = dict(player.promised_resources_to_receive) if self.pay4partner else None
 
@@ -1143,7 +1138,7 @@ class Game:
         self.draw_basic_grid()
         for player_name, state in self.game_state.items():
             print(f"""{player_name} ({state['model']}):
-                  Resources: {state['resources']}""")
+                  Resources: {state['chips']}""")
             if self.pay4partner:
                 print(f"Promised to cover for: {state['promised_to_give']}")
                 print(f"Promised to be covered for: {state['promised_to_receive']}")
