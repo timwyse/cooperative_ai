@@ -106,13 +106,13 @@ class Logger(BaseLogger):
                 "model": player.model_name,
                 "start": list(player.position),
                 "goal": list(player.goal),
-                "initial_resources": dict(player.resources),
+                "initial_chips": dict(player.resources),
                 "non_cooperative_baseline": player.non_cooperative_baseline
             })
         
         self.log_data["config"] = {
             "player_models": player_models,
-            "manual_resources": manual_resources,
+            "manual_chips": manual_resources,
             "with_message_history": getattr(config, 'with_message_history', True),
             "pay4partner": getattr(config, 'pay4partner', False),
             "contract_type": getattr(config, 'contract_type', None),
@@ -207,9 +207,9 @@ class Logger(BaseLogger):
                 "start": list(player_data.get('position_start')) if player_data.get('position_start') is not None else [0, 0],
                 "end": list(player_data.get('position_end')) if player_data.get('position_end') is not None else [0, 0]
             },
-            "resources": {
-                "start": player_data.get('resources_start', {}),
-                "end": player_data.get('resources_end', {})
+            "chips": {
+                "start": player_data.get('chips_start', {}),
+                "end": player_data.get('chips_end', {})
             }
         }
         
@@ -244,19 +244,19 @@ class Logger(BaseLogger):
         
         # Add trade/arrangement data if exists
         trade_proposed = player_data.get('trade_proposed')
-        if trade_proposed and isinstance(trade_proposed, dict) and trade_proposed.get('resources_to_offer'):
+        if trade_proposed and isinstance(trade_proposed, dict) and trade_proposed.get('chips_to_offer'):
             if player_data.get('is_pay4partner', False):
                 # Pay4partner arrangement
                 player_turn_data["arrangement"] = {
-                    "promised_to_cover": trade_proposed.get('resources_to_offer', []),
-                    "requested_coverage": trade_proposed.get('resources_to_receive', []),
+                    "promised_to_cover": trade_proposed.get('chips_to_offer', []),
+                    "requested_coverage": trade_proposed.get('chips_to_receive', []),
                     "outcome": player_data.get('trade_proposal_outcome', 'none')
                 }
             else:
                 # Regular trade
                 player_turn_data["trade"] = {
-                    "offer": trade_proposed.get('resources_to_offer', []),
-                    "request": trade_proposed.get('resources_to_receive', []),
+                    "offer": trade_proposed.get('chips_to_offer', []),
+                    "request": trade_proposed.get('chips_to_receive', []),
                     "outcome": player_data.get('trade_proposal_outcome', 'rejected')  # Default to rejected instead of none
                 }
         
@@ -344,7 +344,7 @@ class Logger(BaseLogger):
                 "position": list(player.position),
                 "goal": list(player.goal),
                 "reached_goal": player.has_finished(),
-                "resources": dict(player.resources),
+                "chips": dict(player.resources),
                 "route": player.route
             }
         
