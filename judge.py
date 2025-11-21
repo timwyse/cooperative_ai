@@ -75,8 +75,8 @@ class Judge:
 
     
         if contract_type == 'strict':
-            contract_type_instructions = """Each entry should specify the tile coordinate, the giving player, the receiving player, and the resource color.  
-Make sure to read the entire discussion, and determine for each player which tiles they are asking for resources for, and what the other player is asking for in return. If the players don't specify the color of a tile, you can leave it blank or put "unknown".
+            contract_type_instructions = """Each entry should specify the tile coordinate, the giving player, the receiving player, and the chip color.  
+Make sure to read the entire discussion, and determine for each player which tiles they are asking for chips for, and what the other player is asking for in return. If the players don't specify the color of a tile, you can leave it blank or put "unknown".
 
 The JSON format must be:  
 {{
@@ -141,7 +141,7 @@ Example:
 """
         judge_message = f"""
 You are a judge in a Colored Trails negotiation.  
-Two players (Player 0 and Player 1) have discussed a possible contract to trade resources. Here is there discussion: 
+Two players (Player 0 and Player 1) have discussed a possible contract to trade chips. Here is there discussion: 
 
 Discussion:
 "{conversation_formatted}"
@@ -216,7 +216,7 @@ Your task:
     
     def check_if_move_is_in_contract(self, player, move, contract):
         message_for_judge = f"""
-You are a judge in a Colored Trails game, a 2-D grid game where players spend resources to move onto tiles. 
+You are a judge in a Colored Trails game, a 2-D grid game where players spend chips to move onto tiles of that color. 
 The two players have negotiated an agreement that specifies which tiles one player will cover (pay for) on behalf of the other. 
 
 Here is the negotiation:

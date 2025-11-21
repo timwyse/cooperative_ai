@@ -37,7 +37,7 @@ TRADE_PROPOSAL_SCHEMA = {
         "properties": {
             "rationale": {"type": "string", "maxLength": 400},
             "want_to_trade": {"type": "boolean"},
-            "resources_to_offer": {
+            "chips__to_offer": {
                 "type": "array",
                 "items": {
                     "type": "object",
@@ -49,7 +49,7 @@ TRADE_PROPOSAL_SCHEMA = {
                     "required": ["color", "quantity"]
                 }
             },
-            "resources_to_receive": {
+            "chips__to_receive": {
                 "type": "array",
                 "items": {
                     "type": "object",

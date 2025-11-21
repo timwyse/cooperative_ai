@@ -115,7 +115,7 @@ class Player:
 
     def compute_non_cooperative_baseline(self):
         path_with_fewest_resources_needed = self.best_routes(self.grid)[0]
-        resources_needed = path_with_fewest_resources_needed['resources_missing_due_to_insufficient_inventory']
+        resources_needed = path_with_fewest_resources_needed['chips_missing_due_to_insufficient_inventory']
         path_length = path_with_fewest_resources_needed['path_length_in_steps']
         if resources_needed == {}:
             return POINTS_FOR_WIN + POINTS_FOR_EXTRA_RESOURCE * (sum(self.resources.values()) - path_length)
@@ -247,8 +247,8 @@ class Player:
                 return out
 
             rationale = obj.get("rationale", "")
-            offer = coerce_side(obj.get("resources_to_offer", []))
-            receive = coerce_side(obj.get("resources_to_receive", []))
+            offer = coerce_side(obj.get("chips_to_offer", []))
+            receive = coerce_side(obj.get("chips_to_receive", []))
 
             if not offer and not receive:
                 return None
@@ -257,8 +257,8 @@ class Player:
 
             trade_proposal = {
                 "rationale": rationale,
-                "resources_to_offer": offer,
-                "resources_to_receive": receive
+                "chips_to_offer": offer,
+                "chips_to_receive": receive
             }
 
             cleaned = self.clean_trade_proposal(trade_proposal, grid, game)
@@ -267,8 +267,8 @@ class Player:
                 return None
             trade_proposal = cleaned
 
-            offer_str = ", ".join(f"{c}:{q}" for c, q in trade_proposal["resources_to_offer"])
-            recv_str = ", ".join(f"{c}:{q}" for c, q in trade_proposal["resources_to_receive"])
+            offer_str = ", ".join(f"{c}:{q}" for c, q in trade_proposal["chips_to_offer"])
+            recv_str = ", ".join(f"{c}:{q}" for c, q in trade_proposal["chips_to_receive"])
             rationale = trade_proposal.get("rationale", "")
             trade_proposal["message"] = f"{self.name} offers [{offer_str}] for [{recv_str}]"
             if rationale:
@@ -282,12 +282,12 @@ class Player:
                 print(f"- Rationale: {rationale}")
             if self.pay4partner:
                 print(f"\n{player_label} proposes Pay for Partner trade:")
-                print(f"- Offering to cover: {trade_proposal['resources_to_offer']}")
-                print(f"- Requesting to be covered for: {trade_proposal['resources_to_receive']}")
+                print(f"- Offering to cover: {trade_proposal['chips_to_offer']}")
+                print(f"- Requesting to be covered for: {trade_proposal['chips_to_receive']}")
             else:
                 print(f"\n{player_label} proposes trade:")
-                print(f"- Offering: {trade_proposal['resources_to_offer']}")
-                print(f"- Requesting: {trade_proposal['resources_to_receive']}")
+                print(f"- Offering: {trade_proposal['chips_to_offer']}")
+                print(f"- Requesting: {trade_proposal['chips_to_receive']}")
 
             return trade_proposal
 
@@ -304,8 +304,8 @@ class Player:
         if self.model_name == 'human':
             return HumanPlayer.accept_trade(self, grid, game, trade)
 
-        resources_to_offer = trade['resources_to_offer']
-        resources_to_receive = trade['resources_to_receive']
+        resources_to_offer = trade['chips_to_offer']
+        resources_to_receive = trade['chips_to_receive']
 
         accept_message = f"{self.name} accepted the trade proposal. \n"
         reject_message = f"{self.name} rejected the trade proposal. \n"

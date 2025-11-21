@@ -88,7 +88,7 @@ def format_turn_summary_for_player(turn_summary, turn_number, player_name, pay4p
         for state_player_name, state in turn_summary["player_states"].items():
             player_ref = "You" if state_player_name == player_name else "The other player"
             status = "FINISHED!" if state['has_finished'] else f"at {state['position']}"
-            summary.append(f"- {player_ref}: {status}, chips: {state['resources']}")
+            summary.append(f"- {player_ref}: {status}, chips: {state['chips']}")
             if pay4partner:
                 if state_player_name == player_name:
                     # For the current player
@@ -105,7 +105,7 @@ def format_turn_summary_for_player(turn_summary, turn_number, player_name, pay4p
 def generate_turn_context(game, player):
     """
     Generates a complete context message about the current turn, including:
-    - Current game state (position, resources, etc.)
+    - Current game state (position, chips, etc.)
     - Recent turn history (last 3 turns)
     - Board layout
     """

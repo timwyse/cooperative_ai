@@ -45,20 +45,20 @@ def compute_best_routes(grid, start_pos, goal_pos, resources):
         scored.append({
             "path": p,
             "path_length_in_steps": len(p) - 1,
-            "resources_required_for_path": dict(needed),
-            "resources_missing_due_to_insufficient_inventory": shortfall,
+            "chips_required_for_path": dict(needed),
+            "chips_missing_due_to_insufficient_inventory": shortfall,
         })
 
     fewest = sorted(
         scored,
-        key=lambda x: (sum(x["resources_missing_due_to_insufficient_inventory"].values()),
+        key=lambda x: (sum(x["chips_missing_due_to_insufficient_inventory"].values()),
                        x["path_length_in_steps"])
     )[0]
 
     shortest_with_fewest = sorted(
         scored,
         key=lambda x: (x["path_length_in_steps"],
-                       sum(x["resources_missing_due_to_insufficient_inventory"].values()))
+                       sum(x["chips_missing_due_to_insufficient_inventory"].values()))
     )[0]
 
     return [fewest, shortest_with_fewest]
