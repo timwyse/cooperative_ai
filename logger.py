@@ -61,14 +61,14 @@ class Logger(BaseLogger):
         
         # Init event log with clean structure
         self.log_data = {
-            "config": {},  # Will be populated by log_game_config
+            "config": {},  # log_game_config
             "game": {
                 "id": self.game_id,
                 "start_timestamp": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
                 "end_timestamp": None,
-                "turns": {}  # Will be populated by log_player_turn_summary
+                "turns": {}  # log_player_turn_summary
             },
-            "final_state": None  # Will be populated by log_game_end
+            "final_state": None  # log_game_end
         }
         
         # Init verbose log with clean structure
@@ -82,12 +82,12 @@ class Logger(BaseLogger):
         }
         
         # Write initial logs
-        self._save_event_log()  # Write initial event log
-        self._save_verbose_log()  # Write initial verbose log
+        self._save_event_log()
+        self._save_verbose_log()
         self.turn = 0
     
     def _generate_unique_game_id(self):
-        """Game id based on timestamp."""
+        """based on timestamp."""
         return datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     
     def log_game_config(self, config, players, grid):
@@ -212,6 +212,23 @@ class Logger(BaseLogger):
                 "end": player_data.get('chips_end', {})
             }
         }
+        # Log trades first
+        trade_proposed = player_data.get('trade_proposed')
+        if trade_proposed and isinstance(trade_proposed, dict) and trade_proposed.get('chips_to_offer'):
+            if player_data.get('is_pay4partner', False):
+                # Pay4partner arrangement
+                player_turn_data["arrangement_proposed"] = {
+                    "promised_to_cover": trade_proposed.get('chips_to_offer', []),
+                    "requested_coverage": trade_proposed.get('chips_to_receive', []),
+                    "outcome": player_data.get('trade_proposal_outcome', 'none')
+                }
+            else:
+                # Regular trade
+                player_turn_data["trade"] = {
+                    "offer": trade_proposed.get('chips_to_offer', []),
+                    "request": trade_proposed.get('chips_to_receive', []),
+                    "outcome": player_data.get('trade_proposal_outcome', 'rejected')  # Default to rejected instead of none
+                }
         
         # Add pay4partner actions if any
         if player_data.get('broke_promise_for'):
@@ -241,24 +258,6 @@ class Logger(BaseLogger):
                     "covered_color": player_data.get('covered_color')
                 })
             player_turn_data.update(move_info)
-        
-        # Add trade/arrangement data if exists
-        trade_proposed = player_data.get('trade_proposed')
-        if trade_proposed and isinstance(trade_proposed, dict) and trade_proposed.get('chips_to_offer'):
-            if player_data.get('is_pay4partner', False):
-                # Pay4partner arrangement
-                player_turn_data["arrangement"] = {
-                    "promised_to_cover": trade_proposed.get('chips_to_offer', []),
-                    "requested_coverage": trade_proposed.get('chips_to_receive', []),
-                    "outcome": player_data.get('trade_proposal_outcome', 'none')
-                }
-            else:
-                # Regular trade
-                player_turn_data["trade"] = {
-                    "offer": trade_proposed.get('chips_to_offer', []),
-                    "request": trade_proposed.get('chips_to_receive', []),
-                    "outcome": player_data.get('trade_proposal_outcome', 'rejected')  # Default to rejected instead of none
-                }
         
         # Add to turn data
         players_bucket = self.log_data["game"]["turns"][turn]["players"]
