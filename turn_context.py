@@ -7,15 +7,19 @@ def format_turn_summary_for_player(turn_summary, turn_number, player_name, pay4p
     """Format turn summary with anonymized player names"""
     summary = [f"\n=== TURN {turn_number} ==="]
     
-    # Trades
+    # Trades/P4P Arrangements
     if "trades" in turn_summary and turn_summary["trades"]:
+        trade_word = "arrangement" if pay4partner else "trade"
+        offer_word = "offered to cover" if pay4partner else "offered"
+        request_word = "requested to cover" if pay4partner else "requested"
+        
         for trade in turn_summary["trades"]:
             proposer = "You" if trade['proposer'] == player_name else "The other player"
             target = "you" if trade['target'] == player_name else "the other player"
             
-            summary.append(f"{proposer} proposed trade to {target}:")
-            summary.append(f"- {proposer} offered: {trade['offered']}")
-            summary.append(f"- {proposer} requested: {trade['requested']}")
+            summary.append(f"{proposer} proposed {trade_word} to {target}:")
+            summary.append(f"- {proposer} {offer_word}: {trade['offered']}")
+            summary.append(f"- {proposer} {request_word}: {trade['requested']}")
             
             # Show proposer's response if it's the current player
             if trade['proposer'] == player_name:
@@ -26,19 +30,19 @@ def format_turn_summary_for_player(turn_summary, turn_number, player_name, pay4p
             if trade['target'] == player_name:
                 # You were the target, so you made the decision
                 if trade.get("success", False):
-                    summary.append("You ACCEPTED the trade")
+                    summary.append(f"You ACCEPTED the {trade_word}")
                     if with_message_history:
                         summary.append(f"You said: {trade.get('target_response', '')}")
                 elif trade.get("rejected", False):
-                    summary.append("You REJECTED the trade")
+                    summary.append(f"You REJECTED the {trade_word}")
                     if with_message_history:
                         summary.append(f"You said: {trade.get('target_response', '')}")
             else:
                 # The other player was the target, so they made the decision
                 if trade.get("success", False):
-                    summary.append("The other player ACCEPTED the trade")
+                    summary.append(f"The other player ACCEPTED the {trade_word}")
                 elif trade.get("rejected", False):
-                    summary.append("The other player REJECTED the trade")
+                    summary.append(f"The other player REJECTED the {trade_word}")
     
     # Pay4Partner Actions
     if "pay4partner_actions" in turn_summary and turn_summary["pay4partner_actions"]:
