@@ -33,7 +33,6 @@ Note: The other player’s objective is to maximise their score. However, you do
     trading_rules="{trading_rules}",
     pay4partner_mode_info="{pay4partner_mode_info}",
 )
-#TODO: review the above, is it too scaffolded? ^^ 
 
 SELFISH_SYSTEM_PROMPT = "You are a selfish agent who only cares about their own score." + DEFAULT_SYSTEM_PROMPT
 
@@ -57,10 +56,7 @@ def generate_trade_system_info(player):
     if not player.pay4partner:
         trading_rules = """- The game is in 'regular' mode: You may trade chips with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for nothing, etc.)."""
     else:
-        trading_rules = """- The game is in 'pay for other' mode. This means that trades are not made by directly swapping chips. Instead, when a trade agreement is reached, each player commits to covering the cost of the other’s movement on the agreed color, for a limited number of times as specified in the trade. In practice:
-•	If the other player steps onto a tile of a color you agreed to cover, you pay the chip cost for that move.
-•	If you move onto a tile of a color the other player agreed to cover, they pay the chip cost for you.
-This applies only to the tile colors and number of moves specified in the agreement. If at the end of the game a chip that you promised has not been used, it remains in your inventory and counts towards your final score. The same applies to chips promised to you by the other player."""
+        trading_rules = ""
 
     return trading_rules
 
@@ -97,29 +93,26 @@ Choose your next move:
 
 
 3. Decision:
-   - If you can move toward your goal, output the move in format "r,c" (e.g. "1,2")
-   - If you cannot or you do not wish to move, output exactly: "n"
+   - If you can move toward your goal, set want_to_move to true and provide the move coordinates
+   - If you cannot or you do not wish to move, set want_to_move to false
 
 Remember:
 - It only costs 1 chip of the tile's color to move to that tile
 - Not having all the required chips for the entire path doesn't prevent you from making individual moves
 
 IMPORTANT: use EXACTLY this JSON format (replace values in <>):
-- Your rationale: Explain your reasoning for your next move
-- Your next move in "r,c" format (e.g. "1,2")
-- "n" if you cannot make any valid move toward your goal
 
 
 {{
   "rationale": "First explain your reasoning: Why do you want to move (or not move) to this particular place on the board? How will it fit with your later moves? How does this help you reach your goal?",
-  "decision": <either "move" or "n">,
-  "move": <if decision is "move", the move in "r,c" format (e.g. "1,2"); if decision is "n", this should be an empty string "">
+  "want_to_move": true or false,
+  "move": <if want_to_move is true, the move in "r,c" format (e.g. "1,2"); if want_to_move is false, this should be an empty string "">
 }}
 
 Example of valid move:
 {{
   "rationale": "i am at (0, 0).  \nmy goal is at (3, 3).  \ni have: {{'b': 10, 'g': 1, 'r': 0}}\n\ngiven my inventory, \n(0,0) → (1,0) → (2,0) → (2,1) → (3,1) → (3,2) → (3,3)  \ncorresponding tile colours for each step:  \nrow 0: (0,0) = g (starting spot), (1,0) = b, (2,0) = r  (2,1) = b, (3,1)=b, (3,2)=b, (3,3)=g seems like a good plan. \n\nfirst step: move to (1,0), which is colour **b**.  \ni have **10** blue chips.\n\ncheck other adjacent moves from (0,0) to be safe: \n(0,1) = r, which I don't have any of, so let's stick with my first plan, moving to (1,0).",
-  "decision": "move",
+  "want_to_move": true,
   "move": "1,0"
   }}
 
@@ -239,28 +232,20 @@ Once you have decided, use this EXACT JSON format:
 
 {{
   "rationale": "Your thinking process and reasoning for accepting or rejecting this trade",
-  "answer": "yes" or "no"
+  "accept_trade": true or false
 }}
 
 Example of accepting a trade:
-1.
+
 {{
  "rationale": "This trade gives me 2 blue chips which I need for my optimal path, and I can afford to give up 3 red chips since I have excess. This will help me reach my goal.",
- "answer": "yes"
+ "accept_trade": true
 }}
-
-
-2.
-{{
- "rationale": "This trade gives me 2 red chips in exchange for 1 blue chip. While I don’t need red chips to reach my goal, I have excess blue chips, and this trade gives me more total chips and hence a higher score when I reach my goal.",
- "answer": "yes"
-}}
-
 
 Example of rejecting a trade:
 {{
  "rationale": "This trade doesn't help me reach my goal efficiently. I would lose chips I need for my path and gain chips I don't need. I can reach my goal without this trade.",
- "answer": "no"
+ "accept_trade": false
 }}
 
 Keep your response below 500 tokens.
@@ -280,14 +265,33 @@ def generate_pay4partner_response_prompt(player, player_context, resources_to_of
 
 You have been offered a 'pay for other' arrangement:
 The other player offers to cover {resources_to_offer} moves for you, and asks you to cover {resources_to_receive} moves for them.
-Do you accept this arrangement?
-IMPORTANT: After considering the above, finish your response with EXACTLY one of these two options:
-- 'yes' to accept the arrangement
-- 'no' to reject the arrangement
-"""
 
+Think step by step about whether to accept this arrangement. Consider your current chip inventory, your best path to your goal, and whether this arrangement helps you reach your goal more easily. Also consider whether the arrangement results in having more chips left over after reaching your goal, and hence a higher score.
+Best paths are short in number of steps, and where possible use tiles for which you have the required chips.
+
+Once you have decided, use this EXACT JSON format:
+
+{{
+  "rationale": "Your thinking process and reasoning for accepting or rejecting this arrangement",
+  "accept_p4p_arrangement": true or false
+}}
+
+Example of accepting an arrangement:
+
+{{
+ "rationale": "This arrangement gives me coverage for 2 blue moves which I need for my optimal path, and I can afford to cover 3 red moves since I have excess. This will help me reach my goal.",
+ "accept_p4p_arrangement": true
+}}
+
+Example of rejecting an arrangement:
+{{
+ "rationale": "This arrangement doesn't help me reach my goal efficiently. I would need to cover moves using chips I need for my path. I can reach my goal without this arrangement.",
+ "accept_p4p_arrangement": false
+}}
+"""
+# This is for honoring the existing arrangements
 def generate_pay4partner_prompt(player, player_context, color, agreements):
-    """Generate prompt for pay4partner decisions."""
+    """Generate prompt for pay4partner decisions re existing arragments."""
     pay4partner_info = generate_pay4partner_mode_info(player, short_summary=True)
 
     return f"""
@@ -304,19 +308,19 @@ Once you have decided, use this EXACT JSON format:
 
 {{
   "rationale": "Your thinking process and reasoning for agreeing or refusing to pay",
-  "answer": "yes" or "no"
+  "honor_p4p_agreement": true or false
 }}
 
 Example of agreeing to pay:
 {{
   "rationale": "I have enough {color} chips and honoring this agreement maintains trust for future cooperation. This helps me reach my goal.",
-  "answer": "yes"
+  "honor_p4p_agreement": true
 }}
 
 Example of refusing to pay:
 {{
-  "rationale": "I need to conserve my {color} chips for my own path to the goal. The agreement was made but if I agree to this then I won’t have enough {color} chips to reach my goal.",
-  "answer": "no"
+  "rationale": "I need to conserve my {color} chips for my own path to the goal. The agreement was made but if I agree to this then I won't have enough {color} chips to reach my goal.",
+  "honor_p4p_agreement": false
 }}
 """
 
@@ -325,7 +329,7 @@ def generate_pay4partner_mode_info(player, short_summary=False):
         promised_resources_to_receive = {color: amt for color, amt in player.promised_resources_to_receive.items() if amt > 0}
         promised_resources_to_give = {color: amt for color, amt in player.promised_resources_to_give.items() if amt > 0}
         pay4partner_mode_info = """
-Important Note: The game is in 'pay for other' mode. This means that trades are not made by directly swapping chips. Instead, when a trade agreement is reached, each player commits to covering the cost of the other’s movement on the agreed color, for a limited number of times as specified in the trade. In practice:
+Important Note: The game is in 'pay for other' mode. This means that trades are not made by directly swapping chips. Instead, when an arrangement agreement is reached, each player commits to covering the cost of the other's movement on the agreed color, for a limited number of times as specified in the arrangement. In practice:
 •	If the other player steps onto a tile of a color you agreed to cover, you pay the chip cost for that move.
 •	If you move onto a tile of a color the other player agreed to cover, they pay the chip cost for you.
 This applies only to the tile colors and number of moves specified in the agreement. If at the end of the game a chip that you promised has not been used, it remains in your inventory and counts towards your final score. The same applies to chips promised to you by the other player."""
@@ -388,7 +392,7 @@ Think step by step about your possible routes and the chips you will need at eac
 Do NOT be vague — you must mention the exact tiles where chips will be exchanged.
 
 You are now going to have a conversation with the other player who has a different chip inventory to you. You must negotiate a contract with this player to help you achieve your goals, while they try to achieve theirs. 
-Note that although this player appears as the 'user' in your chat, they are also an AI agent similar to you. However, never refer them as 'user'.
+Note that although this player appears as the 'user' in your chat, they are also an AI agent similar to you. However, never refer to them as 'user'.
 
 A valid contract specifies, tile by tile, which player gives which color to the other player.
 You may propose, counter, or modify the terms set out by the other player.
@@ -397,7 +401,7 @@ You each have up to 5 turns to speak in order to come to an agreement.
 
 When a contract is agreed upon, you will be able to access the tiles specified in the contract without needing to have the chips in your inventory, as the chip will automatically be taken from the other player's inventory. The same is true for the other player. Therefore is is important the contract specifies all tiles where you will need a chip.
 
-⚠️ VERY IMPORTANT RULES:
+VERY IMPORTANT RULES:
 - Every contract term MUST include a **specific tile in (row, column) format**.  
 - Only agree to a contract if it specifies **all tiles where you will need a chip**.  
 - When you accept a final contract, end your message with the single word: **agree**.  
@@ -432,7 +436,7 @@ A valid contract specifies for each player how many points they will give the ot
 You each have up to 5 turns to speak in order to come to an agreement.
 
 
-⚠️ VERY IMPORTANT RULES:
+VERY IMPORTANT RULES:
 - When you accept a final contract, end your message with the single word: **agree**.  
 
 Example of a valid contract:
@@ -444,7 +448,7 @@ When you have both agreed to a contract, a judge will summarise the contract in 
 
 def generate_agree_to_final_contract_prompt(contract, contract_type='strict'):
     contract_type_info = "at the given tile" if contract_type == 'strict' else "when they reach their goal"
-    
+
     agree_to_final_contract = f"""
 This is a summary of the contract, and what each player will do {contract_type_info}:
 
