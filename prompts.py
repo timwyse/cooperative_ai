@@ -57,10 +57,7 @@ def generate_trade_system_info(player):
     if not player.pay4partner:
         trading_rules = """- The game is in 'regular' mode: You may trade chips with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for nothing, etc.)."""
     else:
-        trading_rules = """- The game is in 'pay for other' mode. This means that trades are not made by directly swapping chips. Instead, when a trade agreement is reached, each player commits to covering the cost of the other’s movement on the agreed color, for a limited number of times as specified in the trade. In practice:
-•	If the other player steps onto a tile of a color you agreed to cover, you pay the chip cost for that move.
-•	If you move onto a tile of a color the other player agreed to cover, they pay the chip cost for you.
-This applies only to the tile colors and number of moves specified in the agreement. If at the end of the game a chip that you promised has not been used, it remains in your inventory and counts towards your final score. The same applies to chips promised to you by the other player."""
+        trading_rules = ""
 
     return trading_rules
 
