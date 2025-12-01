@@ -47,7 +47,7 @@ class GameConfig:
     temperature: float = 1.0
     with_context: bool = True  # turn history between players (goes with system role prompt)
     with_message_history: bool = True  # conversation history for each player (goes with assistant role prompt)
-    system_prompt: Optional[str] = DEFAULT_SYSTEM_PROMPT  # custom system prompt to override DEFAULT_SYSTEM_PROMPT
+    system_prompts: Optional[dict] = field(default_factory=lambda: {'0': DEFAULT_SYSTEM_PROMPT, '1': DEFAULT_SYSTEM_PROMPT})  # system prompts for each player
 
     
     # DISPLAY PARAMETERS
