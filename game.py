@@ -114,8 +114,8 @@ class Game:
         self.logger.log_game_config(self.config, self.players, self.grid)
         # Log system prompt configuration
         self.logger.log_system_prompts({
-            "base_template_type": "SELFISH" if "SELFISH" in str(config.system_prompt) else "DEFAULT",
-            "template": config.system_prompt,
+            "base_template_type": "SELFISH" if "SELFISH" in str(config.system_prompts['0']) else "DEFAULT",
+            "template": {0: config.system_prompts['0'], 1: 'same_as_0' if config.system_prompts['1'] == config.system_prompts['0'] else config.system_prompts['1']},
             "constants": {
                 "POINTS_FOR_WIN": POINTS_FOR_WIN,
                 "POINTS_FOR_EXTRA_RESOURCE": POINTS_FOR_EXTRA_RESOURCE

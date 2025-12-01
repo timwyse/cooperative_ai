@@ -88,10 +88,13 @@ class Player:
         self.pay4partner_log = []
         self.pay4partner_mode_sys_prompt = prompts.generate_pay4partner_mode_info(self, short_summary=True)
         self.trading_rules = prompts.generate_trade_system_info(self)
-        self.system_prompt = config.system_prompt.format(
+        # self.system_prompt = config.system_prompt.format(
+        #     pay4partner_mode_info=self.pay4partner_mode_sys_prompt,
+        #     trading_rules=self.trading_rules
+        # )
+        self.system_prompt = config.system_prompts[self.id].format(
             pay4partner_mode_info=self.pay4partner_mode_sys_prompt,
-            trading_rules=self.trading_rules
-        )
+            trading_rules=self.trading_rules)
 
         # message history
         self.with_message_history = config.with_message_history
