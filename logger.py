@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 import json
+import copy
 import prompts
 
 from pathlib import Path
@@ -399,6 +400,10 @@ class Logger(BaseLogger):
         }
 
 
+        # Log final contract state if contract exists
+        if hasattr(game, 'contract') and game.contract is not None:
+            self.log_final_contract_state(game.contract)
+        
         # Save final JSON
         self._save_event_log()
         self._save_verbose_log()
@@ -424,9 +429,9 @@ class Logger(BaseLogger):
         # Initialize turn in verbose log if not already present
         if turn not in self.verbose_log_data["game"]["turns"]:
             self.verbose_log_data["game"]["turns"][turn] = {}
-        # Log the negotiation details
+        # Log the negotiation details with deep copy to preserve initial state
         self.verbose_log_data["game"]["turns"][turn]["contract_negotiation"] = {
-                    "judge_contract": judge_contract,
+                    "judge_contract": copy.deepcopy(judge_contract),
                     "agreement_status": agreement_status,
                     "conversation_history_0": history_0,
                     "conversation_history_1": history_1,
@@ -437,6 +442,51 @@ class Logger(BaseLogger):
 
         # Save the verbose log
         self._save_verbose_log()
+        
+        # Also log contract to event log (simplified version without conversation history)
+        if turn not in self.log_data["game"]["turns"]:
+            self.log_data["game"]["turns"][turn] = {"players": {}}
+        
+        self.log_data["game"]["turns"][turn]["contract"] = {
+            "judge_contract": copy.deepcopy(judge_contract),
+            "agreement_status": agreement_status,
+            "player_0_agreed": agree_0.get("parsed", {}).get("status") if agree_0 else None,
+            "player_1_agreed": agree_1.get("parsed", {}).get("status") if agree_1 else None,
+        }
+        
+        # Save the event log
+        self._save_event_log()
+    
+    def log_final_contract_state(self, contract):
+        """
+        Log the final state of the contract at game end, showing which tiles were used.
+        This is stored separately from the initial contract logged in turn 0.
+        """
+        # Add to verbose log
+        if "final_contract_state" not in self.verbose_log_data["game"]:
+            self.verbose_log_data["game"]["final_contract_state"] = {}
+        
+        self.verbose_log_data["game"]["final_contract_state"] = {
+            "contract": copy.deepcopy(contract),
+            "summary": {
+                "total_tiles": len(contract),
+                "tiles_used": sum(1 for tile in contract.values() if tile.get("status") == "used"),
+                "tiles_unused": sum(1 for tile in contract.values() if tile.get("status") == "unused")
+            }
+        }
+        
+        # Add to event log
+        if "final_contract_state" not in self.log_data["game"]:
+            self.log_data["game"]["final_contract_state"] = {}
+        
+        self.log_data["game"]["final_contract_state"] = {
+            "contract": copy.deepcopy(contract),
+            "summary": {
+                "total_tiles": len(contract),
+                "tiles_used": sum(1 for tile in contract.values() if tile.get("status") == "used"),
+                "tiles_unused": sum(1 for tile in contract.values() if tile.get("status") == "unused")
+            }
+        }
 
     def log_contract_system_prompt(self, player_id, contract_type, system_prompt):
         """Log system prompts used for contract negotiation"""
