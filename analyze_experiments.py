@@ -103,9 +103,22 @@ def load_experiment_data(experiment_dir="logs/experiments/per_grid"):
             p4p = 'p4ptrue' in config_dir
             contract = config_parts[-1] if len(config_parts) > 3 else 'none'
 
-            # Grid/bucket from directory structure
+            # Grid/bucket/system_prompt from directory structure
             grid_dir = event_log.parent.parent.parent.name  # e.g., grid_000
             bucket_dir = event_log.parent.parent.parent.parent.name  # e.g., Independent_Both_have_optimal_paths
+            system_prompt_dir = event_log.parent.parent.parent.parent.parent.name  # e.g., defaultSP_default_sp
+            
+            # Extract system prompt type from directory name (e.g., "defaultSP_default_sp" -> "default")
+            system_prompt = "default"  # default value
+            if "SP_" in system_prompt_dir and "_sp" in system_prompt_dir.lower():
+                # Extract the part between "SP_" and "_sp"
+                parts = system_prompt_dir.split("SP_")
+                if len(parts) > 1:
+                    prompt_part = parts[1].split("_sp")[0]
+                    system_prompt = prompt_part
+            elif system_prompt_dir not in ['FOUR_1-FOUR_1', 'per_grid', 'experiments', 'logs']:
+                # If it's not a known directory name, use it as-is
+                system_prompt = system_prompt_dir
 
             # turns may be list/dict/None
             turns_obj = (data.get('game') or {}).get('turns', [])
@@ -117,6 +130,7 @@ def load_experiment_data(experiment_dir="logs/experiments/per_grid"):
                 'Grid ID': metadata.get('grid_id', grid_dir.replace('grid_', '')),
                 'Config ID': config_dir,
                 'Run ID': run_id,
+                'System Prompt': system_prompt,
                 'Context': metadata.get('config', {}).get('with_context', context),
                 'Fog of War': metadata.get('config', {}).get('fog_of_war', fog),
                 'Grid': metadata.get('grid', ''),
@@ -224,4 +238,9 @@ def analyze_experiments(experiment_dir=None):
 
 
 if __name__ == "__main__":
-    analyze_experiments()
+    import argparse
+    parser = argparse.ArgumentParser(description='Analyze experiment results')
+    parser.add_argument('--dir', type=str, default="logs/experiments/per_grid",
+                        help='Experiment directory to analyze (default: logs/experiments/per_grid)')
+    args = parser.parse_args()
+    analyze_experiments(args.dir)
