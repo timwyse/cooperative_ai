@@ -7,23 +7,23 @@ MOVE_DECISION_SCHEMA = {
         "additionalProperties": False,
         "properties": {
             "rationale": {"type": "string", "maxLength": 1000},
-            "decision": {"type": "string", "enum": ["move", "n"]},
+            "want_to_move": {"type": "boolean"},
             # Required always; content rules:
-            # - if decision == "move": must be "r,c"
-            # - if decision == "n":    must be "" (empty)
+            # - if want_to_move == true: must be "r,c"
+            # - if want_to_move == false: must be "" (empty)
             "move": {
                 "type": "string",
                 "pattern": r"^(?:-?\d+\s*,\s*-?\d+)?$"
             }
         },
-        "required": ["rationale", "decision", "move"]
+        "required": ["rationale", "want_to_move", "move"]
     },
     "strict": True
 }
 
 ANTHROPIC_MOVE_TOOL = {
     "name": "submit_move",
-    "description": "Choose next move or 'n' if no valid move toward goal.",
+    "description": "Choose next move or indicate you don't want to move.",
     "input_schema": MOVE_DECISION_SCHEMA["schema"],
 }
 
@@ -75,6 +75,29 @@ ANTHROPIC_TRADE_TOOL = {
 
 
 
+# For trade responses
+TRADE_RESPONSE_SCHEMA = {
+    "name": "trade_response",
+    "schema": {
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {
+            "rationale": {"type": "string", "maxLength": 500},
+            "accept_trade": {"type": "boolean"}
+        },
+        # IMPORTANT: OpenAI structured outputs requires ALL properties to be in `required`
+        "required": ["rationale", "accept_trade"]
+    },
+    "strict": True
+}
+
+ANTHROPIC_TRADE_RESPONSE_TOOL = {
+    "name": "trade_response",
+    "description": "Decide whether to accept or reject the proposed trade.",
+    "input_schema": TRADE_RESPONSE_SCHEMA["schema"],
+}
+
+
 YES_NO_SCHEMA = {
     "name": "yes_no",
     "schema": {
@@ -94,6 +117,69 @@ ANTHROPIC_YESNO_TOOL = {
     "name": "yes_no",
     "description": "Answer yes or no to the proposed trade, with a brief justification.",
     "input_schema": YES_NO_SCHEMA["schema"],
+}
+
+# For pay4partner arrangement responses
+PAY4PARTNER_ARRANGEMENT_SCHEMA = {
+    "name": "pay4partner_arrangement",
+    "schema": {
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {
+            "rationale": {"type": "string", "maxLength": 500},
+            "accept_p4p_arrangement": {"type": "boolean"}
+        },
+        "required": ["rationale", "accept_p4p_arrangement"]
+    },
+    "strict": True
+}
+
+ANTHROPIC_PAY4PARTNER_ARRANGEMENT_TOOL = {
+    "name": "pay4partner_arrangement",
+    "description": "Decide whether to accept or reject the pay4partner arrangement.",
+    "input_schema": PAY4PARTNER_ARRANGEMENT_SCHEMA["schema"],
+}
+
+# For pay4partner honor promise (when asked to pay)
+PAY4PARTNER_HONOR_SCHEMA = {
+    "name": "pay4partner_honor",
+    "schema": {
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {
+            "rationale": {"type": "string", "maxLength": 500},
+            "honor_p4p_agreement": {"type": "boolean"}
+        },
+        "required": ["rationale", "honor_p4p_agreement"]
+    },
+    "strict": True
+}
+
+ANTHROPIC_PAY4PARTNER_HONOR_TOOL = {
+    "name": "pay4partner_honor",
+    "description": "Decide whether to honor the pay4partner agreement and pay for the partner's move.",
+    "input_schema": PAY4PARTNER_HONOR_SCHEMA["schema"],
+}
+
+# Generic boolean answer schema (kept for judge and any other generic uses)
+BOOLEAN_ANSWER_SCHEMA = {
+    "name": "boolean_answer",
+    "schema": {
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {
+            "rationale": {"type": "string", "maxLength": 500},
+            "answer": {"type": "boolean"}
+        },
+        "required": ["rationale", "answer"]
+    },
+    "strict": True
+}
+
+ANTHROPIC_BOOLEAN_ANSWER_TOOL = {
+    "name": "boolean_answer",
+    "description": "Answer true or false to the question, with a brief justification.",
+    "input_schema": BOOLEAN_ANSWER_SCHEMA["schema"],
 }
 
 

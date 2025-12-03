@@ -18,9 +18,15 @@ from utils import get_last_alphabetic_word
 from schemas import (
     MOVE_DECISION_SCHEMA,
     TRADE_PROPOSAL_SCHEMA,
+    TRADE_RESPONSE_SCHEMA,
+    PAY4PARTNER_ARRANGEMENT_SCHEMA,
+    PAY4PARTNER_HONOR_SCHEMA,
     YES_NO_SCHEMA,
     ANTHROPIC_MOVE_TOOL,
     ANTHROPIC_TRADE_TOOL,
+    ANTHROPIC_TRADE_RESPONSE_TOOL,
+    ANTHROPIC_PAY4PARTNER_ARRANGEMENT_TOOL,
+    ANTHROPIC_PAY4PARTNER_HONOR_TOOL,
     ANTHROPIC_YESNO_TOOL,
 )
 
@@ -145,12 +151,10 @@ class Player:
     def has_finished(self):
         return self.position == self.goal
 
-    # ---------- Labels / context ----------
     def get_player_label(self, game):
         return self.name
 
     def best_routes(self, grid):
-        """wrapper to player_helper"""
         return compute_best_routes(grid, self.position, self.goal, self.resources)
 
     def format_turn_summary(self, turn_summary, turn_number, with_message_history=False):
@@ -161,7 +165,6 @@ class Player:
         from turn_context import generate_turn_context
         return generate_turn_context(game, self)
 
-    # ---------- Decision-making ----------
     def come_up_with_move(self, game, grid):
         if self.model_name == 'human':
             return HumanPlayer.get_move(self, grid)
@@ -190,11 +193,11 @@ class Player:
 
         # Validate + return
         try:
-            decision = move_obj.get("decision")
-            if decision == "n":
+            want_to_move = move_obj.get("want_to_move")
+            if not isinstance(want_to_move, bool):
+                raise ValueError("Missing/invalid 'want_to_move' (expected boolean)")
+            if not want_to_move:
                 return None
-            if decision != "move":
-                raise ValueError("Missing/invalid 'decision'")
             r_str, c_str = [s.strip() for s in move_obj["move"].strip().split(",")]
             r, c = int(r_str), int(c_str)
 
@@ -329,19 +332,25 @@ class Player:
         self.game.logger.log_player_prompt(self.name, "trade_response", self.system_prompt, current_messages[-1]["content"])
 
         # Make API call - retries in case of trade response parsing error happen in model_adapter.py
-        schema_or_tool = ANTHROPIC_YESNO_TOOL if self.model_api == "anthropic" else YES_NO_SCHEMA
+        # Use different schemas based on pay4partner mode
+        if self.pay4partner:
+            schema_or_tool = ANTHROPIC_PAY4PARTNER_ARRANGEMENT_TOOL if self.model_api == "anthropic" else PAY4PARTNER_ARRANGEMENT_SCHEMA
+            field_name = "accept_p4p_arrangement"
+        else:
+            schema_or_tool = ANTHROPIC_TRADE_RESPONSE_TOOL if self.model_api == "anthropic" else TRADE_RESPONSE_SCHEMA
+            field_name = "accept_trade"
+            
         try:
             parsed, resp_raw = self._structured(current_messages, schema_or_tool=schema_or_tool, max_tokens=256)
             if not parsed:
                 raise ValueError("Failed to parse structured response")
 
-            answer = parsed.get("answer", "").lower()
-            if answer not in ["yes", "no"]:
-                raise ValueError(f"Invalid answer value: {answer}")
+            will_accept = parsed.get(field_name)
+            if not isinstance(will_accept, bool):
+                raise ValueError(f"Invalid {field_name} value: {will_accept}. Expected boolean.")
             
-            status = "accepted" if answer == "yes" else "rejected"
+            status = "accepted" if will_accept else "rejected"
             reasoning = parsed.get("rationale", "No rationale provided")
-            will_accept = (answer == "yes")
 
             response_data = {
                 "raw": resp_raw,
@@ -362,7 +371,7 @@ class Player:
                 }
             }
 
-        # Log the response only after we have both prompt and response
+        # Log the response only after we have both prompt for the action entry and response
         self.game.logger.log_player_response(self.name, "trade_response", response_data)
 
         if self.with_message_history:
@@ -390,7 +399,7 @@ class Player:
             answer = parsed.get("answer", "").lower()
             if answer not in ["yes", "no"]:
                 raise ValueError(f"Invalid answer value: {answer}")
-            
+
             status = "accepted" if answer == "yes" else "rejected"
             reasoning = parsed.get("rationale", "No rationale provided")
             will_accept = (answer == "yes")
@@ -450,14 +459,14 @@ class Player:
         self.game.logger.log_player_prompt(self.name, "pay4partner", self.system_prompt, message)
 
         # Structured call (counts via _structured)
-        schema_or_tool = ANTHROPIC_YESNO_TOOL if self.model_api == "anthropic" else YES_NO_SCHEMA
+        schema_or_tool = ANTHROPIC_PAY4PARTNER_HONOR_TOOL if self.model_api == "anthropic" else PAY4PARTNER_HONOR_SCHEMA
         parsed, resp_raw = self._structured(current_messages, schema_or_tool=schema_or_tool, max_tokens=256)
 
-        answer = (parsed.get("answer") or "").lower()
+        honor_p4p_agreement = parsed.get("honor_p4p_agreement", False)
         reasoning = parsed.get("rationale", "")
-        will_agree = (answer == "yes")
+        will_agree = honor_p4p_agreement
 
-        self.game.logger.log_player_response(self.name, "pay4partner", {"raw": resp_raw, "parsed": {"answer": answer, "rationale": reasoning}})
+        self.game.logger.log_player_response(self.name, "pay4partner", {"raw": resp_raw, "parsed": {"honor_p4p_agreement": honor_p4p_agreement, "rationale": reasoning}})
 
         if self.with_message_history:
             self.messages.extend([{"role": "user", "content": message},
@@ -467,8 +476,8 @@ class Player:
         if reasoning:
             print(f"- Rationale: {reasoning}")
 
-        if not will_agree and answer not in ("yes", "no"):
-            print(f"Unclear response: '{resp_raw}', defaulting to NO")
+        if not will_agree and not isinstance(honor_p4p_agreement, bool):
+            print(f"Unclear response: '{resp_raw}', defaulting to False")
 
         return will_agree
 

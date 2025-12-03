@@ -12,7 +12,7 @@ from logger import Logger
 import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-NUM_WORKERS = 8
+NUM_WORKERS = 20
 
 # Files
 GRIDS_FILE = "experiment_configs/4x4_experiment_grids.yaml"
@@ -59,17 +59,17 @@ def generate_config_dir_name(config):
 def now_ts():
     return datetime.now().strftime("%Y%m%d_%H%M%S_%f")
 
-def generate_experiment_path(pair_name: str, grid_data, config, run_id=None):
-    """logs/experiments/per_grid/<PAIR_NAME>/<bucket>/grid_id/config_dir/<timestamp>_<runid>/"""
+def generate_experiment_path(pair_name: str, grid_data, config, run_timestamp, run_id=None):
+    """logs/experiments/per_grid/<RUN_TIMESTAMP>/<PAIR_NAME>/<bucket>/grid_id/config_dir/<timestamp>_<runid>/"""
     bucket = grid_data['bucket'].replace(" ", "_").replace("(", "").replace(")", "")
     grid_id = f"grid_{grid_data['id']:03d}"
     config_dir = generate_config_dir_name(config)
     timestamp = now_ts()
     run_id = run_id or uuid.uuid4().hex[:8]
-    base_path = Path("logs") / "experiments" / "per_grid" / pair_name / bucket / grid_id / config_dir / f"{timestamp}_{run_id}"
+    base_path = Path("logs") / "experiments" / "per_grid" / run_timestamp / pair_name / bucket / grid_id / config_dir / f"{timestamp}_{run_id}"
     return base_path, f"{timestamp}_{run_id}"
 
-def _run_single_experiment(pair_name: str, agents: List, grid_data, variation):
+def _run_single_experiment(pair_name: str, agents: List, grid_data, variation, run_timestamp):
     """
     Thread worker for a single (pair, grid, variation).
     Returns (ok: bool, summary: dict).
@@ -99,7 +99,7 @@ def _run_single_experiment(pair_name: str, agents: List, grid_data, variation):
     )
 
     run_id = uuid.uuid4().hex[:8]
-    exp_path, timestamp = generate_experiment_path(pair_name, grid_data, config, run_id=run_id)
+    exp_path, timestamp = generate_experiment_path(pair_name, grid_data, config, run_timestamp, run_id=run_id)
     exp_path.mkdir(parents=True, exist_ok=True)
 
     game_id = f"grid_{grid_id}_{timestamp}"
@@ -166,6 +166,12 @@ def _run_single_experiment(pair_name: str, agents: List, grid_data, variation):
 def run_experiments(start_id=None, end_id=None, pair_args: List[str] = None, num_workers=NUM_WORKERS):
     # Resolve model pairs
     model_pairs = parse_pairs(pair_args or [])
+    
+    # Create run-level timestamp (YYYY_MM_DD_HH format)
+    run_timestamp = datetime.now().strftime("%Y_%m_%d_%H")
+    print(f"\n{'='*60}")
+    print(f"Starting experiment batch: {run_timestamp}")
+    print(f"{'='*60}\n")
 
     param_file = f"experiment_configs/{PARAM_VARIATIONS}.yaml"
     print(f"\nLoading parameter variations from: {param_file}")
@@ -223,7 +229,7 @@ def run_experiments(start_id=None, end_id=None, pair_args: List[str] = None, num
         print("\nRunning sequentially...")
         results = []
         for pair_name, agents, grid_data, variation in tasks:
-            ok, summary = _run_single_experiment(pair_name, agents, grid_data, variation)
+            ok, summary = _run_single_experiment(pair_name, agents, grid_data, variation, run_timestamp)
             status = "SUCCESS" if ok else "CRASHED"
             print(f"[{status}] pair={summary.get('pair')} grid={summary.get('grid_id')} -> {summary.get('path')}")
             results.append((ok, summary))
@@ -236,7 +242,7 @@ def run_experiments(start_id=None, end_id=None, pair_args: List[str] = None, num
     results = []
     with ThreadPoolExecutor(max_workers=num_workers) as executor:
         fut_to_task = {
-            executor.submit(_run_single_experiment, pair_name, agents, grid_data, variation):
+            executor.submit(_run_single_experiment, pair_name, agents, grid_data, variation, run_timestamp):
             (pair_name, agents, grid_data, variation)
             for (pair_name, agents, grid_data, variation) in tasks
         }

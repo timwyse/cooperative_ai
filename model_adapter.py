@@ -190,8 +190,6 @@ class ModelAdapter:
         max_tokens: int = 1000,
     ) -> Tuple[Dict[str, Any], str]:
         """
-        Provider-agnostic structured call:
-
         - Anthropic: pass a *tool def* like ANTHROPIC_*_TOOL (with 'name' and 'input_schema').
                      Returns (parsed_dict, raw_json_str).
         - OpenAI/Together: pass the *JSON Schema payload* (the actual schema dict).
@@ -232,7 +230,6 @@ class ModelAdapter:
         response_format = {"type": "json_schema", "json_schema": json_schema}
         return self._make_api_call_with_retries(messages, schema_or_tool, max_tokens, response_format)
 
-    # -------- Utility --------
     @staticmethod
     def last_json_object(text: str) -> Optional[Dict[str, Any]]:
         import re

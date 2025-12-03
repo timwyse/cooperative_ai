@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 import json
+import copy
 import prompts
 
 from pathlib import Path
@@ -61,14 +62,14 @@ class Logger(BaseLogger):
         
         # Init event log with clean structure
         self.log_data = {
-            "config": {},  # Will be populated by log_game_config
+            "config": {},  # log_game_config
             "game": {
                 "id": self.game_id,
                 "start_timestamp": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
                 "end_timestamp": None,
-                "turns": {}  # Will be populated by log_player_turn_summary
+                "turns": {}  # log_player_turn_summary
             },
-            "final_state": None  # Will be populated by log_game_end
+            "final_state": None  # log_game_end
         }
         
         # Init verbose log with clean structure
@@ -82,12 +83,12 @@ class Logger(BaseLogger):
         }
         
         # Write initial logs
-        self._save_event_log()  # Write initial event log
-        self._save_verbose_log()  # Write initial verbose log
+        self._save_event_log()
+        self._save_verbose_log()
         self.turn = 0
     
     def _generate_unique_game_id(self):
-        """Game id based on timestamp."""
+        """based on timestamp."""
         return datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     
     def log_game_config(self, config, players, grid):
@@ -212,6 +213,23 @@ class Logger(BaseLogger):
                 "end": player_data.get('chips_end', {})
             }
         }
+        # Log trades first
+        trade_proposed = player_data.get('trade_proposed')
+        if trade_proposed and isinstance(trade_proposed, dict) and trade_proposed.get('chips_to_offer'):
+            if player_data.get('is_pay4partner', False):
+                # Pay4partner arrangement
+                player_turn_data["arrangement_proposed"] = {
+                    "promised_to_cover": trade_proposed.get('chips_to_offer', []),
+                    "requested_coverage": trade_proposed.get('chips_to_receive', []),
+                    "outcome": player_data.get('trade_proposal_outcome', 'none')
+                }
+            else:
+                # Regular trade
+                player_turn_data["trade"] = {
+                    "offer": trade_proposed.get('chips_to_offer', []),
+                    "request": trade_proposed.get('chips_to_receive', []),
+                    "outcome": player_data.get('trade_proposal_outcome', 'rejected')  # Default to rejected instead of none
+                }
         
         # Add pay4partner actions if any
         if player_data.get('broke_promise_for'):
@@ -241,24 +259,6 @@ class Logger(BaseLogger):
                     "covered_color": player_data.get('covered_color')
                 })
             player_turn_data.update(move_info)
-        
-        # Add trade/arrangement data if exists
-        trade_proposed = player_data.get('trade_proposed')
-        if trade_proposed and isinstance(trade_proposed, dict) and trade_proposed.get('chips_to_offer'):
-            if player_data.get('is_pay4partner', False):
-                # Pay4partner arrangement
-                player_turn_data["arrangement"] = {
-                    "promised_to_cover": trade_proposed.get('chips_to_offer', []),
-                    "requested_coverage": trade_proposed.get('chips_to_receive', []),
-                    "outcome": player_data.get('trade_proposal_outcome', 'none')
-                }
-            else:
-                # Regular trade
-                player_turn_data["trade"] = {
-                    "offer": trade_proposed.get('chips_to_offer', []),
-                    "request": trade_proposed.get('chips_to_receive', []),
-                    "outcome": player_data.get('trade_proposal_outcome', 'rejected')  # Default to rejected instead of none
-                }
         
         # Add to turn data
         players_bucket = self.log_data["game"]["turns"][turn]["players"]
@@ -400,6 +400,10 @@ class Logger(BaseLogger):
         }
 
 
+        # Log final contract state if contract exists
+        if hasattr(game, 'contract') and game.contract_type == 'strict' and game.contract is not None:
+            self.log_final_contract_state(game.contract)
+        
         # Save final JSON
         self._save_event_log()
         self._save_verbose_log()
@@ -409,6 +413,7 @@ class Logger(BaseLogger):
             json.dump(self.log_data, f, indent=2, ensure_ascii=False)
 
     def log_contract_negotiation(self, 
+                                 contract_type,
                                  judge_contract,
                                  history_0,
                                  history_1,
@@ -425,9 +430,9 @@ class Logger(BaseLogger):
         # Initialize turn in verbose log if not already present
         if turn not in self.verbose_log_data["game"]["turns"]:
             self.verbose_log_data["game"]["turns"][turn] = {}
-        # Log the negotiation details
+        # Log the negotiation details with deep copy to preserve initial state
         self.verbose_log_data["game"]["turns"][turn]["contract_negotiation"] = {
-                    "judge_contract": judge_contract,
+                    "judge_contract": copy.deepcopy(judge_contract),
                     "agreement_status": agreement_status,
                     "conversation_history_0": history_0,
                     "conversation_history_1": history_1,
@@ -438,6 +443,59 @@ class Logger(BaseLogger):
 
         # Save the verbose log
         self._save_verbose_log()
+        
+        # Also log contract to event log (simplified version without conversation history)
+        if turn not in self.log_data["game"]["turns"]:
+            self.log_data["game"]["turns"][turn] = {"players": {}}
+        
+        if contract_type == 'tile_with_judge_implementation':
+            self.log_data["game"]["turns"][turn]["contract"] = {
+                "judge_contract": copy.deepcopy(judge_contract),
+                "agreement_status": agreement_status,
+                "player_0_agreed": True,
+                "player_1_agreed": True,
+            }
+        else:
+            self.log_data["game"]["turns"][turn]["contract"] = {
+                "judge_contract": copy.deepcopy(judge_contract),
+                "agreement_status": agreement_status,
+                "player_0_agreed": agree_0.get("parsed", {}).get("status") if agree_0 else None,
+                "player_1_agreed": agree_1.get("parsed", {}).get("status") if agree_1 else None,
+            }
+        
+        # Save the event log
+        self._save_event_log()
+    
+    def log_final_contract_state(self, contract):
+        """
+        Log the final state of the contract at game end, showing which tiles were used.
+        This is stored separately from the initial contract logged in turn 0.
+        """
+        # Add to verbose log
+        if "final_contract_state" not in self.verbose_log_data["game"]:
+            self.verbose_log_data["game"]["final_contract_state"] = {}
+        
+        self.verbose_log_data["game"]["final_contract_state"] = {
+            "contract": copy.deepcopy(contract),
+            "summary": {
+                "total_tiles": len(contract),
+                "tiles_used": sum(1 for tile in contract.values() if tile.get("status") == "used"),
+                "tiles_unused": sum(1 for tile in contract.values() if tile.get("status") == "unused")
+            }
+        }
+        
+        # Add to event log
+        if "final_contract_state" not in self.log_data["game"]:
+            self.log_data["game"]["final_contract_state"] = {}
+        
+        self.log_data["game"]["final_contract_state"] = {
+            "contract": copy.deepcopy(contract),
+            "summary": {
+                "total_tiles": len(contract),
+                "tiles_used": sum(1 for tile in contract.values() if tile.get("status") == "used"),
+                "tiles_unused": sum(1 for tile in contract.values() if tile.get("status") == "unused")
+            }
+        }
 
     def log_contract_system_prompt(self, player_id, contract_type, system_prompt):
         """Log system prompts used for contract negotiation"""

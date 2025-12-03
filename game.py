@@ -92,6 +92,10 @@ class Game:
         self.total_trades_failed = 0
         self.amount_received_from_trades = {'0': 0, '1': 0}  
         
+        # Initialize pay4partner arrangement metrics
+        self.total_p4p_arrangements_proposed = 0
+        self.total_p4p_arrangements_accepted = 0
+        self.total_p4p_arrangements_rejected = 0
 
         # Initialize contract metrics
         self.contract_accepted = 0
@@ -294,6 +298,9 @@ class Game:
             'total_trades_accepted': self.total_trades_accepted,
             'total_trades_rejected': self.total_trades_rejected,
             'total_trades_failed': self.total_trades_failed,
+            'total_p4p_arrangements_proposed': self.total_p4p_arrangements_proposed,
+            'total_p4p_arrangements_accepted': self.total_p4p_arrangements_accepted,
+            'total_p4p_arrangements_rejected': self.total_p4p_arrangements_rejected,
             'amount_received_by_0_from_trades': self.amount_received_from_trades['0'],
             'amount_received_by_1_from_trades': self.amount_received_from_trades['1'],
             'contract_accepted': self.contract_accepted,
@@ -447,7 +454,10 @@ class Game:
                 resources_to_offer = propose_trade.get('chips_to_offer', [])
                 resources_to_receive = propose_trade.get('chips_to_receive', [])
                 if resources_to_offer and resources_to_receive:  # Only count if actual resources specified
-                    self.total_trades_proposed += 1
+                    if self.pay4partner:
+                        self.total_p4p_arrangements_proposed += 1
+                    else:
+                        self.total_trades_proposed += 1
 
                 player_turn_data[player.name]['trade_proposal_outcome'] = 'accepted' if trade_executed else 'rejected'
 
@@ -675,9 +685,10 @@ class Game:
             player.resources[color] += 1
             self.moves_made_under_strict_contract[player.id] += 1
             
-            mark_tile_in_contract_as_used(self.contract, move, player.name)
-            mark_tile_in_contract_as_used(player.contract, move, 'you')
-            mark_tile_in_contract_as_used(partner.contract, move, 'the other player')
+            if self.contract_type == 'strict':
+                mark_tile_in_contract_as_used(self.contract, move, player.name)
+                mark_tile_in_contract_as_used(player.contract, move, 'you')
+                mark_tile_in_contract_as_used(partner.contract, move, 'the other player')
             return True
 
     
@@ -699,7 +710,10 @@ class Game:
             trade_accepted = other_player.accept_trade(self.grid, self, propose_trade)
             
             if trade_accepted:
-                self.total_trades_accepted += 1
+                if self.pay4partner:
+                    self.total_p4p_arrangements_accepted += 1
+                else:
+                    self.total_trades_accepted += 1
                 # Execute the trade immediately
                 if self.pay4partner is False:
                     # Execute the trade by swapping resources
@@ -764,8 +778,11 @@ class Game:
                 return True
             else:
                 target_label = other_player.get_player_label(self)
-                self.total_trades_rejected += 1
-                print(f"\nTrade rejected by {target_label}")
+                if self.pay4partner:
+                    self.total_p4p_arrangements_rejected += 1
+                else:
+                    self.total_trades_rejected += 1
+                print(f"\n{'Arrangement' if self.pay4partner else 'Trade'} rejected by {target_label}")
                 return False
 
         except Exception as e:
@@ -868,8 +885,8 @@ class Game:
                 print(f"Using player-generated contract directly:\n{judge_contract}")
                 contract_for_0 = history_0
                 contract_for_1 = history_1
-                agree_0 = "agree"
-                agree_1 = "agree"
+                player_0_agreement_data = "agree"
+                player_1_agreement_data = "agree"
                 contract_status = True
             else:
                 # Get the judge to create a formal contract
@@ -906,6 +923,7 @@ class Game:
                     return None
             
             self.logger.log_contract_negotiation(
+                contract_type=self.contract_type,
                 judge_contract=judge_contract,
                 history_0=history_0,
                 history_1=history_1,
