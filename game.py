@@ -685,9 +685,10 @@ class Game:
             player.resources[color] += 1
             self.moves_made_under_strict_contract[player.id] += 1
             
-            mark_tile_in_contract_as_used(self.contract, move, player.name)
-            mark_tile_in_contract_as_used(player.contract, move, 'you')
-            mark_tile_in_contract_as_used(partner.contract, move, 'the other player')
+            if self.contract_type == 'strict':
+                mark_tile_in_contract_as_used(self.contract, move, player.name)
+                mark_tile_in_contract_as_used(player.contract, move, 'you')
+                mark_tile_in_contract_as_used(partner.contract, move, 'the other player')
             return True
 
     
@@ -884,8 +885,8 @@ class Game:
                 print(f"Using player-generated contract directly:\n{judge_contract}")
                 contract_for_0 = history_0
                 contract_for_1 = history_1
-                agree_0 = "agree"
-                agree_1 = "agree"
+                player_0_agreement_data = "agree"
+                player_1_agreement_data = "agree"
                 contract_status = True
             else:
                 # Get the judge to create a formal contract
@@ -922,6 +923,7 @@ class Game:
                     return None
             
             self.logger.log_contract_negotiation(
+                contract_type=self.contract_type,
                 judge_contract=judge_contract,
                 history_0=history_0,
                 history_1=history_1,

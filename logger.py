@@ -401,7 +401,7 @@ class Logger(BaseLogger):
 
 
         # Log final contract state if contract exists
-        if hasattr(game, 'contract') and game.contract is not None:
+        if hasattr(game, 'contract') and game.contract_type == 'strict' and game.contract is not None:
             self.log_final_contract_state(game.contract)
         
         # Save final JSON
@@ -413,6 +413,7 @@ class Logger(BaseLogger):
             json.dump(self.log_data, f, indent=2, ensure_ascii=False)
 
     def log_contract_negotiation(self, 
+                                 contract_type,
                                  judge_contract,
                                  history_0,
                                  history_1,
@@ -447,12 +448,20 @@ class Logger(BaseLogger):
         if turn not in self.log_data["game"]["turns"]:
             self.log_data["game"]["turns"][turn] = {"players": {}}
         
-        self.log_data["game"]["turns"][turn]["contract"] = {
-            "judge_contract": copy.deepcopy(judge_contract),
-            "agreement_status": agreement_status,
-            "player_0_agreed": agree_0.get("parsed", {}).get("status") if agree_0 else None,
-            "player_1_agreed": agree_1.get("parsed", {}).get("status") if agree_1 else None,
-        }
+        if contract_type == 'tile_with_judge_implementation':
+            self.log_data["game"]["turns"][turn]["contract"] = {
+                "judge_contract": copy.deepcopy(judge_contract),
+                "agreement_status": agreement_status,
+                "player_0_agreed": True,
+                "player_1_agreed": True,
+            }
+        else:
+            self.log_data["game"]["turns"][turn]["contract"] = {
+                "judge_contract": copy.deepcopy(judge_contract),
+                "agreement_status": agreement_status,
+                "player_0_agreed": agree_0.get("parsed", {}).get("status") if agree_0 else None,
+                "player_1_agreed": agree_1.get("parsed", {}).get("status") if agree_1 else None,
+            }
         
         # Save the event log
         self._save_event_log()
