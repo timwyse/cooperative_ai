@@ -54,7 +54,7 @@ def extra_short_context(player):
 
 def generate_trade_system_info(player):
     if not player.pay4partner:
-        trading_rules = """- The game is in 'regular' mode: You may trade chips with other players at any agreed rate (e.g., 1 green for 1 blue, 1 green for 2 red, 2 green for nothing, etc.)."""
+        trading_rules = """- The game is in 'regular' mode: You may trade chips with other players at any agreed rate (e.g., 1 red for 1 blue, 1 blue for 2 red, 2 blue for 0 red, etc.)."""
     else:
         trading_rules = ""
 
