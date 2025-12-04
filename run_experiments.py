@@ -85,8 +85,8 @@ def _run_single_experiment(pair_name: str, agents: List, grid_data, variation, r
         grid=grid,
         resource_mode='manual',
         manual_resources=[
-            {"R": 14, "B": 0, "G": 1},
-            {"R": 0, "B": 14, "G": 1}
+            {"R": 14, "B": 0, "G": 2},
+            {"R": 0, "B": 14, "G": 2}
         ],
         players=agents,
         pay4partner=variation["pay4partner"],

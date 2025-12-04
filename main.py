@@ -22,7 +22,7 @@ CONFIG = replace(
 # ['B', 'B', 'R', 'R'],
 # ['R', 'R', 'R', 'G'],
 #     ],
-    manual_resources = [{'R':10, 'B': 0, 'G':1}, {'R':0, 'B': 10, 'G':1}],
+    manual_resources = [{'R':10, 'B': 0, 'G':2}, {'R':0, 'B': 10, 'G':2}],
 
     wait_for_enter=False,
     display_gui=True,  # Disable Pygame window, only show console output
