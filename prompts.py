@@ -111,7 +111,7 @@ IMPORTANT: use EXACTLY this JSON format (replace values in <>):
 
 Example of valid move:
 {{
-  "rationale": "i am at (0, 0).  \nmy goal is at (3, 3).  \nin my inventory I have: {{'b': 10, 'g': 2, 'r': 0}}\n, \n(0,0) → (1,0) → (2,0) → (2,1) → (3,1) → (3,2) → (3,3) requires just one resource that I don't have \ncorresponding tile colours for each step:  \nrow 0: (0,0) = g (starting spot), (1,0) = b, (2,0) = r  (2,1) = b, (3,1)=b, (3,2)=b, (3,3)=g seems like a good plan. \n\nfirst step: move to (1,0), which is colour **b**.  \ni have **10** blue chips.\n\ncheck other adjacent moves from (0,0) to be safe: \n(0,1) = r, which I don't have any of, so let's stick with my first plan, moving to (1,0).",
+  "rationale": "i am at (0, 0).  \nmy goal is at (3, 3).  \nin my inventory I have: {{'r': 13, 'g': 2, 'b': 0}}\n, \n(0,0) → (1,0) → (2,0) → (2,1) → (3,1) → (3,2) → (3,3) requires just one resource that I don't have \ncorresponding tile colours for each step:  \nrow 0: (0,0) = g (starting spot), (1,0) = r, (2,0) = b  (2,1) = r, (3,1)=r, (3,2)=r, (3,3)=g seems like a good plan. \n\nfirst step: move to (1,0), which is colour **r**.  \ni have **13** red chips.\n\ncheck other adjacent moves from (0,0) to be safe: \n(0,1) = b, which I don't have any of, so let's stick with my first plan, moving to (1,0).",
   "want_to_move": true,
   "move": "1,0"
   }}
@@ -122,9 +122,9 @@ Example of valid move:
 
 Example 2:
 {{
-  "rationale": "I am at (0,0) and my goal is (3,3). My inventory is {'B': 13, 'G': 1, 'R': 0}. The tile at (0,1) is 'B' (blue), and I have plenty of blue chips. A direct path to the goal is along the top row (0,1) → (0,2) → (0,3) → (1,3) → (2,3) → (3,3). Each of (0,1), (0,2), (0,3), and (1,3) are blue tiles, and with 13 B chips I can easily pay for each move. However (2,3) is a red tile, and I have 0 R chips. Moreover (2,3) is not specified in the contract. My contract covers me for red tiles on (1,0), (2,0), (2, 2) and (3,2). (2, 1) is blue, therefore I can follow an alternative path: (0,0) → (1,0) → (2,0) → (2,1) → (2,2) → (3,2) → (3,3), which uses only tiles covered by the contract and blue tiles I can pay for. Therefore, I will move to (1,0) next.",
+  "rationale": "I am at (0,0) and my goal is (3,3). My inventory is {'B': 13, 'G': 2, 'R': 0}. The tile at (0,1) is 'B' (blue), and I have plenty of blue chips. A direct path to the goal is along the top row (0,1) → (0,2) → (0,3) → (1,3) → (2,3) → (3,3). Each of (0,1), (0,2), (0,3), and (1,3) are blue tiles, and with 13 B chips I can easily pay for each move. However (2,3) is a red tile, and I have 0 R chips. Moreover (2,3) is not specified in the contract. My contract covers me for red tiles on (1,0), (2,0), (2, 2) and (3,2). (2, 1) is blue, therefore I can follow an alternative path: (0,0) → (1,0) → (2,0) → (2,1) → (2,2) → (3,2) → (3,3), which uses only tiles covered by the contract and blue tiles I can pay for. Therefore, I will move to (1,0) next.",
   "want_to_move": true,
-  "move": "0,1"
+  "move": "1,0"
   }}
 """
 
