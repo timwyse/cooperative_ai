@@ -70,7 +70,7 @@ def generate_move_prompt(player, player_context):
     extra_context = extra_short_context(player)
  
 
-    return f"""
+    prompt =  f"""
 {player_context}
 
 {pay4partner_info}
@@ -111,12 +111,24 @@ IMPORTANT: use EXACTLY this JSON format (replace values in <>):
 
 Example of valid move:
 {{
-  "rationale": "i am at (0, 0).  \nmy goal is at (3, 3).  \ni have: {{'b': 10, 'g': 1, 'r': 0}}\n\ngiven my inventory, \n(0,0) → (1,0) → (2,0) → (2,1) → (3,1) → (3,2) → (3,3)  \ncorresponding tile colours for each step:  \nrow 0: (0,0) = g (starting spot), (1,0) = b, (2,0) = r  (2,1) = b, (3,1)=b, (3,2)=b, (3,3)=g seems like a good plan. \n\nfirst step: move to (1,0), which is colour **b**.  \ni have **10** blue chips.\n\ncheck other adjacent moves from (0,0) to be safe: \n(0,1) = r, which I don't have any of, so let's stick with my first plan, moving to (1,0).",
+  "rationale": "i am at (0, 0).  \nmy goal is at (3, 3).  \nin my inventory I have: {{'r': 13, 'g': 2, 'b': 0}}\n, \n(0,0) → (1,0) → (2,0) → (2,1) → (3,1) → (3,2) → (3,3) requires just one resource that I don't have \ncorresponding tile colours for each step:  \nrow 0: (0,0) = g (starting spot), (1,0) = r, (2,0) = b  (2,1) = r, (3,1)=r, (3,2)=r, (3,3)=g seems like a good plan. \n\nfirst step: move to (1,0), which is colour **r**.  \ni have **13** red chips.\n\ncheck other adjacent moves from (0,0) to be safe: \n(0,1) = b, which I don't have any of, so let's stick with my first plan, moving to (1,0).",
   "want_to_move": true,
   "move": "1,0"
   }}
 
 """
+    if player.contract_type == 'strict':
+      prompt += """
+
+Example 2:
+{{
+  "rationale": "I am at (0,0) and my goal is (3,3). My inventory is {'B': 13, 'G': 2, 'R': 0}. The tile at (0,1) is 'B' (blue), and I have plenty of blue chips. A direct path to the goal is along the top row (0,1) → (0,2) → (0,3) → (1,3) → (2,3) → (3,3). Each of (0,1), (0,2), (0,3), and (1,3) are blue tiles, and with 13 B chips I can easily pay for each move. However (2,3) is a red tile, and I have 0 R chips. Moreover (2,3) is not specified in the contract. My contract covers me for red tiles on (1,0), (2,0), (2, 2) and (3,2). (2, 1) is blue, therefore I can follow an alternative path: (0,0) → (1,0) → (2,0) → (2,1) → (2,2) → (3,2) → (3,3), which uses only tiles covered by the contract and blue tiles I can pay for. Therefore, I will move to (1,0) next.",
+  "want_to_move": true,
+  "move": "1,0"
+  }}
+"""
+
+    return prompt
 
 def generate_trade_proposal_prompt(player, player_context):
     """Generate prompt for regular trade proposal decisions."""
@@ -124,7 +136,7 @@ def generate_trade_proposal_prompt(player, player_context):
     extra_context = extra_short_context(player)
     contract_info = generate_contract_info(player)
     
-    return f"""
+    prompt = f"""
 {player_context}
 
 {pay4partner_info}
@@ -182,8 +194,31 @@ Example of valid trade:
     }}
   ]
 }}
+"""
+    if player.contract_type == 'strict':
+      prompt += """
+Example 2:
+{{
+  "rationale": "I am at (3, 1). Both (3,2) and (2,1) are blue tiles, and I have 0 blue chips. My contract covers me for blue tiles on only (0,1) and (1,1). Therefore, I should trade for blue chips to reach my goal at (3,3). I have excess red chips that I can offer. Trading 1 red for 1 blue will let me move to (3, 2), and from there I can reach my goal of (3,3).",
+  "want_to_trade": true,
+  "chips_to_offer": [
+    {{
+      "color": "R",
+      "quantity": 1
+    }}
+  ],
+  "chips_to_receive": [
+    {{
+      "color": "B",
+      "quantity": 1
+    }}
+  ]
+}}
+"""
 
-2. If you don't want to trade, use EXACTLY this JSON format:
+    prompt += """
+
+If you don't want to trade, use EXACTLY this JSON format:
 {{
   "rationale": "Explain why you don't want to trade. Do you have all the chips you need? Is there no beneficial trade possible?",
   "want_to_trade": false
@@ -204,6 +239,7 @@ Remember:
 Keep your response below 1000 characters.
 """
 
+    return prompt
 
 def generate_trade_response_prompt(player, player_context, resources_to_offer, resources_to_receive):
     """Generate prompt for trade response decisions."""
@@ -361,7 +397,7 @@ Thus if you move onto one of these tiles, you do not need to have the required c
 
 """
         if player.contract_type == 'strict':
-            contract_info += "Note that if a tile you have been promised has status 'used', you can no longer move onto that tile without having the chip in your inventory.\n"
+            contract_info += "Note that if a tile you have been promised in the contract has status 'used', it has already been accessed by the 'receiver' and is no longer part of the contract.\n"
 
     elif player.contract_type == 'contract_for_finishing' and player.contract is not None:
         contract_info = f"""
