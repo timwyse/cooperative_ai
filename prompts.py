@@ -118,9 +118,10 @@ Example 1:
 
 """
     if player.contract_type == 'strict':
-      prompt += """
+      prompt += f"""
 
 Example 2:
+{{
   "rationale": "I am at (0,0) and my goal is (3,3). My inventory is {'B': 13, 'G': 2, 'R': 0}. The tile at (0,1) is 'B' (blue), and I have plenty of blue chips. A direct path to the goal is along the top row (0,1) → (0,2) → (0,3) → (1,3) → (2,3) → (3,3). Each of (0,1), (0,2), (0,3), and (1,3) are blue tiles, and with 13 B chips I can easily pay for each move. However (2,3) is a red tile, and I have 0 R chips. Moreover (2,3) is not specified in the contract. My contract covers me for red tiles on (1,0), (2,0), (2, 2) and (3,2). (2, 1) is blue, therefore I can follow an alternative path: (0,0) → (1,0) → (2,0) → (2,1) → (2,2) → (3,2) → (3,3), which uses only tiles covered by the contract and blue tiles I can pay for. Therefore, I will move to (1,0) next.",
   "want_to_move": true,
   "move": "1,0"
@@ -193,7 +194,7 @@ Example of valid trade:
 }}
 """
     if player.contract_type == 'strict':
-      prompt += """
+      prompt += f"""
 Example 2:
 {{
   "rationale": "I am at (3, 1). Both (3,2) and (2,1) are blue tiles, and I have 0 blue chips. My contract covers me for blue tiles on only (0,1) and (1,1). Therefore, I should trade for blue chips to reach my goal at (3,3). I have excess red chips that I can offer. Trading 1 red for 1 blue will let me move to (3, 2), and from there I can reach my goal of (3,3).",
@@ -213,7 +214,7 @@ Example 2:
 }}
 """
 
-    prompt += """
+    prompt += f"""
 
 If you don't want to trade, use EXACTLY this JSON format:
 {{
