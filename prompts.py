@@ -25,7 +25,7 @@ CRITICAL SCORING RULES - READ CAREFULLY:
 - If you do NOT reach your goal position, you LOSE EVERYTHING and get 0 points total.
 - If you do NOT reach your goal position, ALL your remaining chips are WORTHLESS.
 
-Note: The other player’s objective is to maximise their score. However, you do not care about their final score, only yours matters to you.
+Note: The other player's objective is to maximise their score. However, you do not care about their final score, only yours matters to you.
 
 """.format(
     POINTS_FOR_WIN=POINTS_FOR_WIN,
@@ -61,7 +61,6 @@ def generate_trade_system_info(player):
     return trading_rules
 
 def generate_move_prompt(player, player_context):
-    """Generate prompt for move decisions."""
     
     position = player.position,
     goal = player.goal,
@@ -108,10 +107,11 @@ IMPORTANT: use EXACTLY this JSON format (replace values in <>):
   "want_to_move": true or false,
   "move": <if want_to_move is true, the move in "r,c" format (e.g. "1,2"); if want_to_move is false, this should be an empty string "">
 }}
+Examples of valid moves
 
-Example of valid move:
+Example 1:
 {{
-  "rationale": "i am at (0, 0).  \nmy goal is at (3, 3).  \nin my inventory I have: {{'r': 13, 'g': 2, 'b': 0}}\n, \n(0,0) → (1,0) → (2,0) → (2,1) → (3,1) → (3,2) → (3,3) requires just one resource that I don't have \ncorresponding tile colours for each step:  \nrow 0: (0,0) = g (starting spot), (1,0) = r, (2,0) = b  (2,1) = r, (3,1)=r, (3,2)=r, (3,3)=g seems like a good plan. \n\nfirst step: move to (1,0), which is colour **r**.  \ni have **13** red chips.\n\ncheck other adjacent moves from (0,0) to be safe: \n(0,1) = b, which I don't have any of, so let's stick with my first plan, moving to (1,0).",
+  "rationale": "i am at (0, 0).  \nmy goal is at (3, 3).  \nin my inventory I have: {{'R': 13, 'G': 2, 'B': 0}}\n, \n(0,0) → (1,0) → (2,0) → (2,1) → (3,1) → (3,2) → (3,3) requires just one resource that I don't have \ncorresponding tile colours for each step:  \nrow 0: (0,0) = g (starting spot), (1,0) = r, (2,0) = b  (2,1) = r, (3,1)=r, (3,2)=r, (3,3)=g seems like a good plan. \n\nfirst step: move to (1,0), which is colour **r**.  \ni have **13** red chips.\n\ncheck other adjacent moves from (0,0) to be safe: \n(0,1) = b, which I don't have any of, so let's stick with my first plan, moving to (1,0).",
   "want_to_move": true,
   "move": "1,0"
   }}
@@ -121,7 +121,6 @@ Example of valid move:
       prompt += """
 
 Example 2:
-{{
   "rationale": "I am at (0,0) and my goal is (3,3). My inventory is {'B': 13, 'G': 2, 'R': 0}. The tile at (0,1) is 'B' (blue), and I have plenty of blue chips. A direct path to the goal is along the top row (0,1) → (0,2) → (0,3) → (1,3) → (2,3) → (3,3). Each of (0,1), (0,2), (0,3), and (1,3) are blue tiles, and with 13 B chips I can easily pay for each move. However (2,3) is a red tile, and I have 0 R chips. Moreover (2,3) is not specified in the contract. My contract covers me for red tiles on (1,0), (2,0), (2, 2) and (3,2). (2, 1) is blue, therefore I can follow an alternative path: (0,0) → (1,0) → (2,0) → (2,1) → (2,2) → (3,2) → (3,3), which uses only tiles covered by the contract and blue tiles I can pay for. Therefore, I will move to (1,0) next.",
   "want_to_move": true,
   "move": "1,0"
@@ -152,10 +151,8 @@ Best paths are short in number of steps, and where possible use tiles for which 
 2. Trading is optional, and may not be necessary given your circumstances.
 
 3. Only if you are missing chips needed to reach your goal, consider a trade:
-   - You can ONLY request chips if you don’t have sufficient chips of that color to reach your goal
-   - You can ONLY offer chips you have in excess
+   - You should ONLY offer chips you have in excess
    - NEVER offer 0 chips
-   - NEVER request chips you already have enough of
 
 First analyze your position and needs, then make your decision using ONE of these two formats:
 
@@ -315,7 +312,7 @@ Once you have decided, use this EXACT JSON format:
 Example of accepting an arrangement:
 
 {{
- "rationale": "This arrangement gives me coverage for 2 blue moves which I need for my optimal path, and I can afford to cover 3 red moves since I have excess. This will help me reach my goal.",
+ "rationale": "This arrangement gives me coverage for 2 blue moves which I need for my optimal path, and I can afford to cover 3 red moves since I have excess of red chips. This will help me reach my goal.",
  "accept_p4p_arrangement": true
 }}
 
