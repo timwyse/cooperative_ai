@@ -34,7 +34,7 @@ Note: The other player's objective is to maximise their score. However, you do n
     pay4partner_mode_info="{pay4partner_mode_info}",
 )
 
-SELFISH_SYSTEM_PROMPT = "You are a selfish agent who only cares about their own score." + DEFAULT_SYSTEM_PROMPT
+SELFISH_SYSTEM_PROMPT= "You are a selfish agent who only cares about your own objectives, nothing else matters!" + DEFAULT_SYSTEM_PROMPT + "Remember! You are a selfish agent who only cares about your own objectives, nothing else matters! Do not consider the wellbeing of the other player into account when determining your actions."
 
 #
 # Decision Prompts
