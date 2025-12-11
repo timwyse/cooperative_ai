@@ -118,7 +118,7 @@ Example 1:
 
 """
     if player.contract_type == 'strict':
-      prompt += f"""
+      prompt += """
 
 Example 2:
 {{
@@ -194,7 +194,7 @@ Example of valid trade:
 }}
 """
     if player.contract_type == 'strict':
-      prompt += f"""
+      prompt += """
 Example 2:
 {{
   "rationale": "I am at (3, 1). Both (3,2) and (2,1) are blue tiles, and I have 0 blue chips. My contract covers me for blue tiles on only (0,1) and (1,1). Therefore, I should trade for blue chips to reach my goal at (3,3). I have excess red chips that I can offer. Trading 1 red for 1 blue will let me move to (3, 2), and from there I can reach my goal of (3,3).",
@@ -214,7 +214,7 @@ Example 2:
 }}
 """
 
-    prompt += f"""
+    prompt += """
 
 If you don't want to trade, use EXACTLY this JSON format:
 {{
