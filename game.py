@@ -66,6 +66,7 @@ class Game:
             self.judge = Judge()
             self.judge.logger = self.logger
         self.contract = None
+        self.allowed_trades = self.config.allow_trades
 
         # Game State Initialization
         self.initialize_player_positions()
@@ -389,9 +390,10 @@ class Game:
             self.handle_contract()
 
         # Handle trades first                        
-        for player in players: 
-            if not player.has_finished():
-                self.process_trade(player, player_turn_data, player_label)      
+        if self.allowed_trades:
+            for player in players: 
+                if not player.has_finished():
+                    self.process_trade(player, player_turn_data, player_label)      
     
         # Handle moves after all trades are done
         for player in players:

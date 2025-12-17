@@ -11,7 +11,7 @@ import prompts as p
 # refer to config.py to see which arguments are available for the game and what their defaults are
 # can replace any of the default values in DEFAULT_CONFIG with your own values
 CONFIG = replace(
-    load_config("configs/4-4_npb_id-104.yaml"), # can use DEFAULT_CONFIG or load a specific configs here eg load_config("configs/simple_prisoners_dilemma.yaml"),
+    load_config("configs/4-4_i_id-0.yaml"), # can use DEFAULT_CONFIG or load a specific configs here eg load_config("configs/simple_prisoners_dilemma.yaml"),
    players=[FOUR_1, FOUR_1],
 #     grid_size=6,
     #  colors=['R', 'B', 'G'],
@@ -28,11 +28,12 @@ CONFIG = replace(
     display_gui=True,  # Disable Pygame window, only show console output
     with_context=True,  # Enable turn history between players
     with_message_history=False,  # Enable conversation memory for each player
-    pay4partner=True,  # Enable 'pay for partner' mode
-    contract_type='strict',  # Options: contract_for_finishing, strict, tile_with_judge_implementation
-    # system_prompt=p.SELFISH_SYSTEM_PROMPT,
+    # pay4partner=True,  # Enable 'pay for partner' mode
+    # contract_type='strict',  # Options: contract_for_finishing, strict, tile_with_judge_implementation
+    system_prompts={'0': p.NO_TRADE_SYSTEM_PROMPT, '1': p.NO_TRADE_SYSTEM_PROMPT},  # Custom system prompts for each player
     # fog_of_war=[True, True],  # Enable fog of war for both players
-    # show_paths=True,  # Show best paths to goal for each player
+    show_paths=True,  # Show best paths to goal for each player
+    allow_trades=False,  # Disable trading between players
 )
 
 
