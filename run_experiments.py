@@ -11,6 +11,7 @@ from agents import *
 from logger import Logger
 import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from prompts import DEFAULT_SYSTEM_PROMPT, SELFISH_SYSTEM_PROMPT
 
 NUM_WORKERS = 20
 
@@ -50,24 +51,34 @@ def parse_pairs(pair_args: List[str]) -> List[Tuple[str, List]]:
         pairs.append((make_pair_name(a_name, b_name), agents))
     return pairs
 
-def generate_config_dir_name(config):
+def generate_config_dir_name(config, selfish="00"):
     contract_type = "none" if config.contract_type in [None, "none"] else str(config.contract_type)
     ctx = "ctx1" if config.with_context else "ctx0"
     fog = "fog" + "".join("1" if f else "0" for f in config.fog_of_war)
-    return f"{ctx}_{fog}_p4p{str(config.pay4partner).lower()}_contract_{contract_type}"
+    return f"{ctx}_{fog}_p4p{str(config.pay4partner).lower()}_contract_{contract_type}_selfish{selfish}"
 
 def now_ts():
     return datetime.now().strftime("%Y%m%d_%H%M%S_%f")
 
-def generate_experiment_path(pair_name: str, grid_data, config, run_timestamp, run_id=None):
+def generate_experiment_path(pair_name: str, grid_data, config, run_timestamp, run_id=None, selfish="00"):
     """logs/experiments/per_grid/<RUN_TIMESTAMP>/<PAIR_NAME>/<bucket>/grid_id/config_dir/<timestamp>_<runid>/"""
     bucket = grid_data['bucket'].replace(" ", "_").replace("(", "").replace(")", "")
     grid_id = f"grid_{grid_data['id']:03d}"
-    config_dir = generate_config_dir_name(config)
+    config_dir = generate_config_dir_name(config, selfish=selfish)
     timestamp = now_ts()
     run_id = run_id or uuid.uuid4().hex[:8]
     base_path = Path("logs") / "experiments" / "per_grid" / run_timestamp / pair_name / bucket / grid_id / config_dir / f"{timestamp}_{run_id}"
     return base_path, f"{timestamp}_{run_id}"
+
+def _selfish_to_str(selfish: list) -> str:
+    return "".join("1" if s else "0" for s in selfish)
+
+def _get_system_prompts(selfish: list) -> dict:
+
+    return {
+        '0': SELFISH_SYSTEM_PROMPT if selfish[0] else DEFAULT_SYSTEM_PROMPT,
+        '1': SELFISH_SYSTEM_PROMPT if selfish[1] else DEFAULT_SYSTEM_PROMPT
+    }
 
 def _run_single_experiment(pair_name: str, agents: List, grid_data, variation, run_timestamp):
     """
@@ -78,6 +89,11 @@ def _run_single_experiment(pair_name: str, agents: List, grid_data, variation, r
     grid = grid_data['grid']
     bucket = grid_data['bucket']
     sub_stratum = grid_data['sub_stratum']
+    
+    # Get selfish setting (default to [False, False] if not specified)
+    selfish = variation.get("selfish", [False, False])
+    selfish_str = _selfish_to_str(selfish)
+    system_prompts = _get_system_prompts(selfish)
 
     config = GameConfig(
         grid_size=4,
@@ -93,13 +109,14 @@ def _run_single_experiment(pair_name: str, agents: List, grid_data, variation, r
         contract_type=variation["contract_type"],
         with_message_history=variation["with_message_history"],
         fog_of_war=variation["fog_of_war"],
+        system_prompts=system_prompts,
         display_gui=False,
         wait_for_enter=False,
         with_context=True
     )
 
     run_id = uuid.uuid4().hex[:8]
-    exp_path, timestamp = generate_experiment_path(pair_name, grid_data, config, run_timestamp, run_id=run_id)
+    exp_path, timestamp = generate_experiment_path(pair_name, grid_data, config, run_timestamp, run_id=run_id, selfish=selfish_str)
     exp_path.mkdir(parents=True, exist_ok=True)
 
     game_id = f"grid_{grid_id}_{timestamp}"
@@ -116,7 +133,8 @@ def _run_single_experiment(pair_name: str, agents: List, grid_data, variation, r
             "contract_type": variation["contract_type"],
             "with_context": config.with_context,
             "with_message_history": variation["with_message_history"],
-            "fog_of_war": [False, False]
+            "fog_of_war": [False, False],
+            "selfish": selfish
         },
         "grid_metrics": {
             "b_min_trades_efficient_path": grid_data["b_min_trades_efficient_path"],
@@ -263,7 +281,7 @@ if __name__ == "__main__":
     parser.add_argument('--start-id', type=int, help='Start from this grid ID (inclusive)')
     parser.add_argument('--end-id', type=int, help='Run until this grid ID (inclusive)')
     parser.add_argument('--workers', type=int, default=NUM_WORKERS,
-                        help='Number of parallel workers (default: 8, use 1 for sequential)')
+                        help='Number of parallel workers (default: 20, use 1 for sequential)')
     parser.add_argument('--pairs', action='append',
                         help="Model pair as 'A,B'. Repeat for multiple pairs. "
                              "Example: --pairs FOUR_1,FOUR_1 --pairs SONNET_4,SONNET_4")

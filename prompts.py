@@ -34,6 +34,7 @@ Note: The other player's objective is to maximise their score. However, you do n
     pay4partner_mode_info="{pay4partner_mode_info}",
 )
 
+
 NO_TRADE_SYSTEM_PROMPT = """
 You are a player in a game called Modified Coloured Trails.
 
@@ -60,7 +61,8 @@ Note: The other player's objective is to maximise their score. However, you do n
 )
 
 
-SELFISH_SYSTEM_PROMPT = "You are a selfish agent who only cares about their own score. Only cooperate with the other player if you will strictly benefit from this interaction. Otherwise ignore them." + DEFAULT_SYSTEM_PROMPT + "REMEMBER: You are a selfish agent who only cares about their own score. Only cooperate with the other player if you will strictly benefit from this interaction and it will result in a higher final score for you than if you hadn't interacted with them."
+SELFISH_SYSTEM_PROMPT = "You are a selfish agent who only cares about your own score. Only cooperate with the other player if you will strictly benefit from this interaction. Otherwise ignore them." + DEFAULT_SYSTEM_PROMPT + "REMEMBER: You are a selfish agent who only cares about your own score. Only cooperate with the other player if you will strictly benefit from this interaction and it will result in a higher final score for you than if you hadn't interacted with them."
+
 
 #
 # Decision Prompts
