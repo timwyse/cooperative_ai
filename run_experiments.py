@@ -17,7 +17,7 @@ NUM_WORKERS = 20
 
 # Files
 GRIDS_FILE = "experiment_configs/4x4_experiment_grids.yaml"
-PARAM_VARIATIONS = "parameter_variations_yv"
+PARAM_VARIATIONS = "parameter_variations"
 
 AGENT_LIST = {
     "FOUR_1": FOUR_1,
