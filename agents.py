@@ -14,7 +14,7 @@ FOUR_1 = Agent(name="GPT 4.1", value="gpt-4.1", api='open_ai') # $8
 FOUR_0 = Agent(name="GPT 4o", value="gpt-4o", api='open_ai') # $10 
 DEEPSEEK_V3 = Agent(name="DeepSeek_R1", value="deepseek-ai/DeepSeek-V3", api='together') # $1.25
 # QWEN_2_7B = Agent(name="QWEN_25_7B", value="Qwen/Qwen2.5-7B-Instruct-Turbo", api='together') # $0.30 
-QWEN_480B = Agent(name="QWEN_480B", value=" Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8", api='together') # $0.6
+QWEN_480B = Agent(name="QWEN_480B", value="Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8", api='together') # $0.6
 # LLAMA_3_3B = Agent(name="Llama_3_3B", value="meta-llama/Llama-3.2-3B-Instruct-Turbo", api='together')# $0.06
 LLAMA_405B = Agent(name="Llama_405B", value="meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo", api='together')# $3.5
 SONNET_4 = Agent(name="Claude_Sonnet_4", value="claude-sonnet-4-20250514", api='anthropic') # $15 
