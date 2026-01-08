@@ -13,10 +13,10 @@ import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from prompts import DEFAULT_SYSTEM_PROMPT, SELFISH_SYSTEM_PROMPT
 
-NUM_WORKERS = 20
+NUM_WORKERS = 7
 
 # Files
-GRIDS_FILE = "experiment_configs/4x4_experiment_grids.yaml"
+GRIDS_FILE = "experiment_configs/6x6_experiment_grids.yaml"
 PARAM_VARIATIONS = "parameter_variations_yv"
 
 AGENT_LIST = {
@@ -96,13 +96,13 @@ def _run_single_experiment(pair_name: str, agents: List, grid_data, variation, r
     system_prompts = _get_system_prompts(selfish)
 
     config = GameConfig(
-        grid_size=4,
+        grid_size=6,
         colors=['R', 'B', 'G'],
         grid=grid,
         resource_mode='manual',
         manual_resources=[
-            {"R": 14, "B": 0, "G": 2},
-            {"R": 0, "B": 14, "G": 2}
+            {"R": 25, "B": 0, "G": 2},
+            {"R": 0, "B": 25, "G": 2}
         ],
         players=agents,
         pay4partner=variation["pay4partner"],
@@ -275,7 +275,7 @@ def run_experiments(start_id=None, end_id=None, pair_args: List[str] = None, num
 
     successes = sum(1 for ok, _ in results if ok)
     print(f"\nFinished. {successes}/{len(results)} runs succeeded.")
-
+# up to 259
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run grid-based experiments (multi-pair)')
     parser.add_argument('--start-id', type=int, help='Start from this grid ID (inclusive)')
