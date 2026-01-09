@@ -85,7 +85,7 @@ TRADE_RESPONSE_SCHEMA = {
             "rationale": {"type": "string", "maxLength": 500},
             "accept_trade": {"type": "boolean"}
         },
-        # IMPORTANT: OpenAI structured outputs requires ALL properties to be in `required`
+        # OpenAI structured outputs requires ALL properties to be in `required`
         "required": ["rationale", "accept_trade"]
     },
     "strict": True
@@ -93,7 +93,7 @@ TRADE_RESPONSE_SCHEMA = {
 
 ANTHROPIC_TRADE_RESPONSE_TOOL = {
     "name": "trade_response",
-    "description": "Decide whether to accept or reject the proposed trade. IMPORTANT: You must FIRST think through your reasoning in 'rationale', THEN provide your decision in 'accept_trade'. Always output rationale BEFORE accept_trade. Example: {\"rationale\": \"The proposed trade gives me 2B chips which I need. I would give 3R chips but I have 14R, so I can afford it. This trade helps me reach my goal.\", \"accept_trade\": true}",
+    "description": "Decide whether to accept or reject the proposed trade. You must first think through your reasoning in 'rationale', then provide your decision in 'accept_trade'. Always output rationale before accept_trade. Example: {\"rationale\": \"The proposed trade gives me 2B chips which I need. I would give 3R chips but I have 14R, so I can afford it. This trade helps me reach my goal.\", \"accept_trade\": true}",
     "input_schema": TRADE_RESPONSE_SCHEMA["schema"],
 }
 
@@ -107,7 +107,7 @@ YES_NO_SCHEMA = {
             "rationale": {"type": "string", "maxLength": 500},
             "answer": {"type": "string", "enum": ["yes", "no"]}
         },
-        # IMPORTANT: OpenAI structured outputs requires ALL properties to be in `required`
+        # OpenAI structured outputs requires ALL properties to be in `required`
         "required": ["rationale", "answer"]
     },
     "strict": True
@@ -115,7 +115,7 @@ YES_NO_SCHEMA = {
 
 ANTHROPIC_YESNO_TOOL = {
     "name": "yes_no",
-    "description": "Answer yes or no. You must first think through your reasoning in 'rationale', THEN provide your decision in 'answer'. Always output rationale before answer. Example: {\"rationale\": \"This contract benefits me because it ensures the other player helps me reach my goal.\", \"answer\": \"yes\"}",
+    "description": "Answer yes or no. You must first think through your reasoning in 'rationale', then provide your decision in 'answer'. Always output rationale before answer. Example: {\"rationale\": \"This contract benefits me because it ensures the other player helps me reach my goal.\", \"answer\": \"yes\"}",
     "input_schema": YES_NO_SCHEMA["schema"],
 }
 
