@@ -21,5 +21,5 @@ QWEN_3_235B = Agent(name="QWEN_3_235B", value="qwen/qwen3-235b-a22b-2507", api='
 QWEN_3_80B = Agent(name="QWEN_3_80B", value="qwen/qwen3-next-80b-a3b-instruct", api='openrouter') # $1.10
 QWEN_480B = Agent(name="QWEN_480B_openrouter", value="qwen/qwen3-coder", api='openrouter') # $0.6
 # LLAMA_3_3B = Agent(name="Llama_3_3B", value="meta-llama/Llama-3.2-3B-Instruct-Turbo", api='openrouter')# $0.06
-LLAMA_405B = Agent(name="Llama_405B", value="meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo", api='openrouter')# $3.5
-LLAMA_70B = Agent(name="Llama_70B", value="meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo", api='openrouter')# $0.88
+LLAMA_405B = Agent(name="Llama_405B", value="meta-llama/llama-3.1-405b-instruct", api='openrouter')# $3.5
+LLAMA_70B = Agent(name="Llama_70B", value="meta-llama/llama-3.1-70b-instruct", api='openrouter')# $0.88

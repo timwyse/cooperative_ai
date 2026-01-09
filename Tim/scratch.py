@@ -111,7 +111,7 @@ api_key
 # %%
 
 
-model = "qwen/qwen3-235b-a22b-2507"
+model = "meta-llama/llama-3.1-405b-instruct"
 from openai import OpenAI
 from os import getenv
 
@@ -137,3 +137,24 @@ resp = client.chat.completions.create(
 content = resp.choices[0].message.content
 print(content)
 # %%
+
+from openai import OpenAI
+
+client = OpenAI(
+  base_url="https://openrouter.ai/api/v1",
+  api_key=getenv("OPENROUTER_API_KEY"),
+)
+
+completion = client.chat.completions.create(
+  
+  model="meta-llama/llama-3.1-70b-instruct",
+  messages=[
+    {
+      "role": "user",
+      "content": "What is the meaning of life?"
+    }
+  ]
+)
+print(completion.choices[0].message.content)
+# %%
+

@@ -231,9 +231,9 @@ Task:
    - Tile: {move}
 
    Answer: 
-   - If this tile is NOT in the contract, reply with "no".
-   - If this tile is in the contract **but** {player.name} is the **giver** of a color for this tile, reply with "no".  
-   - If this tile is in the contract **and** {player.name} is the **receiver** of a color for this tile **but** this tile has already been used by the player in their route: {player.route}, reply with "no".
+   - If this tile is NOT covered by the players’ agreement, reply with "no".
+   - If this tile is covered by the players’ agreement **but** {player.name} is the **giver** of a color for this tile, reply with "no".  
+   - If this tile is covered by the players’ agreement **and** {player.name} is the **receiver** of a color for this tile **but** this tile has already been used by the player in their route: {player.route}, reply with "no".
    - Otherwise, reply with "yes".
 
 IMPORTANT RULES:  
