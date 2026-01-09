@@ -249,8 +249,8 @@ IMPORTANT RULES:
         try:
             parsed, resp_raw = self._structured(message_for_judge, schema_or_tool=schema_or_tool, max_tokens=1000)
             print(f"Judge response: {resp_raw}")
-            if not parsed:
-                raise ValueError("Failed to parse structured response")
+            if parsed is None:
+                raise ValueError("Failed to parse structured response: got None")
 
             answer = parsed.get("answer", "").lower()
             if answer not in ["yes", "no"]:

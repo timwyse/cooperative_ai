@@ -341,9 +341,9 @@ class Player:
             field_name = "accept_trade"
             
         try:
-            parsed, resp_raw = self._structured(current_messages, schema_or_tool=schema_or_tool, max_tokens=256)
-            if not parsed:
-                raise ValueError("Failed to parse structured response")
+            parsed, resp_raw = self._structured(current_messages, schema_or_tool=schema_or_tool, max_tokens=512)
+            if parsed is None:
+                raise ValueError("Failed to parse structured response: got None")
 
             will_accept = parsed.get(field_name)
             if not isinstance(will_accept, bool):
@@ -363,13 +363,19 @@ class Player:
         except Exception as e:
             print(f"Error handling trade response: {e}, defaulting to rejected")
             will_accept = False
+            reasoning = f"Failed to handle response: {str(e)}"
             response_data = {
                 "raw": resp_raw if 'resp_raw' in locals() else str(e),
                 "parsed": {
                     "status": "rejected",
-                    "rationale": f"Failed to handle response: {str(e)}"
+                    "rationale": reasoning
                 }
             }
+            # Log API/structured response error
+            self.game.logger.log_format_error(self.name, "api_structured_response_error", {
+                "error": str(e),
+                "action": "trade_response"
+            })
 
         # Log the response only after we have both prompt for the action entry and response
         self.game.logger.log_player_response(self.name, "trade_response", response_data)
@@ -392,9 +398,9 @@ class Player:
         # Make API call - retries in case of trade response parsing error happen in model_adapter.py
         schema_or_tool = ANTHROPIC_YESNO_TOOL if self.model_api == "anthropic" else YES_NO_SCHEMA
         try:
-            parsed, resp_raw = self._structured(contract_conversation, schema_or_tool=schema_or_tool, max_tokens=256)
-            if not parsed:
-                raise ValueError("Failed to parse structured response")
+            parsed, resp_raw = self._structured(contract_conversation, schema_or_tool=schema_or_tool, max_tokens=512)
+            if parsed is None:
+                raise ValueError("Failed to parse structured response: got None")
 
             answer = parsed.get("answer", "").lower()
             if answer not in ["yes", "no"]:
@@ -460,7 +466,7 @@ class Player:
 
         # Structured call (counts via _structured)
         schema_or_tool = ANTHROPIC_PAY4PARTNER_HONOR_TOOL if self.model_api == "anthropic" else PAY4PARTNER_HONOR_SCHEMA
-        parsed, resp_raw = self._structured(current_messages, schema_or_tool=schema_or_tool, max_tokens=256)
+        parsed, resp_raw = self._structured(current_messages, schema_or_tool=schema_or_tool, max_tokens=512)
 
         honor_p4p_agreement = parsed.get("honor_p4p_agreement", False)
         reasoning = parsed.get("rationale", "")
