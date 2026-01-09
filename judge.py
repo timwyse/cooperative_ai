@@ -3,7 +3,7 @@ import json
 from anthropic import Anthropic
 from openai import OpenAI
 
-from agents import SONNET_4, FOUR_0
+from agents import SONNET_4_5, FOUR_0
 from constants import ANTHROPIC_API_KEY, OPENAI_API_KEY, POINTS_FOR_WIN
 from model_adapter import ModelAdapter
 from schemas import (STRICT_JUDGE_SCHEMA, ANTHROPIC_STRICT_JUDGE_TOOL, 
@@ -14,7 +14,7 @@ from utils import get_last_alphabetic_word
 JUDGE_SYSTEM_PROMPT = "You are a judge whose goal is to summaries a contract created between two players. Your response must only include the contract, nothing else."
 
 class Judge:
-    def __init__(self, model=SONNET_4, temperature=1):
+    def __init__(self, model=SONNET_4_5, temperature=1):
         self.model = model.value
         self.model_api = model.api
         if self.model_api == 'open_ai':
@@ -231,9 +231,9 @@ Task:
    - Tile: {move}
 
    Answer: 
-   - If this tile is NOT in the contract, reply with "no".
-   - If this tile is in the contract **but** {player.name} is the **giver** of a color for this tile, reply with "no".  
-   - If this tile is in the contract **and** {player.name} is the **receiver** of a color for this tile **but** this tile has already been used by the player in their route: {player.route}, reply with "no".
+   - If this tile is NOT covered by the players’ agreement, reply with "no".
+   - If this tile is covered by the players’ agreement **but** {player.name} is the **giver** of a color for this tile, reply with "no".  
+   - If this tile is covered by the players’ agreement **and** {player.name} is the **receiver** of a color for this tile **but** this tile has already been used by the player in their route: {player.route}, reply with "no".
    - Otherwise, reply with "yes".
 
 IMPORTANT RULES:  
