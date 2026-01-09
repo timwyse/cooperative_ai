@@ -20,3 +20,14 @@ LLAMA_405B = Agent(name="Llama_405B", value="meta-llama/Meta-Llama-3.1-405B-Inst
 SONNET_4 = Agent(name="Claude_Sonnet_4", value="claude-sonnet-4-20250514", api='anthropic') # $15 
 HAIKU_3_5 = Agent(name="Claude_Haiku_3.5", value="claude-3-5-haiku-20241022", api='anthropic') # $4
 
+SONNET_4_5 = Agent(
+    name="Claude_Sonnet_4.5",
+    value="claude-sonnet-4-5-20250929",
+    api="anthropic"
+)  # ~$15
+
+HAIKU_4_5 = Agent(
+    name="Claude_Haiku_4.5",
+    value="claude-haiku-4-5-20251001",
+    api="anthropic"
+)  # ~$4
