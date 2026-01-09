@@ -23,7 +23,7 @@ MOVE_DECISION_SCHEMA = {
 
 ANTHROPIC_MOVE_TOOL = {
     "name": "submit_move",
-    "description": "Choose next move or indicate you don't want to move.",
+    "description": "Choose your next move. You must first think through your reasoning in 'rationale', then provide your decision in 'want_to_move' and 'move'. Example: {\"rationale\": \"I am at (0,0). My goal is (3,3). Looking at the board, moving to (1,0) costs R which I have. This gets me closer to my goal.\", \"want_to_move\": true, \"move\": \"1,0\"}",
     "input_schema": MOVE_DECISION_SCHEMA["schema"],
 }
 
@@ -69,7 +69,7 @@ TRADE_PROPOSAL_SCHEMA = {
 
 ANTHROPIC_TRADE_TOOL = {
     "name": "propose_trade",
-    "description": "Propose a trade or respond with 'n' if you don't want to trade.",
+    "description": "Propose a trade or indicate you don't want to trade. You must first think through your reasoning in 'rationale', then provide your decision. Example: {\"rationale\": \"My inventory is R=14, B=0. I need B chips to reach my goal. The other player has B=14. Trading 2R for 2B helps me.\", \"want_to_trade\": true, \"chips_to_offer\": [{\"color\": \"R\", \"quantity\": 2}], \"chips_to_receive\": [{\"color\": \"B\", \"quantity\": 2}]}",
     "input_schema": TRADE_PROPOSAL_SCHEMA["schema"],
 }
 
@@ -93,7 +93,7 @@ TRADE_RESPONSE_SCHEMA = {
 
 ANTHROPIC_TRADE_RESPONSE_TOOL = {
     "name": "trade_response",
-    "description": "Decide whether to accept or reject the proposed trade.",
+    "description": "Decide whether to accept or reject the proposed trade. IMPORTANT: You must FIRST think through your reasoning in 'rationale', THEN provide your decision in 'accept_trade'. Always output rationale BEFORE accept_trade. Example: {\"rationale\": \"The proposed trade gives me 2B chips which I need. I would give 3R chips but I have 14R, so I can afford it. This trade helps me reach my goal.\", \"accept_trade\": true}",
     "input_schema": TRADE_RESPONSE_SCHEMA["schema"],
 }
 
@@ -115,7 +115,7 @@ YES_NO_SCHEMA = {
 
 ANTHROPIC_YESNO_TOOL = {
     "name": "yes_no",
-    "description": "Answer yes or no to the proposed trade, with a brief justification.",
+    "description": "Answer yes or no. You must first think through your reasoning in 'rationale', THEN provide your decision in 'answer'. Always output rationale before answer. Example: {\"rationale\": \"This contract benefits me because it ensures the other player helps me reach my goal.\", \"answer\": \"yes\"}",
     "input_schema": YES_NO_SCHEMA["schema"],
 }
 
@@ -136,7 +136,7 @@ PAY4PARTNER_ARRANGEMENT_SCHEMA = {
 
 ANTHROPIC_PAY4PARTNER_ARRANGEMENT_TOOL = {
     "name": "pay4partner_arrangement",
-    "description": "Decide whether to accept or reject the pay4partner arrangement.",
+    "description": "Decide whether to accept or reject the pay4partner arrangement. You must first think through your reasoning in 'rationale', then provide your decision in 'accept_p4p_arrangement'. Example: {\"rationale\": \"This arrangement covers 2R moves for me which I need. In exchange I cover 2B moves which I can afford with my 14B chips.\", \"accept_p4p_arrangement\": true}",
     "input_schema": PAY4PARTNER_ARRANGEMENT_SCHEMA["schema"],
 }
 
@@ -157,7 +157,7 @@ PAY4PARTNER_HONOR_SCHEMA = {
 
 ANTHROPIC_PAY4PARTNER_HONOR_TOOL = {
     "name": "pay4partner_honor",
-    "description": "Decide whether to honor the pay4partner agreement and pay for the partner's move.",
+    "description": "Decide whether to honor the pay4partner agreement and pay for the partner's move. You must first think through your reasoning in 'rationale', then provide your decision in 'honor_p4p_agreement'. Example: {\"rationale\": \"I agreed to cover R chips for the other player. They are moving to an R tile. I have enough R chips to honor this agreement.\", \"honor_p4p_agreement\": true}",
     "input_schema": PAY4PARTNER_HONOR_SCHEMA["schema"],
 }
 
@@ -178,7 +178,7 @@ BOOLEAN_ANSWER_SCHEMA = {
 
 ANTHROPIC_BOOLEAN_ANSWER_TOOL = {
     "name": "boolean_answer",
-    "description": "Answer true or false to the question, with a brief justification.",
+    "description": "Answer true or false. You must first think through your reasoning in 'rationale', then provide your decision in 'answer'. Example: {\"rationale\": \"Based on my analysis of the situation...\", \"answer\": true}",
     "input_schema": BOOLEAN_ANSWER_SCHEMA["schema"],
 }
 
