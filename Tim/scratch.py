@@ -28,3 +28,112 @@ print(get_gpt_response(system_prompt, user))
 ## independent: 0-19
 ## MD: 20-29, 40-49, 90-99
 ## Needy Player (Blue): 120-139
+
+import anthropic
+
+import anthropic
+
+def get_claude_response(system_prompt, user_prompt, model="claude-2"):
+    """
+    Query an Anthropic Claude model using the Messages API.
+
+    Args:
+        system_prompt (str): The system prompt to set the context.
+        user_prompt (str): The user input to query the model.
+        model (str): The Claude model to use (e.g., "claude-2").
+
+    Returns:
+        str: The model's response.
+    """
+    client = anthropic.Client()  # Assumes your API key is set in the environment
+    response = client.chat.create(
+        model=model,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ],
+        max_tokens_to_sample=500
+    )
+    return response["completion"]
+
+# Example usage:
+system_prompt = "You are a helpful assistant."
+user_prompt = "What is the capital of France?"
+print(get_claude_response(system_prompt, user_prompt))
+# %%
+
+model = "qwen/qwen3-235b-a22b-2507"
+from openai import OpenAI
+import os
+
+client = OpenAI(
+    api_key=os.environ["OPENROUTER_API_KEY"],
+    base_url="https://openrouter.ai/api/v1",
+    default_headers={
+        "HTTP-Referer": "https://yourapp.example",
+        "X-Title": "Your App Name",
+    },
+)
+
+resp = client.chat.completions.create(
+    model="qwen/qwen3-235b-a22b-2507",
+    messages=[{"role": "user", "content": "Hello!"}],
+    extra_body={
+        "provider": {"order": ["together"], "allow_fallbacks": False}
+    },
+)
+
+print(resp.choices[0].message.content)
+# %%
+import requests
+import json
+api_key=os.environ["OPENROUTER_API_KEY"],
+response = requests.post(
+  url="https://openrouter.ai/api/v1/chat/completions",
+  headers={
+    "Authorization": f"Bearer {api_key}",
+    "Content-Type": "application/json",
+  },
+  data=json.dumps({
+    "model": "qwen/qwen3-235b-a22b-2507",
+    "messages": [
+      {
+        "role": "user",
+        "content": "What is the meaning of life?"
+      }
+    ]
+  })
+)
+# %%
+response.json()
+# %%
+api_key
+# %%
+
+
+model = "qwen/qwen3-235b-a22b-2507"
+from openai import OpenAI
+from os import getenv
+
+# gets API Key from environment variable OPENAI_API_KEY
+client = OpenAI(
+  base_url="https://openrouter.ai/api/v1",
+  api_key=getenv("OPENROUTER_API_KEY"),
+)
+
+resp = client.chat.completions.create(
+  model=model,
+  temperature=0.7,
+  max_completion_tokens=256,
+  messages=[
+    {
+      "role": "user",
+      "content": "Say this is a test",
+    },
+  ],
+)
+
+
+content = resp.choices[0].message.content
+print(content)
+# %%

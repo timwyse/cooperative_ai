@@ -8,7 +8,7 @@ from anthropic import Anthropic
 from openai import OpenAI
 from together import Together
 
-from constants import ANTHROPIC_API_KEY, OPENAI_API_KEY, TOGETHER_API_KEY
+from constants import ANTHROPIC_API_KEY, OPENAI_API_KEY, TOGETHER_API_KEY, OPENROUTER_API_KEY
 
 
 class ModelAdapter:
@@ -22,7 +22,7 @@ class ModelAdapter:
       text = adapter.chat_completion(messages, max_completion_tokens=1000)
 
       # structured
-      #  OpenAI/Together: pass a JSON Schema *payload* (the actual "schema" dict)
+      #  OpenAI/Together/OpenRouter: pass a JSON Schema *payload* (the actual "schema" dict)
       #  Anthropic: pass a *tool definition* (with tool name + input_schema)
       parsed, raw = adapter.structured(messages, schema_or_tool, max_tokens=1000)
     """
@@ -38,6 +38,11 @@ class ModelAdapter:
             self.client = Together(api_key=TOGETHER_API_KEY)
         elif model_api == "anthropic":
             self.client = Anthropic(api_key=ANTHROPIC_API_KEY)
+        elif model_api == "openrouter":
+            self.client = OpenAI(
+                api_key=OPENROUTER_API_KEY,
+                base_url="https://openrouter.ai/api/v1",
+            )
         else:
             raise ValueError(f"Unknown model_api: {model_api}")
 
@@ -63,7 +68,7 @@ class ModelAdapter:
                     texts.append(block.text)
             return "\n".join(t.strip() for t in texts if t).strip()
 
-        if self.model_api == "open_ai":
+        if self.model_api in ("open_ai", "openrouter"):
             resp = self.client.chat.completions.create(
                 model=self.model_name,
                 temperature=self.temperature,
@@ -143,7 +148,7 @@ class ModelAdapter:
                     print(f"Retrying API call (attempt {attempt + 1}/{max_retries})...")
                 
                 # Handle different APIs
-                if self.model_api == "open_ai":
+                if self.model_api in ("open_ai", "openrouter"):
                     resp = self.client.chat.completions.create(
                         model=self.model_name,
                         temperature=self.temperature,
@@ -216,7 +221,7 @@ class ModelAdapter:
                     return parsed, raw_text
             raise RuntimeError("Claude did not return the expected tool call.")
 
-        # OpenAI / Together: treat schema_or_tool as JSON Schema payload
+        # OpenAI / Together / OpenRouter: treat schema_or_tool as JSON Schema payload
         if "name" in schema_or_tool and "schema" in schema_or_tool:
             # Full schema object with name and schema - extract name and schema
             json_schema = {

@@ -20,9 +20,10 @@ GRIDS_FILE = "experiment_configs/4x4_experiment_grids.yaml"
 PARAM_VARIATIONS = "parameter_variations"
 
 AGENT_LIST = {
-    "FOUR_1": FOUR_1,
+    # "FOUR_1": FOUR_1,
     # "SONNET_4": SONNET_4,
-    # "LLAMA_405B": LLAMA_405B,
+    "LLAMA_405B": LLAMA_405B,
+    # "LLAMA_70B": LLAMA_70B
 }
 
 def make_pair_name(a, b) -> str:
