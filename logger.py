@@ -68,8 +68,7 @@ class Logger(BaseLogger):
                 "start_timestamp": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
                 "end_timestamp": None,
                 "turns": {}  # log_player_turn_summary
-            },
-            "final_state": None  # log_game_end
+            }
         }
         
         # Init verbose log with clean structure
