@@ -14,7 +14,7 @@ import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from prompts import DEFAULT_SYSTEM_PROMPT, SELFISH_SYSTEM_PROMPT
 
-NUM_WORKERS = 20
+NUM_WORKERS = 8
 
 # Files
 GRIDS_FILE = "experiment_configs/4x4_experiment_grids.yaml"
@@ -22,8 +22,9 @@ PARAM_VARIATIONS = "parameter_variations"
 
 AGENT_LIST = {
     "FOUR_1": FOUR_1,
-    "HAIKU_4_5": HAIKU_4_5
-    # "SONNET_4": SONNET_4,
+    "HAIKU_4_5": HAIKU_4_5,
+    "HAIKU_3_5": HAIKU_3_5,  # Known working model for testing
+    "SONNET_4_5": SONNET_4_5,
     # "LLAMA_405B": LLAMA_405B,
 }
 
@@ -36,10 +37,35 @@ QUOTA_ERROR_PATTERNS = [
 class QuotaError(Exception):
     pass
 
+def is_experiment_completed(run_timestamp: str, pair_name: str, grid_data: dict, config, selfish_str: str) -> bool:
+    """Check if a completed experiment already exists for this configuration."""
+    bucket = grid_data['bucket'].replace(" ", "_").replace("(", "").replace(")", "")
+    grid_id = f"grid_{grid_data['id']:03d}"
+    config_dir = generate_config_dir_name(config, selfish=selfish_str)
+    
+    # Path to the config directory where runs would be stored
+    config_path = Path("logs") / "experiments" / "per_grid" / run_timestamp / pair_name / bucket / grid_id / config_dir
+    
+    if not config_path.exists():
+        return False
+    
+    # Check each run folder for a completed event log
+    for run_folder in config_path.iterdir():
+        if run_folder.is_dir():
+            for log_file in run_folder.glob("event_log_*.json"):
+                try:
+                    with open(log_file, 'r') as f:
+                        content = f.read()
+                        if '"total_scores"' in content:
+                            return True
+                except Exception:
+                    continue
+    
+    return False
+
 def _is_quota_error(error_str: str) -> bool:
     error_lower = error_str.lower()
     return any(pattern in error_lower for pattern in QUOTA_ERROR_PATTERNS)
-
 def make_pair_name(a, b) -> str:
     return f"{a.replace(' ', '_')}-{b.replace(' ', '_')}"
 
@@ -165,10 +191,38 @@ def _run_single_experiment(pair_name: str, agents: List, grid_data, variation, r
         return False, {"status": "CRASHED", "pair": pair_name, "grid_id": grid_id,
                        "error": error_str, "traceback": tb_str, "path": str(exp_path)}
 
-def run_experiments(start_id=None, end_id=None, pair_args: List[str] = None, num_workers=NUM_WORKERS):
+def find_latest_run_folder() -> str:
+    """Find the most recent run folder (YYYY_MM_DD_HH format)."""
+    base_path = Path("logs") / "experiments" / "per_grid"
+    if not base_path.exists():
+        return None
+    
+    # Find all folders matching the timestamp pattern
+    folders = [f for f in base_path.iterdir() if f.is_dir() and len(f.name) == 13]  # YYYY_MM_DD_HH = 13 chars
+    if not folders:
+        return None
+    
+    # Sort by name (which is chronological for this format) and get the latest
+    latest = sorted(folders, key=lambda x: x.name, reverse=True)[0]
+    return latest.name
+
+def run_experiments(start_id=None, end_id=None, pair_args: List[str] = None, num_workers=NUM_WORKERS, add_to_latest=False, skip_completed=False, run_folder=None):
     model_pairs = parse_pairs(pair_args or [])
-    run_timestamp = datetime.now().strftime("%Y_%m_%d_%H")
-    print(f"\n{'='*60}\nStarting experiment batch: {run_timestamp}\n{'='*60}\n")
+    
+    if run_folder:
+        # Use specified run folder
+        run_timestamp = run_folder
+        print(f"\n{'='*60}\nADDING to specified batch: {run_timestamp}\n{'='*60}\n")
+    elif add_to_latest:
+        run_timestamp = find_latest_run_folder()
+        if run_timestamp is None:
+            print("No existing run folder found, creating new one.")
+            run_timestamp = datetime.now().strftime("%Y_%m_%d_%H")
+        else:
+            print(f"\n{'='*60}\nADDING to existing batch: {run_timestamp}\n{'='*60}\n")
+    else:
+        run_timestamp = datetime.now().strftime("%Y_%m_%d_%H")
+        print(f"\n{'='*60}\nStarting experiment batch: {run_timestamp}\n{'='*60}\n")
 
     # Load parameter variations
     param_file = f"experiment_configs/{PARAM_VARIATIONS}.yaml"
@@ -187,12 +241,40 @@ def run_experiments(start_id=None, end_id=None, pair_args: List[str] = None, num
 
     # Build tasks
     tasks = []
+    skipped_count = 0
     for pair_name, agents in model_pairs:
         for grid_data in grids:
             if grid_data['bucket'] == 'Needy Player (Red)' and agents[0] == agents[1]:
                 continue  # Skip symmetric grids for identical agents
             for variation in param_variations:
+                # Check if we should skip completed experiments
+                if skip_completed:
+                    selfish = variation.get("selfish", [False, False])
+                    selfish_str = _selfish_to_str(selfish)
+                    
+                    # Create a temporary config to check completion status
+                    temp_config = GameConfig(
+                        grid_size=4,
+                        colors=['R', 'B', 'G'],
+                        grid=grid_data['grid'],
+                        resource_mode='manual',
+                        manual_resources=[{"R": 14, "B": 0, "G": 2}, {"R": 0, "B": 14, "G": 2}],
+                        players=agents,
+                        pay4partner=variation["pay4partner"],
+                        contract_type=variation["contract_type"],
+                        with_message_history=variation["with_message_history"],
+                        fog_of_war=variation["fog_of_war"],
+                        with_context=True
+                    )
+                    
+                    if is_experiment_completed(run_timestamp, pair_name, grid_data, temp_config, selfish_str):
+                        skipped_count += 1
+                        continue
+                
                 tasks.append((pair_name, agents, grid_data, variation))
+    
+    if skip_completed and skipped_count > 0:
+        print(f"Skipped {skipped_count} already completed experiments")
 
     print(f"Total runs: {len(tasks)}, Workers: {num_workers}")
 
@@ -226,5 +308,8 @@ if __name__ == "__main__":
     parser.add_argument('--end-id', type=int, help='Run until this grid ID (inclusive)')
     parser.add_argument('--workers', type=int, default=NUM_WORKERS, help='Number of parallel workers')
     parser.add_argument('--pairs', action='append', help="Model pair as 'A,B'")
+    parser.add_argument('--add', action='store_true', help='Add experiments to the most recent run folder instead of creating a new one')
+    parser.add_argument('--skip-completed', action='store_true', help='Skip experiments that already have completed logs')
+    parser.add_argument('--run-folder', type=str, help='Specify exact run folder to add to (e.g., 2026_01_08_17)')
     args = parser.parse_args()
-    run_experiments(start_id=args.start_id, end_id=args.end_id, pair_args=args.pairs, num_workers=args.workers)
+    run_experiments(start_id=args.start_id, end_id=args.end_id, pair_args=args.pairs, num_workers=args.workers, add_to_latest=args.add, skip_completed=args.skip_completed, run_folder=args.run_folder)
