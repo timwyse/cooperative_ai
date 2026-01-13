@@ -14,6 +14,8 @@ FOUR_1 = Agent(name="GPT 4.1", value="gpt-4.1", api='open_ai') # $8
 FOUR_0 = Agent(name="GPT 4o", value="gpt-4o", api='open_ai') # $10 
 SONNET_4 = Agent(name="Claude_Sonnet_4", value="claude-sonnet-4-20250514", api='anthropic') # $15 
 HAIKU_3_5 = Agent(name="Claude_Haiku_3.5", value="claude-3-5-haiku-20241022", api='anthropic') # $4
+SONNET_4_5 = Agent(name="Claude_Sonnet_4.5", value="claude-sonnet-4-5-20250929", api="anthropic")  # ~$15
+HAIKU_4_5 = Agent(name="Claude_Haiku_4.5", value="claude-haiku-4-5-20251001", api="anthropic") 
 DEEPSEEK_V3 = Agent(name="DeepSeek_R1", value="deepseek-ai/DeepSeek-V3", api='openrouter') # $1.25
 QWEN_2_7B = Agent(name="QWEN_25_7B", value="Qwen/Qwen2.5-7B-Instruct-Turbo", api='openrouter') # $0.30 
 # QWEN_480B = Agent(name="QWEN_480B", value="Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8", api='openrouter') # $0.6

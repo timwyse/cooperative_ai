@@ -205,21 +205,54 @@ class ModelAdapter:
             system_text = "\n".join(m["content"] for m in messages if m["role"] == "system")
             msgs_wo_system = [m for m in messages if m["role"] != "system"]
 
-            resp = self.client.messages.create(
-                model=self.model_name,
-                temperature=self.temperature,
-                system=system_text or None,
-                messages=msgs_wo_system,
-                tools=[schema_or_tool],
-                tool_choice={"type": "tool", "name": schema_or_tool["name"]},
-                max_tokens=max_tokens,
-            )
-            for block in resp.content:
-                if getattr(block, "type", None) == "tool_use" and getattr(block, "name", None) == schema_or_tool["name"]:
-                    parsed = block.input
-                    raw_text = json.dumps(parsed)
-                    return parsed, raw_text
-            raise RuntimeError("Claude did not return the expected tool call.")
+            max_retries = 3
+            last_error = None
+            last_parsed = None
+            
+            for attempt in range(max_retries):
+                try:
+                    if attempt > 0:
+                        print(f"Retrying Anthropic API call (attempt {attempt + 1}/{max_retries})...")
+                    
+                    resp = self.client.messages.create(
+                        model=self.model_name,
+                        temperature=self.temperature,
+                        system=system_text or None,
+                        messages=msgs_wo_system,
+                        tools=[schema_or_tool],
+                        tool_choice={"type": "tool", "name": schema_or_tool["name"]},
+                        max_tokens=max_tokens,
+                    )
+                    
+                    for block in resp.content:
+                        if getattr(block, "type", None) == "tool_use" and getattr(block, "name", None) == schema_or_tool["name"]:
+                            parsed = block.input
+                            last_parsed = parsed
+                            
+                            # Validate we got a non-empty response with required fields
+                            if not parsed or not isinstance(parsed, dict):
+                                raise ValueError(f"Empty or invalid tool response: {parsed}")
+                            
+                            # Check required fields from input_schema
+                            input_schema = schema_or_tool.get("input_schema", {})
+                            required_fields = input_schema.get("required", [])
+                            missing = [f for f in required_fields if f not in parsed]
+                            if missing:
+                                raise ValueError(f"Missing required fields {missing} in response: {parsed}")
+                            
+                            raw_text = json.dumps(parsed)
+                            return parsed, raw_text
+                    
+                    raise RuntimeError("Claude did not return the expected tool call.")
+                    
+                except Exception as e:
+                    last_error = e
+                    if attempt == max_retries - 1:
+                        error_msg = f"Anthropic structured call failed after {max_retries} attempts. Last error: {last_error}"
+                        if last_parsed:
+                            error_msg += f"\nLast parsed response: {last_parsed}"
+                        raise RuntimeError(error_msg)
+                    print(f"Attempt {attempt + 1} failed: {e}")
 
         # OpenAI / Together / OpenRouter: treat schema_or_tool as JSON Schema payload
         if "name" in schema_or_tool and "schema" in schema_or_tool:

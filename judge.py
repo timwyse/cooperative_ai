@@ -3,7 +3,7 @@ import json
 from anthropic import Anthropic
 from openai import OpenAI
 
-from agents import SONNET_4, FOUR_0
+from agents import SONNET_4_5, FOUR_0
 from constants import ANTHROPIC_API_KEY, OPENAI_API_KEY, POINTS_FOR_WIN
 from model_adapter import ModelAdapter
 from schemas import (STRICT_JUDGE_SCHEMA, ANTHROPIC_STRICT_JUDGE_TOOL, 
@@ -14,7 +14,7 @@ from utils import get_last_alphabetic_word
 JUDGE_SYSTEM_PROMPT = "You are a judge whose goal is to summaries a contract created between two players. Your response must only include the contract, nothing else."
 
 class Judge:
-    def __init__(self, model=SONNET_4, temperature=1):
+    def __init__(self, model=SONNET_4_5, temperature=1):
         self.model = model.value
         self.model_api = model.api
         if self.model_api == 'open_ai':
@@ -249,8 +249,8 @@ IMPORTANT RULES:
         try:
             parsed, resp_raw = self._structured(message_for_judge, schema_or_tool=schema_or_tool, max_tokens=1000)
             print(f"Judge response: {resp_raw}")
-            if not parsed:
-                raise ValueError("Failed to parse structured response")
+            if parsed is None:
+                raise ValueError("Failed to parse structured response: got None")
 
             answer = parsed.get("answer", "").lower()
             if answer not in ["yes", "no"]:

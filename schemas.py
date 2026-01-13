@@ -23,7 +23,7 @@ MOVE_DECISION_SCHEMA = {
 
 ANTHROPIC_MOVE_TOOL = {
     "name": "submit_move",
-    "description": "Choose next move or indicate you don't want to move.",
+    "description": "Choose your next move. You must first think through your reasoning in 'rationale', then provide your decision in 'want_to_move' and 'move'. Example: {\"rationale\": \"I am at (0,0). My goal is (3,3). Looking at the board, moving to (1,0) costs R which I have. This gets me closer to my goal.\", \"want_to_move\": true, \"move\": \"1,0\"}",
     "input_schema": MOVE_DECISION_SCHEMA["schema"],
 }
 
@@ -69,7 +69,7 @@ TRADE_PROPOSAL_SCHEMA = {
 
 ANTHROPIC_TRADE_TOOL = {
     "name": "propose_trade",
-    "description": "Propose a trade or respond with 'n' if you don't want to trade.",
+    "description": "Propose a trade or indicate you don't want to trade. You must first think through your reasoning in 'rationale', then provide your decision. Example: {\"rationale\": \"My inventory is R=14, B=0. I need B chips to reach my goal. The other player has B=14. Trading 2R for 2B helps me.\", \"want_to_trade\": true, \"chips_to_offer\": [{\"color\": \"R\", \"quantity\": 2}], \"chips_to_receive\": [{\"color\": \"B\", \"quantity\": 2}]}",
     "input_schema": TRADE_PROPOSAL_SCHEMA["schema"],
 }
 
@@ -82,10 +82,9 @@ TRADE_RESPONSE_SCHEMA = {
         "type": "object",
         "additionalProperties": False,
         "properties": {
-            "rationale": {"type": "string", "maxLength": 500},
-            "accept_trade": {"type": "boolean"}
+            "rationale": {"type": "string", "maxLength": 200, "description": "Brief reasoning (1-2 sentences), then you MUST set accept_trade"},
+            "accept_trade": {"type": "boolean", "description": "REQUIRED: true to accept, false to reject"}
         },
-        # IMPORTANT: OpenAI structured outputs requires ALL properties to be in `required`
         "required": ["rationale", "accept_trade"]
     },
     "strict": True
@@ -93,7 +92,7 @@ TRADE_RESPONSE_SCHEMA = {
 
 ANTHROPIC_TRADE_RESPONSE_TOOL = {
     "name": "trade_response",
-    "description": "Decide whether to accept or reject the proposed trade.",
+    "description": "Think briefly, then decide. You MUST provide both: 1) rationale (1-2 sentences max), 2) accept_trade (true/false). Example: {\"rationale\": \"Trade helps me get B chips I need.\", \"accept_trade\": true}",
     "input_schema": TRADE_RESPONSE_SCHEMA["schema"],
 }
 
@@ -104,10 +103,9 @@ YES_NO_SCHEMA = {
         "type": "object",
         "additionalProperties": False,
         "properties": {
-            "rationale": {"type": "string", "maxLength": 500},
-            "answer": {"type": "string", "enum": ["yes", "no"]}
+            "rationale": {"type": "string", "maxLength": 200, "description": "Brief reasoning (1-2 sentences), then you MUST set answer"},
+            "answer": {"type": "string", "enum": ["yes", "no"], "description": "REQUIRED: yes or no"}
         },
-        # IMPORTANT: OpenAI structured outputs requires ALL properties to be in `required`
         "required": ["rationale", "answer"]
     },
     "strict": True
@@ -115,7 +113,7 @@ YES_NO_SCHEMA = {
 
 ANTHROPIC_YESNO_TOOL = {
     "name": "yes_no",
-    "description": "Answer yes or no to the proposed trade, with a brief justification.",
+    "description": "Think briefly, then decide. You MUST provide both: 1) rationale (1-2 sentences max), 2) answer (yes/no). Example: {\"rationale\": \"This benefits my goal.\", \"answer\": \"yes\"}",
     "input_schema": YES_NO_SCHEMA["schema"],
 }
 
@@ -126,8 +124,8 @@ PAY4PARTNER_ARRANGEMENT_SCHEMA = {
         "type": "object",
         "additionalProperties": False,
         "properties": {
-            "rationale": {"type": "string", "maxLength": 500},
-            "accept_p4p_arrangement": {"type": "boolean"}
+            "rationale": {"type": "string", "maxLength": 200, "description": "Brief reasoning (1-2 sentences), then you MUST set accept_p4p_arrangement"},
+            "accept_p4p_arrangement": {"type": "boolean", "description": "REQUIRED: true to accept, false to reject"}
         },
         "required": ["rationale", "accept_p4p_arrangement"]
     },
@@ -136,7 +134,7 @@ PAY4PARTNER_ARRANGEMENT_SCHEMA = {
 
 ANTHROPIC_PAY4PARTNER_ARRANGEMENT_TOOL = {
     "name": "pay4partner_arrangement",
-    "description": "Decide whether to accept or reject the pay4partner arrangement.",
+    "description": "Think briefly, then decide. You MUST provide both: 1) rationale (1-2 sentences max), 2) accept_p4p_arrangement (true/false). Example: {\"rationale\": \"This helps me reach my goal.\", \"accept_p4p_arrangement\": true}",
     "input_schema": PAY4PARTNER_ARRANGEMENT_SCHEMA["schema"],
 }
 
@@ -147,8 +145,8 @@ PAY4PARTNER_HONOR_SCHEMA = {
         "type": "object",
         "additionalProperties": False,
         "properties": {
-            "rationale": {"type": "string", "maxLength": 500},
-            "honor_p4p_agreement": {"type": "boolean"}
+            "rationale": {"type": "string", "maxLength": 200, "description": "Brief reasoning (1-2 sentences), then you MUST set honor_p4p_agreement"},
+            "honor_p4p_agreement": {"type": "boolean", "description": "REQUIRED: true to honor, false to break"}
         },
         "required": ["rationale", "honor_p4p_agreement"]
     },
@@ -157,7 +155,7 @@ PAY4PARTNER_HONOR_SCHEMA = {
 
 ANTHROPIC_PAY4PARTNER_HONOR_TOOL = {
     "name": "pay4partner_honor",
-    "description": "Decide whether to honor the pay4partner agreement and pay for the partner's move.",
+    "description": "Think briefly, then decide. You MUST provide both: 1) rationale (1-2 sentences max), 2) honor_p4p_agreement (true/false). Example: {\"rationale\": \"I agreed to help.\", \"honor_p4p_agreement\": true}",
     "input_schema": PAY4PARTNER_HONOR_SCHEMA["schema"],
 }
 
@@ -168,8 +166,8 @@ BOOLEAN_ANSWER_SCHEMA = {
         "type": "object",
         "additionalProperties": False,
         "properties": {
-            "rationale": {"type": "string", "maxLength": 500},
-            "answer": {"type": "boolean"}
+            "rationale": {"type": "string", "maxLength": 200, "description": "Brief reasoning (1-2 sentences), then you MUST set answer"},
+            "answer": {"type": "boolean", "description": "REQUIRED: true or false"}
         },
         "required": ["rationale", "answer"]
     },
@@ -178,7 +176,7 @@ BOOLEAN_ANSWER_SCHEMA = {
 
 ANTHROPIC_BOOLEAN_ANSWER_TOOL = {
     "name": "boolean_answer",
-    "description": "Answer true or false to the question, with a brief justification.",
+    "description": "Think briefly, then decide. You MUST provide both: 1) rationale (1-2 sentences max), 2) answer (true/false). Example: {\"rationale\": \"This is correct.\", \"answer\": true}",
     "input_schema": BOOLEAN_ANSWER_SCHEMA["schema"],
 }
 
