@@ -22,6 +22,7 @@ PARAM_VARIATIONS = "parameter_variations"
 
 AGENT_LIST = {
     "FOUR_1": FOUR_1,
+    "GPT_5_2": GPT_5_2,
     "HAIKU_4_5": HAIKU_4_5,
     "HAIKU_3_5": HAIKU_3_5,  # Known working model for testing
     "SONNET_4_5": SONNET_4_5,
