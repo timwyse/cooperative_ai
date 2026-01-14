@@ -135,19 +135,17 @@ class ModelAdapter:
         schema_or_tool: Dict[str, Any],
         max_tokens: int,
         response_format: Dict[str, Any]
-    ) -> Tuple[Dict[str, Any], str]:
-        """Make API call with retries and JSON validation."""
+    ) -> Tuple[Optional[Dict[str, Any]], str]:
         max_retries = 3
         last_error = None
         last_raw = None
 
         for attempt in range(max_retries):
             try:
-                # Make API call
                 if attempt > 0:
                     print(f"Retrying API call (attempt {attempt + 1}/{max_retries})...")
                 
-                # Handle different APIs
+                # different APIs handling
                 if self.model_api in ("open_ai", "openrouter"):
                     resp = self.client.chat.completions.create(
                         model=self.model_name,
@@ -185,15 +183,18 @@ class ModelAdapter:
                     error_msg = f"Failed to get valid JSON response after {max_retries} attempts. Last error: {str(last_error)}"
                     if last_raw:
                         error_msg += f"\nLast raw response: {last_raw}"
-                    raise ValueError(error_msg)
+                    print(f"API Error: {error_msg}")
+                    return None, error_msg
                 print(f"Attempt {attempt + 1} failed with error: {e}, retrying...")
+        
+        return None, "retry loop exited without returning"
 
     def structured(
         self,
         messages: List[Dict[str, str]],
         schema_or_tool: Dict[str, Any],
         max_tokens: int = 1000,
-    ) -> Tuple[Dict[str, Any], str]:
+    ) -> Tuple[Optional[Dict[str, Any]], str]:
         """
         - Anthropic: pass a *tool def* like ANTHROPIC_*_TOOL (with 'name' and 'input_schema').
                      Returns (parsed_dict, raw_json_str).
@@ -239,7 +240,7 @@ class ModelAdapter:
                             missing = [f for f in required_fields if f not in parsed]
                             if missing:
                                 raise ValueError(f"Missing required fields {missing} in response: {parsed}")
-                            
+
                             raw_text = json.dumps(parsed)
                             return parsed, raw_text
                     
@@ -251,8 +252,12 @@ class ModelAdapter:
                         error_msg = f"Anthropic structured call failed after {max_retries} attempts. Last error: {last_error}"
                         if last_parsed:
                             error_msg += f"\nLast parsed response: {last_parsed}"
-                        raise RuntimeError(error_msg)
+                        print(f"API Error: {error_msg}")
+                        return None, error_msg
                     print(f"Attempt {attempt + 1} failed: {e}")
+            
+
+            return None, "Anthropic retry loop exited without returning"
 
         # OpenAI / Together / OpenRouter: treat schema_or_tool as JSON Schema payload
         if "name" in schema_or_tool and "schema" in schema_or_tool:

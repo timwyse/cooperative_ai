@@ -165,9 +165,12 @@ Your task:
         
         contract_parsed, contract_raw = self._structured(judge_conversation, schema_or_tool=schema_or_tool, max_tokens=1000)
         
-        # if contract.lower() == 'n':
-        #     print("Judge determined that a contract was not established")
-        #     return None
+        # Handle API failure - return empty contract
+        if contract_parsed is None:
+            print(f"Judge API error: {contract_raw}")
+            if hasattr(self, 'logger') and self.logger:
+                self.logger.log_format_error("Judge", "api_error_contract", {"error": contract_raw or "Unknown API error"})
+            return {}  # Empty contract
         
         if type(contract_parsed) == dict:
             # Fix for all models: unwrap if contract is nested in an extra layer
@@ -176,19 +179,17 @@ Your task:
             return contract_parsed
             
         else:
-            print("⚠️ Contract of wrong type:")
             print(f"contract put forward by judge: {contract_parsed}")
-            if hasattr(self, 'logger'):
+            if hasattr(self, 'logger') and self.logger:
                 self.logger.log_format_error(
                     "Judge",
-                    "contract_json_parse_error",
-                    {"error": 'structured_output_error', "raw_response": contract_parsed}
+                    "contract_wrong_type",
+                    {"error": 'expected dict', "raw_response": str(contract_parsed)}
                 )
+            return {}  # Return empty contract instead of implicit None
 
     def _unwrap_nested_contract(self, contract: dict) -> dict:
         """
-        Fix for LLMs wrapping contracts in an extra layer.
-        
         Models sometimes return:
             {"contract": {"(0,1)": {...}}}      (Anthropic)
             {"parameter": {"(0,1)": {...}}}     (OpenAI/GPT-5.2)
@@ -196,7 +197,7 @@ Your task:
         Instead of the expected flat format:
             {"(0,1)": {...}}
         
-        This method detects and unwraps such cases for all model types.
+        This unwraps the contract.
         """
         import re
         tile_pattern = re.compile(r'^\(\d+,\d+\)$')
@@ -215,7 +216,7 @@ Your task:
             if isinstance(inner, dict):
                 inner_has_tiles = any(tile_pattern.match(k) for k in inner.keys())
                 if inner_has_tiles:
-                    print(f"⚠️ Unwrapping nested contract from key '{wrapper_key}'")
+                    print(f"Unwrapping nested contract from key '{wrapper_key}'")
                     return inner
         
         # Return as-is if we can't identify the pattern
