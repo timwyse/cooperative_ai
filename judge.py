@@ -170,6 +170,9 @@ Your task:
         #     return None
         
         if type(contract_parsed) == dict:
+            # Fix for all models: unwrap if contract is nested in an extra layer
+            # e.g., {"contract": {...}}, {"parameter": {...}} instead of flat structure
+            contract_parsed = self._unwrap_nested_contract(contract_parsed)
             return contract_parsed
             
         else:
@@ -182,7 +185,41 @@ Your task:
                     {"error": 'structured_output_error', "raw_response": contract_parsed}
                 )
 
-    
+    def _unwrap_nested_contract(self, contract: dict) -> dict:
+        """
+        Fix for LLMs wrapping contracts in an extra layer.
+        
+        Models sometimes return:
+            {"contract": {"(0,1)": {...}}}      (Anthropic)
+            {"parameter": {"(0,1)": {...}}}     (OpenAI/GPT-5.2)
+            {"$PARAMETER_NAME": {"(0,1)": {...}}}
+        Instead of the expected flat format:
+            {"(0,1)": {...}}
+        
+        This method detects and unwraps such cases for all model types.
+        """
+        import re
+        tile_pattern = re.compile(r'^\(\d+,\d+\)$')
+        
+        # Check if any top-level key looks like a tile coordinate
+        has_tile_keys = any(tile_pattern.match(k) for k in contract.keys())
+        
+        if has_tile_keys:
+            # Already in correct format
+            return contract
+        
+        # Check if there's exactly one key containing a nested dict with tile keys
+        if len(contract) == 1:
+            wrapper_key = list(contract.keys())[0]
+            inner = contract[wrapper_key]
+            if isinstance(inner, dict):
+                inner_has_tiles = any(tile_pattern.match(k) for k in inner.keys())
+                if inner_has_tiles:
+                    print(f"⚠️ Unwrapping nested contract from key '{wrapper_key}'")
+                    return inner
+        
+        # Return as-is if we can't identify the pattern
+        return contract
     
     def format_contract_for_player(self, contract, player):
         if not isinstance(contract, dict):
