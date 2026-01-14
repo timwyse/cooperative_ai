@@ -214,7 +214,17 @@ STRICT_JUDGE_SCHEMA = {
 
 ANTHROPIC_STRICT_JUDGE_TOOL = {
     "name": "strict_judge",
-    "description": "Summarise a contract based on a conversation between two players.",
+    "description": """Summarise a contract based on a conversation between two players.
+    
+CRITICAL: Return ONLY tile entries directly at the root level. Each key must be a tile coordinate like "(0,1)" or "(2,3)".
+
+Example of CORRECT format:
+{
+  "(0,1)": {"giver": "Player 0", "receiver": "Player 1", "color": "Red"},
+  "(2,3)": {"giver": "Player 1", "receiver": "Player 0", "color": "Blue"}
+}
+
+Do NOT wrap in "contract" or any other key. Put tile coordinates directly at the root.""",
     "input_schema": STRICT_JUDGE_SCHEMA["schema"],
 }
 
@@ -252,6 +262,16 @@ FINISHING_JUDGE_SCHEMA = {
 
 ANTHROPIC_FINISHING_JUDGE_TOOL = {
     "name": "finishing_judge",
-    "description": "Summarise a contract based on a conversation between two players.",
+    "description": """Summarise a contract based on a conversation between two players.
+
+CRITICAL: Return ONLY goal-based entries directly at the root level. Each key must be like "player_0_reaches_goal" or "player_1_reaches_goal".
+
+Example of CORRECT format:
+{
+  "player_0_reaches_goal": {"giver": "Player 1", "receiver": "Player 0", "amount": "5"},
+  "player_1_reaches_goal": {"giver": "Player 0", "receiver": "Player 1", "amount": "3"}
+}
+
+Do NOT wrap in "contract" or any other key. Put goal entries directly at the root.""",
     "input_schema": FINISHING_JUDGE_SCHEMA["schema"],
 }

@@ -184,6 +184,12 @@ class Player:
         schema_or_tool = ANTHROPIC_MOVE_TOOL if self.model_api == "anthropic" else MOVE_DECISION_SCHEMA
         move_obj, move_raw = self._structured(current_messages, schema_or_tool=schema_or_tool, max_tokens=1000)
 
+        # Handle API failure - return None (no move) with logged error
+        if move_obj is None:
+            self.game.logger.log_format_error(self.name, "api_error_move", {"error": move_raw or "Unknown API error"})
+            self.game.logger.log_player_response(self.name, "move", {"raw": move_raw, "parsed": None, "api_error": True})
+            return None
+
         # Log response
         self.game.logger.log_player_response(self.name, "move", {"raw": move_raw, "parsed": move_obj})
 
@@ -235,6 +241,12 @@ class Player:
         # Structured call (counts via _structured)
         schema_or_tool = ANTHROPIC_TRADE_TOOL if self.model_api == "anthropic" else TRADE_PROPOSAL_SCHEMA
         obj, trade_raw = self._structured(current_messages, schema_or_tool=schema_or_tool, max_tokens=2000)
+
+        # Handle API failure - return None (no trade) with logged error
+        if obj is None:
+            self.game.logger.log_format_error(self.name, "api_error_trade_proposal", {"error": trade_raw or "Unknown API error"})
+            self.game.logger.log_player_response(self.name, "trade_proposal", {"raw": trade_raw, "parsed": None, "api_error": True})
+            return None
 
         self.game.logger.log_player_response(self.name, "trade_proposal", {"raw": trade_raw, "parsed": obj})
 
@@ -467,6 +479,12 @@ class Player:
         # Structured call (counts via _structured)
         schema_or_tool = ANTHROPIC_PAY4PARTNER_HONOR_TOOL if self.model_api == "anthropic" else PAY4PARTNER_HONOR_SCHEMA
         parsed, resp_raw = self._structured(current_messages, schema_or_tool=schema_or_tool, max_tokens=512)
+
+        # Handle API failure - default to not honoring agreement
+        if parsed is None:
+            self.game.logger.log_format_error(self.name, "api_error_p4p_honor", {"error": resp_raw or "Unknown API error"})
+            self.game.logger.log_player_response(self.name, "pay4partner", {"raw": resp_raw, "parsed": None, "api_error": True})
+            return False
 
         honor_p4p_agreement = parsed.get("honor_p4p_agreement", False)
         reasoning = parsed.get("rationale", "")
