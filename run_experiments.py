@@ -143,7 +143,8 @@ def _run_single_experiment(pair_name: str, agents: List, grid_data, variation, r
         system_prompts=system_prompts,
         display_gui=False,
         wait_for_enter=False,
-        with_context=True
+        with_context=True,
+        show_paths=True
     )
 
     run_id = uuid.uuid4().hex[:8]
