@@ -151,16 +151,53 @@ def load_experiment_data(experiment_dir="logs/experiments/per_grid"):
                 'Max Possible Score': final_state.get('metrics', {}).get('max_possible_score', 0),  # Updated path
                 'Reached Goal Player 0': final_state['players']['0']['reached_goal'],  # Changed from 'Player 0' to '0'
                 'Reached Goal Player 1': final_state['players']['1']['reached_goal'],  # Changed from 'Player 1' to '1'
+                
+                
                 'Total Trades Proposed': final_state.get('metrics', {}).get('total_trades_proposed', 0),
+                'Total Trades Proposed Player 0': final_state.get('metrics', {}).get('total_trades_proposed_0', 0),
+                'Total Trades Proposed Player 1': final_state.get('metrics', {}).get('total_trades_proposed_1', 0),
+
                 'Total Trades Accepted': final_state.get('metrics', {}).get('total_trades_accepted', 0),
+                'Total Trades Accepted Player 0': final_state.get('metrics', {}).get('total_trades_accepted_0', 0),
+                'Total Trades Accepted Player 1': final_state.get('metrics', {}).get('total_trades_accepted_1', 0),
+
                 'Total Trades Rejected': final_state.get('metrics', {}).get('total_trades_rejected', 0),
-                'Total P4P Arrangements Proposed': final_state.get('metrics', {}).get('total_p4p_arrangements_proposed', 0),
-                'Total P4P Arrangements Accepted': final_state.get('metrics', {}).get('total_p4p_arrangements_accepted', 0),
-                'Total P4P Arrangements Rejected': final_state.get('metrics', {}).get('total_p4p_arrangements_rejected', 0),
-                'Total P4P Promises Kept': final_state.get('metrics', {}).get('total_p4p_promises_kept', 0),
-                'Total P4P Promises Broken': final_state.get('metrics', {}).get('total_p4p_promises_broken', 0),
+                'Total Trades Rejected Player 0': final_state.get('metrics', {}).get('total_trades_rejected_0', 0),
+                'Total Trades Rejected Player 1': final_state.get('metrics', {}).get('total_trades_rejected_1', 0),
+                
                 'amount_received_by_0_from_trades': final_state.get('metrics', {}).get('amount_received_by_0_from_trades', 0),
                 'amount_received_by_1_from_trades': final_state.get('metrics', {}).get('amount_received_by_1_from_trades', 0),
+                
+                'total_trades_failed': final_state.get('metrics', {}).get('total_trades_failed', 0),
+
+                'Total P4P Arrangements Proposed': final_state.get('metrics', {}).get('total_p4p_arrangements_proposed', 0),
+                'Total P4P Arrangements Proposed Player 0': final_state.get('metrics', {}).get('total_p4p_arrangements_proposed_0', 0),
+                'Total P4P Arrangements Proposed Player 1': final_state.get('metrics', {}).get('total_p4p_arrangements_proposed_1', 0),
+
+                'Total P4P Arrangements Accepted': final_state.get('metrics', {}).get('total_p4p_arrangements_accepted', 0),
+                'Total P4P Arrangements Accepted Player 0': final_state.get('metrics', {}).get('total_p4p_arrangements_accepted_0', 0),
+                'Total P4P Arrangements Accepted Player 1': final_state.get('metrics', {}).get('total_p4p_arrangements_accepted_1', 0),
+
+                'Total P4P Arrangements Rejected': final_state.get('metrics', {}).get('total_p4p_arrangements_rejected', 0),
+                'Total P4P Arrangements Rejected Player 0': final_state.get('metrics', {}).get('total_p4p_arrangements_rejected_0', 0),
+                'Total P4P Arrangements Rejected Player 1': final_state.get('metrics', {}).get('total_p4p_arrangements_rejected_1', 0),
+
+                'Total P4P Promises Kept': final_state.get('metrics', {}).get('total_p4p_promises_kept', 0),
+                'Total P4P Promises Kept Player 0': final_state.get('metrics', {}).get('total_p4p_promises_kept_0', 0),
+                'Total P4P Promises Kept Player 1': final_state.get('metrics', {}).get('total_p4p_promises_kept_1', 0),
+
+                'Total P4P Promises Broken': final_state.get('metrics', {}).get('total_p4p_promises_broken', 0),
+                'Total P4P Promises Broken Player 0': final_state.get('metrics', {}).get('total_p4p_promises_broken_0', 0),
+                'Total P4P Promises Broken Player 1': final_state.get('metrics', {}).get('total_p4p_promises_broken_1', 0),
+                
+                'Total P4P Amounts Promised to Receive': final_state.get('metrics', {}).get('total_p4p_amounts_promised_to_receive', 0),
+                'Total P4P Amounts Promised to Receive Player 0': final_state.get('metrics', {}).get('total_p4p_amounts_promised_to_receive_0', 0),
+                'Total P4P Amounts Promised to Receive Player 1': final_state.get('metrics', {}).get('total_p4p_amounts_promised_to_receive_1', 0),
+                
+                'Total P4P Amounts Received': final_state.get('metrics', {}).get('total_p4p_amounts_received', 0),
+                'Total P4P Amounts Received Player 0': final_state.get('metrics', {}).get('total_p4p_amounts_received_0', 0),
+                'Total P4P Amounts Received Player 1': final_state.get('metrics', {}).get('total_p4p_amounts_received_1', 0),
+                
                 'contract_accepted': final_state.get('metrics', {}).get('contract_accepted', 0),
                 'contract_negotiaion_length': final_state.get('metrics', {}).get('contract_negotiaion_length', 0),
                 'num_tiles_in_contract': final_state.get('metrics', {}).get('num_tiles_in_contract', 0),
@@ -168,6 +205,8 @@ def load_experiment_data(experiment_dir="logs/experiments/per_grid"):
                 'num_tiles_promised_to_receive_from_contract_1': final_state.get('metrics', {}).get('num_tiles_promised_to_receive_from_contract_1', 0),
                 'moves_made_under_strict_contract_0': final_state.get('metrics', {}).get('moves_made_under_strict_contract_0', 0),
                 'moves_made_under_strict_contract_1': final_state.get('metrics', {}).get('moves_made_under_strict_contract_1', 0),
+                'contract_moves_blocked_by_partner_shortfall_0': final_state.get('metrics', {}).get('contract_moves_blocked_by_partner_shortfall_0', 0),
+                'contract_moves_blocked_by_partner_shortfall_1': final_state.get('metrics', {}).get('contract_moves_blocked_by_partner_shortfall_1', 0),
                 'points_for_completion_promised_to_0': final_state.get('metrics', {}).get('points_for_completion_promised_to_0', 0),
                 'points_for_completion_promised_to_1': final_state.get('metrics', {}).get('points_for_completion_promised_to_1', 0),
             }
