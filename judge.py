@@ -12,6 +12,7 @@ from schemas import (STRICT_JUDGE_SCHEMA, ANTHROPIC_STRICT_JUDGE_TOOL,
 from utils import get_last_alphabetic_word
 
 JUDGE_SYSTEM_PROMPT = "You are a judge whose goal is to summaries a contract created between two players. Your response must only include the contract, nothing else."
+HYBRID_CONTRACT_JUDGE_SYSTEM_PROMPT = "You are a judge whose goal is to identify if a negotiation between two players resulted in a contract agreement, and if the following move is covered by that agreement. Your response must only include 'yes' or 'no', nothing else."
 
 class Judge:
     def __init__(self, model=SONNET_4_5, temperature=1):
@@ -279,7 +280,7 @@ IMPORTANT RULES:
 - After your reasoning, respond with either "yes" or "no". No other text.
 """
         message_for_judge = [
-            {"role": "system", "content": JUDGE_SYSTEM_PROMPT},
+            {"role": "system", "content": HYBRID_CONTRACT_JUDGE_SYSTEM_PROMPT},
             {"role": "user", "content": message_for_judge}
         ]
 

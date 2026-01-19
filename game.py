@@ -87,29 +87,30 @@ class Game:
         self.running = True
 
         # Initialize trade metrics
-        self.total_trades_proposed = 0
-        self.total_trades_accepted = 0
-        self.total_trades_rejected = 0
+        self.total_trades_proposed = {'0': 0, '1': 0}
+        self.total_trades_accepted = {'0': 0, '1': 0}
+        self.total_trades_rejected = {'0': 0, '1': 0}
         self.total_trades_failed = 0
-        self.amount_received_from_trades = {'0': 0, '1': 0}  
+        self.total_amount_received_from_trades = {'0': 0, '1': 0}  
         
         # Initialize pay4partner arrangement metrics
-        self.total_p4p_arrangements_proposed = 0
-        self.total_p4p_arrangements_accepted = 0
-        self.total_p4p_arrangements_rejected = 0
+        self.total_p4p_arrangements_proposed = {'0': 0, '1': 0}
+        self.total_p4p_arrangements_accepted = {'0': 0, '1': 0}
+        self.total_p4p_arrangements_rejected = {'0': 0, '1': 0}
+        self.total_p4p_promises_kept = {'0': 0, '1': 0}
+        self.total_p4p_promises_broken = {'0': 0, '1': 0}
+        self.total_p4p_amounts_promised_to_receive = {'0': 0, '1': 0}
+        self.total_p4p_amounts_received = {'0': 0, '1': 0}
 
         # Initialize contract metrics
         self.contract_accepted = 0
         self.contract_negotiaion_length = 0  # in turns
         self.num_tiles_in_contract = 0
         self.num_tiles_promised_to_receive_from_contract = {'0': 0, '1': 0}
+        self.moves_made_under_strict_contract = {'0': 0, '1': 0}
+        self.contract_moves_blocked_by_partner_shortfall = {'0': 0, '1': 0} 
         self.points_for_completion_promised_to_receive_from_contract = {'0': 0, '1': 0}
-        self.num_unfulfilled_contract_moves = 0
-        self.moves_made_under_strict_contract = {player.id: 0 for player in self.players}
-
-        # initialise p4p metrics
-        self.total_p4p_promises_kept = 0
-        self.total_p4p_promises_broken = 0
+        
 
         # Logging Initial State
         self.logger.log_game_config(self.config, self.players, self.grid)
@@ -295,27 +296,62 @@ class Game:
             print(f"{player_name}: {score} points")
         
         final_metrics = {
-            'total_trades_proposed': self.total_trades_proposed,
-            'total_trades_accepted': self.total_trades_accepted,
-            'total_trades_rejected': self.total_trades_rejected,
+            'total_trades_proposed': self.total_trades_proposed['0'] + self.total_trades_proposed['1'],
+            'total_trades_proposed_0': self.total_trades_proposed['0'],
+            'total_trades_proposed_1': self.total_trades_proposed['1'],
+            
+            'total_trades_accepted': self.total_trades_accepted['0'] + self.total_trades_accepted['1'],
+            'total_trades_accepted_0': self.total_trades_accepted['0'],
+            'total_trades_accepted_1': self.total_trades_accepted['1'],
+            
+            'total_trades_rejected': self.total_trades_rejected['0'] + self.total_trades_rejected['1'],
+            'total_trades_rejected_0': self.total_trades_rejected['0'],
+            'total_trades_rejected_1': self.total_trades_rejected['1'],
+            
+            'amount_received_by_0_from_trades': self.total_amount_received_from_trades['0'],
+            'amount_received_by_1_from_trades': self.total_amount_received_from_trades['1'],
+
             'total_trades_failed': self.total_trades_failed,
-            'total_p4p_arrangements_proposed': self.total_p4p_arrangements_proposed,
-            'total_p4p_arrangements_accepted': self.total_p4p_arrangements_accepted,
-            'total_p4p_arrangements_rejected': self.total_p4p_arrangements_rejected,
-            'amount_received_by_0_from_trades': self.amount_received_from_trades['0'],
-            'amount_received_by_1_from_trades': self.amount_received_from_trades['1'],
+
+            'total_p4p_arrangements_proposed': self.total_p4p_arrangements_proposed['0'] + self.total_p4p_arrangements_proposed['1'],
+            'total_p4p_arrangements_proposed_0': self.total_p4p_arrangements_proposed['0'],
+            'total_p4p_arrangements_proposed_1': self.total_p4p_arrangements_proposed['1'],
+
+            'total_p4p_arrangements_accepted': self.total_p4p_arrangements_accepted['0'] + self.total_p4p_arrangements_accepted['1'],
+            'total_p4p_arrangements_accepted_0': self.total_p4p_arrangements_accepted['0'],
+            'total_p4p_arrangements_accepted_1': self.total_p4p_arrangements_accepted['1'],
+            
+            'total_p4p_arrangements_rejected': self.total_p4p_arrangements_rejected['0'] + self.total_p4p_arrangements_rejected['1'],
+            'total_p4p_arrangements_rejected_0': self.total_p4p_arrangements_rejected['0'],
+            'total_p4p_arrangements_rejected_1': self.total_p4p_arrangements_rejected['1'],
+
+            'total_p4p_promises_kept': self.total_p4p_promises_kept['0'] + self.total_p4p_promises_kept['1'],
+            'total_p4p_promises_kept_0': self.total_p4p_promises_kept['0'],
+            'total_p4p_promises_kept_1': self.total_p4p_promises_kept['1'],
+            
+            'total_p4p_promises_broken': self.total_p4p_promises_broken['0'] + self.total_p4p_promises_broken['1'],
+            'total_p4p_promises_broken_0': self.total_p4p_promises_broken['0'],
+            'total_p4p_promises_broken_1': self.total_p4p_promises_broken['1'],
+            
+            'total_p4p_amounts_promised_to_receive': self.total_p4p_amounts_promised_to_receive['0'] + self.total_p4p_amounts_promised_to_receive['1'],
+            'total_p4p_amounts_promised_to_receive_0': self.total_p4p_amounts_promised_to_receive['0'],
+            'total_p4p_amounts_promised_to_receive_1': self.total_p4p_amounts_promised_to_receive['1'],
+            
+            'total_p4p_amounts_received': self.total_p4p_amounts_received['0'] + self.total_p4p_amounts_received['1'],
+            'total_p4p_amounts_received_0': self.total_p4p_amounts_received['0'],
+            'total_p4p_amounts_received_1': self.total_p4p_amounts_received['1'],
+            
             'contract_accepted': self.contract_accepted,
             'contract_negotiaion_length': self.contract_negotiaion_length ,
             'num_tiles_in_contract': self.num_tiles_in_contract,
             'num_tiles_promised_to_receive_from_contract_0': self.num_tiles_promised_to_receive_from_contract['0'],
             'num_tiles_promised_to_receive_from_contract_1': self.num_tiles_promised_to_receive_from_contract['1'],
-            'num_unfulfilled_contract_moves': self.num_unfulfilled_contract_moves,
             'moves_made_under_strict_contract_0': self.moves_made_under_strict_contract['0'],
             'moves_made_under_strict_contract_1': self.moves_made_under_strict_contract['1'],
+            'contract_moves_blocked_by_partner_shortfall_0': self.contract_moves_blocked_by_partner_shortfall['0'],
+            'contract_moves_blocked_by_partner_shortfall_1': self.contract_moves_blocked_by_partner_shortfall['1'],
             'points_for_completion_promised_to_0': self.points_for_completion_promised_to_receive_from_contract['0'],
             'points_for_completion_promised_to_1': self.points_for_completion_promised_to_receive_from_contract['1'],
-            'total_p4p_promises_kept': self.total_p4p_promises_kept,
-            'total_p4p_promises_broken': self.total_p4p_promises_broken
         }
         
         # Log final game state and metrics to combined logger
@@ -457,9 +493,9 @@ class Game:
                 resources_to_receive = propose_trade.get('chips_to_receive', [])
                 if resources_to_offer and resources_to_receive:  # Only count if actual resources specified
                     if self.pay4partner:
-                        self.total_p4p_arrangements_proposed += 1
+                        self.total_p4p_arrangements_proposed[player.id] += 1
                     else:
-                        self.total_trades_proposed += 1
+                        self.total_trades_proposed[player.id] += 1
 
                 player_turn_data[player.name]['trade_proposal_outcome'] = 'accepted' if trade_executed else 'rejected'
 
@@ -549,7 +585,8 @@ class Game:
                     color = self.grid.get_color(r, c)
                     
                     if partner_agrees_to_pay:
-                        self.total_p4p_promises_kept += 1
+                        self.total_p4p_promises_kept[partner.id] += 1
+                        self.total_p4p_amounts_received[player.id] += 1
                         player.move(move, self.grid)
                         move_result = move
                         player_turn_data[player.name]['move_made'] = move
@@ -570,7 +607,7 @@ class Game:
                         print(f"{player_label} moved to {move} via pay4partner.")
                     
                     else:
-                        self.total_p4p_promises_broken += 1
+                        self.total_p4p_promises_broken[partner.id] += 1
                         # record broken promise but still check if player can move normally
                         if player.can_move_to(move, self.grid):
                             player.move(move, self.grid)
@@ -680,7 +717,7 @@ class Game:
         color = self.grid.get_color(r, c)
         if partner.resources[color] <= 0:
             print(f"Contract move failed: partner {partner.name} does not have enough {color} resources.")
-            self.num_unfulfilled_contract_moves += 1
+            self.contract_moves_blocked_by_partner_shortfall[player.id] += 1
             return False
         else:
             partner.resources[color] -= 1
@@ -713,31 +750,33 @@ class Game:
             
             if trade_accepted:
                 if self.pay4partner:
-                    self.total_p4p_arrangements_accepted += 1
+                    self.total_p4p_arrangements_accepted[other_player.id] += 1
                 else:
-                    self.total_trades_accepted += 1
+                    self.total_trades_accepted[other_player.id] += 1
                 # Execute the trade immediately
                 if self.pay4partner is False:
                     # Execute the trade by swapping resources
                     for resource, quantity in resources_to_offer:
                         player.resources[resource] -= quantity
                         other_player.resources[resource] += quantity
-                        self.amount_received_from_trades[other_player.id] += quantity
+                        self.total_amount_received_from_trades[other_player.id] += quantity
 
                     for resource, quantity in resources_to_receive:
                         player.resources[resource] += quantity
                         other_player.resources[resource] -= quantity
-                        self.amount_received_from_trades[player.id] += quantity
+                        self.total_amount_received_from_trades[player.id] += quantity
 
                 else:
                     # In pay4partner mode, update promised resources instead of actual resources
                     for resource, quantity in resources_to_offer:
                         player.promised_resources_to_give[resource] += quantity
                         other_player.promised_resources_to_receive[resource] += quantity
+                        self.total_p4p_amounts_promised_to_receive[other_player.id] += quantity
 
                     for resource, quantity in resources_to_receive:
                         player.promised_resources_to_receive[resource] += quantity
                         other_player.promised_resources_to_give[resource] += quantity
+                        self.total_p4p_amounts_promised_to_receive[player.id] += quantity
                     player.pay4partner_log.append({
                         "agreement_turn": self.turn,
                         "with": other_player.name,
@@ -781,9 +820,9 @@ class Game:
             else:
                 target_label = other_player.get_player_label(self)
                 if self.pay4partner:
-                    self.total_p4p_arrangements_rejected += 1
+                    self.total_p4p_arrangements_rejected[other_player.id] += 1
                 else:
-                    self.total_trades_rejected += 1
+                    self.total_trades_rejected[other_player.id] += 1
                 print(f"\n{'Arrangement' if self.pay4partner else 'Trade'} rejected by {target_label}")
                 return False
 
@@ -843,7 +882,7 @@ class Game:
             system_player_1 = player_1.generate_tile_level_contract_prompt(player_1.generate_player_context_message(self, self.grid))
             history_0 = [{"role": "system", "content": system_player_0}]
             history_1 = [{"role": "system", "content": system_player_1}]
-        n_exchanges = 5
+        n_exchanges = 8
 
         # Seed the conversation
         initial_message = "Let's begin negotiation to come up with a contract. What would you like to propose?"
