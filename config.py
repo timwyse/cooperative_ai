@@ -6,6 +6,7 @@ from dataclasses import dataclass, field, replace
 from typing import List, Optional, TYPE_CHECKING
 from pathlib import Path
 
+import agents  as a
 from constants import AVAILABLE_COLORS
 from prompts import DEFAULT_SYSTEM_PROMPT
 
@@ -24,6 +25,7 @@ class GameConfig:
     fog_of_war: Optional[List[bool]] = None  # if True, players can only see the colors of tiles adjacent to their current position; if list, must be same length as players and specifies fog_of_war for each player
     show_paths: bool = True  # if True, each player is informed of their best paths to their goal at the start of each turn
     allow_trades: bool = True  # if False, players cannot trade resources
+    judge_model: a.Agent = a.GPT_5_2 
 
     # RESOURCE SETTINGS
     surplus: float = 1.5 # Multiplier of the minimum steps required to complete the game. Used to determine how many resources each player starts with.

@@ -9,7 +9,7 @@ Agent = namedtuple("Agent", ["name", "value", "api"])
 HUMAN = Agent(name="human", value=None, api=None)
 # NANO = Agent(name="4.1 nano", value="gpt-4.1-nano-2025-04-14", api='open_ai') # $0.40 
 MINI = Agent(name="4.1 mini", value="gpt-4.1-mini", api='open_ai') # $1.60 
-GPT_5 = Agent(name="GPT-5", value="gpt-5", api='open_ai') # $10 
+# GPT_5 = Agent(name="GPT-5", value="gpt-5", api='open_ai') # $10 Structured output doesn't seem to work well for GPT-5
 GPT_5_2 = Agent(name="GPT-5.2", value="gpt-5.2", api='open_ai') # $14 
 FOUR_1 = Agent(name="GPT 4.1", value="gpt-4.1", api='open_ai') # $8 
 FOUR_0 = Agent(name="GPT 4o", value="gpt-4o", api='open_ai') # $10 

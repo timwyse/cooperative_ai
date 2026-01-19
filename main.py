@@ -12,7 +12,7 @@ import prompts as p
 # can replace any of the default values in DEFAULT_CONFIG with your own values
 CONFIG = replace(
     load_config("configs/4-4_md_id-21.yaml"), # can use DEFAULT_CONFIG or load a specific configs here eg load_config("configs/simple_prisoners_dilemma.yaml"),
-   players=[QWEN_3_235B, QWEN_3_235B],
+   players=[GPT_5_2, GPT_5_2],
 #     grid_size=6,
     #  colors=['R', 'B', 'G'],
 # #     resource_mode='manual',

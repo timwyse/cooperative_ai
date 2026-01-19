@@ -63,7 +63,7 @@ class Game:
         self.pay4partner = self.config.pay4partner
         self.contract_type = self.config.contract_type
         if self.contract_type is not None:
-            self.judge = Judge()
+            self.judge = Judge(model=self.config.judge_model)
             self.judge.logger = self.logger
         self.contract = None
         self.allowed_trades = self.config.allow_trades

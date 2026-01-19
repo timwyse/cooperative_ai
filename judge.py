@@ -3,7 +3,7 @@ import json
 from anthropic import Anthropic
 from openai import OpenAI
 
-from agents import SONNET_4_5, FOUR_0
+from agents import SONNET_4_5, FOUR_0, QWEN_3_235B, GPT_5_2
 from constants import ANTHROPIC_API_KEY, OPENAI_API_KEY, POINTS_FOR_WIN
 from model_adapter import ModelAdapter
 from schemas import (STRICT_JUDGE_SCHEMA, ANTHROPIC_STRICT_JUDGE_TOOL, 
