@@ -1,6 +1,6 @@
 from collections import Counter
 
-def compute_best_routes(grid, start_pos, goal_pos, resources):
+def compute_best_routes(grid, start_pos, goal_pos, resources, show_missing_chips=True):
     """
     Returns two routes:
     1) fewest_resources_needed_path
@@ -60,5 +60,10 @@ def compute_best_routes(grid, start_pos, goal_pos, resources):
         key=lambda x: (x["path_length_in_steps"],
                        sum(x["chips_missing_due_to_insufficient_inventory"].values()))
     )[0]
+
+    if not show_missing_chips:
+        fewest.pop("chips_missing_due_to_insufficient_inventory", None)
+        shortest_with_fewest.pop("chips_missing_due_to_insufficient_inventory", None)
+        
 
     return [fewest, shortest_with_fewest]

@@ -17,13 +17,16 @@ SONNET_4 = Agent(name="Claude_Sonnet_4", value="claude-sonnet-4-20250514", api='
 HAIKU_3_5 = Agent(name="Claude_Haiku_3.5", value="claude-3-5-haiku-20241022", api='anthropic') # $4
 SONNET_4_5 = Agent(name="Claude_Sonnet_4.5", value="claude-sonnet-4-5-20250929", api="anthropic")  # ~$15
 HAIKU_4_5 = Agent(name="Claude_Haiku_4.5", value="claude-haiku-4-5-20251001", api="anthropic") 
-DEEPSEEK_V3 = Agent(name="DeepSeek_R1", value="deepseek-ai/DeepSeek-V3", api='openrouter') # $1.25
-QWEN_2_7B = Agent(name="QWEN_25_7B", value="Qwen/Qwen2.5-7B-Instruct-Turbo", api='openrouter') # $0.30 
+# DEEPSEEK_V3 = Agent(name="DeepSeek_R1", value="deepseek-ai/DeepSeek-V3", api='openrouter') # $1.25
+# QWEN_2_7B = Agent(name="QWEN_25_7B", value="Qwen/Qwen2.5-7B-Instruct-Turbo", api='openrouter') # $0.30 
 # QWEN_480B = Agent(name="QWEN_480B", value="Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8", api='openrouter') # $0.6
 QWEN_3_235B = Agent(name="QWEN_3_235B", value="qwen/qwen3-235b-a22b-2507", api='openrouter') # $0.46
-QWEN_3_80B = Agent(name="QWEN_3_80B", value="qwen/qwen3-next-80b-a3b-instruct", api='openrouter') # $1.10
-QWEN_25_72B = Agent(name="QWEN_25_72B", value="qwen/qwen-2.5-72b-instruct", api='openrouter') # $0.39
-QWEN_480B = Agent(name="QWEN_480B_openrouter", value="qwen/qwen3-coder", api='openrouter') # $0.6
+QWEN_3_30B =  Agent(name="QWEN_3_30B", value="qwen/qwen3-30b-a3b-instruct-2507", api='openrouter') # $0.08/0.33
+# QWEN_3_80B = Agent(name="QWEN_3_80B", value="qwen/qwen3-next-80b-a3b-instruct", api='openrouter') # $1.10
+# QWEN_25_72B = Agent(name="QWEN_25_72B", value="qwen/qwen-2.5-72b-instruct", api='openrouter') # $0.39
+# QWEN_480B = Agent(name="QWEN_480B_openrouter", value="qwen/qwen3-coder", api='openrouter') # $0.6
 # LLAMA_3_3B = Agent(name="Llama_3_3B", value="meta-llama/Llama-3.2-3B-Instruct-Turbo", api='openrouter')# $0.06
-LLAMA_405B = Agent(name="Llama_405B", value="meta-llama/llama-3.1-405b-instruct", api='openrouter')# $3.5
-LLAMA_70B = Agent(name="Llama_70B", value="meta-llama/llama-3.1-70b-instruct", api='openrouter')# $0.88
+# LLAMA_405B = Agent(name="Llama_405B", value="meta-llama/llama-3.1-405b-instruct", api='openrouter')# $3.5
+# LLAMA_70B = Agent(name="Llama_70B", value="meta-llama/llama-3.1-70b-instruct", api='openrouter')# $0.88
+LLAMA_SCOUT = Agent(name="Llama_Scout", value="meta-llama/llama-4-scout", api='openrouter')# $0.08 / 0.30
+LLAMA_MAVERICK = Agent(name="Llama_Maverick", value="meta-llama/llama-4-maverick", api='openrouter')# $0.15/0.60

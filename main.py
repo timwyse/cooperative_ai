@@ -12,7 +12,7 @@ import prompts as p
 # can replace any of the default values in DEFAULT_CONFIG with your own values
 CONFIG = replace(
     load_config("configs/4-4_md_id-21.yaml"), # can use DEFAULT_CONFIG or load a specific configs here eg load_config("configs/simple_prisoners_dilemma.yaml"),
-   players=[GPT_5_2, GPT_5_2],
+   players=[LLAMA_SCOUT, LLAMA_SCOUT],
 #     grid_size=6,
     #  colors=['R', 'B', 'G'],
 # #     resource_mode='manual',
@@ -29,11 +29,12 @@ CONFIG = replace(
     with_context=True,  # Enable turn history between players
     with_message_history=False,  # Enable conversation memory for each player
     # pay4partner=True,  # Enable 'pay for partner' mode
-    contract_type='tile_with_judge_implementation',  # Options: contract_for_finishing, strict, tile_with_judge_implementation
+    # contract_type='strict',  # Options: contract_for_finishing, strict, tile_with_judge_implementation
     system_prompts={'0': p.SELFISH_SYSTEM_PROMPT, '1': p.SELFISH_SYSTEM_PROMPT},  # Custom system prompts for each player
     # fog_of_war=[True, True],  # Enable fog of war for both players
     show_paths=True,  # Show best paths to goal for each player
     # allow_trades=False,  # Disable trading between players
+    judge_model = QWEN_3_235B 
 )
 
 

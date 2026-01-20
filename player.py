@@ -154,8 +154,8 @@ class Player:
     def get_player_label(self, game):
         return self.name
 
-    def best_routes(self, grid):
-        return compute_best_routes(grid, self.position, self.goal, self.resources)
+    def best_routes(self, grid, show_missing_chips=True):
+        return compute_best_routes(grid, self.position, self.goal, self.resources, show_missing_chips=show_missing_chips)
 
     def format_turn_summary(self, turn_summary, turn_number, with_message_history=False):
         from turn_context import format_turn_summary_for_player

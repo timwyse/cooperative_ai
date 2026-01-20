@@ -137,7 +137,7 @@ def generate_turn_context(game, player):
     best_paths_message = f"""- Here is a path to your goal that priortises using chips that you currently have in your inventory:
     {player.best_routes(game.grid)[0]}.
 Here is a path to your goal that priortises using chips that the other player currently has in their inventory:
-{other_player.best_routes(game.grid)[0]}.
+{other_player.best_routes(game.grid, show_missing_chips=False)[0]}.
 
 Other paths to your goal may also be viable.""" if player.show_paths and not player.fog_of_war else ""
     
