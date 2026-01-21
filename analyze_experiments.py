@@ -61,7 +61,11 @@ def load_experiment_data(experiment_dir="logs/experiments/per_grid"):
 
     for event_log in event_logs:
         # print(f"\nProcessing log file: {event_log}")
-        try:
+        try: 
+            raw_text = event_log.read_text(errors="ignore")
+            if "insufficient credits" in raw_text.lower():
+                skipped_files.append(str(event_log))
+                continue
             metadata_file = event_log.parent / "metadata.json"
             metadata = {}
             if metadata_file.exists():

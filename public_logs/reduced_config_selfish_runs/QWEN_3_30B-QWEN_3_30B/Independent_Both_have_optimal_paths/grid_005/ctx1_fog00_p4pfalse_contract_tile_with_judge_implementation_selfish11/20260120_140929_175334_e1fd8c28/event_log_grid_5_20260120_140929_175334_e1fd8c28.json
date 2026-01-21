@@ -1,0 +1,672 @@
+{
+  "config": {
+    "player_models": [
+      "QWEN_3_30B",
+      "QWEN_3_30B"
+    ],
+    "manual_chips": [
+      {
+        "B": 0,
+        "G": 2,
+        "R": 14
+      },
+      {
+        "B": 14,
+        "G": 2,
+        "R": 0
+      }
+    ],
+    "with_message_history": false,
+    "pay4partner": false,
+    "contract_type": "tile_with_judge_implementation",
+    "with_context": true,
+    "fog_of_war": [
+      false,
+      false
+    ],
+    "resource_mode": "manual",
+    "grid_size": 4,
+    "colors": [
+      "R",
+      "B",
+      "G"
+    ],
+    "mode": "Standard Trading",
+    "player_details": [
+      {
+        "id": 0,
+        "model": "QWEN_3_30B",
+        "start": [
+          0,
+          0
+        ],
+        "goal": [
+          3,
+          3
+        ],
+        "initial_chips": {
+          "B": 0,
+          "G": 2,
+          "R": 14
+        },
+        "non_cooperative_baseline": 70
+      },
+      {
+        "id": 1,
+        "model": "QWEN_3_30B",
+        "start": [
+          0,
+          0
+        ],
+        "goal": [
+          3,
+          3
+        ],
+        "initial_chips": {
+          "B": 14,
+          "G": 2,
+          "R": 0
+        },
+        "non_cooperative_baseline": 70
+      }
+    ]
+  },
+  "game": {
+    "id": "grid_5_20260120_140929_175334_e1fd8c28",
+    "start_timestamp": "2026-01-20T14:09:29.177523Z",
+    "end_timestamp": "2026-01-20T14:36:10.653048Z",
+    "turns": {
+      "0": {
+        "players": {
+          "0": {
+            "position": {
+              "start": [
+                0,
+                0
+              ],
+              "end": [
+                0,
+                1
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 2,
+                "R": 14
+              },
+              "end": {
+                "B": 0,
+                "G": 2,
+                "R": 13
+              }
+            },
+            "move_made": [
+              0,
+              1
+            ],
+            "move_type": "regular"
+          },
+          "1": {
+            "position": {
+              "start": [
+                0,
+                0
+              ],
+              "end": [
+                0,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              }
+            }
+          }
+        },
+        "contract": {
+          "judge_contract": "player 1: Let's begin negotiation to come up with a contract. What would you like to propose? \n, \nplayer 0: I notice that our goals are the same—reaching (3, 3)—but our chip inventories differ significantly. I have 14 red and 2 green chips, but no blue. The other player has 14 blue and 2 green chips, but no red.\n\nLooking at the board, my shortest path is:  \n(0,0) → (0,1) → (0,2) → (0,3) → (1,3) → (2,3) → (3,3)  \nThis path requires: 5 red, 1 green (in that order).\n\nThe other player’s shortest path is:  \n(0,0) → (1,0) → (2,0) → (2,1) → (3,1) → (3,2) → (3,3)  \nThis path requires: 5 blue, 1 green.\n\nSo, I need red and green, and the other player needs blue and green.\n\nHowever, I have green (2), so I don’t need to trade for green. The other player also has green (2), so both of us can manage green.\n\nBut I lack blue, and the other player lacks red.\n\nNow, let’s look at the tiles that require special attention:\n\n**My path (R/G-heavy):**  \n- (0,1): R (I have 14, so fine)  \n- (0,2): R (I have 14, fine)  \n- (0,3): R (I have 14, fine)  \n- (1,3): R (I have 14, fine)  \n- (2,3): R (I have 14, fine)  \n- (3,3): G (I have 2, fine)\n\nWait — I can complete my path with my current chips. I have 14 red chips, and I need only 5 red and 1 green. I have both.\n\nSo my path requires no trades. I can go directly from (0,0) to (3,3) along the top row and down:  \n(0,0): G (I have green? Wait — I have 2 green, but the tile is green? Yes, (0,0) is green. But I don’t pay to stay on the starting tile. So only when I move *to* a tile do I pay.\n\nSo:\n- From (0,0) to (0,1): pay 1 red → I have 14 red, so fine\n- (0,1) to (0,2): pay 1 red → fine\n- (0,2) to (0,3): pay 1 red → fine\n- (0,3) to (1,3): pay 1 red → fine\n- (1,3) to (2,3): pay 1 red → fine\n- (2,3) to (3,3): pay 1 green → I have 2 green, so fine\n\nSo I can reach goal with **14 - 5 = 9 red** and **2 - 1 = 1 green** left.\n\nFinal score = 20 (goal reached) + 5 × 9 + 5 × 1 = 20 + 45 + 5 = 70 points.\n\nThe other player has:\n- 14 blue, 2 green, 0 red\n- Their path: (0,0) → (1,0): B → need 1 blue\n- (1,0) → (2,0): B → need 1 blue\n- (2,0) → (2,1): B → need 1 blue\n- (2,1) → (3,1): B → need 1 blue\n- (3,1) → (3,2): B → need 1 blue\n- (3,2) → (3,3): G → need 1 green\n\nSo they need 5 blue, 1 green.\n\nThey have 14 blue and 2 green → can reach goal with 14 - 5 = 9 blue, 2 - 1 = 1 green.\n\nFinal score: 20 + 5×9 + 5×1 = 70.\n\nSo both of us can reach the goal independently with **no trades needed**, and both get 70 points.\n\nBut here’s the thing: I only care about *my* score. If I cooperate, I might get more than 70? No — I already get 70 without any trade.\n\nBut what if I trade?\n\nSuppose I propose: “Let’s both go on our own paths. No trade needed. \n, \nplayer 1: Turn: 1: I can reach my goal without any trades, using my 14 red and 2 green chips. My path: (0,0) → (0,1) → (0,2) → (0,3) → (1,3) → (2,3) → (3,3). This costs 5 red and 1 green. I’ll have 9 red and 1 green left. Final score: 20 + 5×9 + 5×1 = 70.\n\nThe other player can also reach their goal independently with their 14 blue and 2 green chips, using their path: (0,0) → (1,0) → (2,0) → (2,1) → (3,1) → (3,2) → (3,3). They pay 5 blue and 1 green, leave with 9 blue and 1 green. Final score: 70.\n\nSince I can achieve 70 points on my own, and any trade would only risk lowering my chip count without guaranteeing higher score (especially since I have no shortage), I see no benefit in cooperating.\n\nThere’s no way for me to get more than 70 points unless I use a different path that requires fewer chips — but my current path already uses only 6 moves and I have sufficient chips.\n\nMoreover, if I were to trade, I’d have to give away chips (e.g., for blue), but I don’t need blue — and I’d be giving up red for blue that I don’t even use.\n\nTherefore, I will not trade.\n\nI will proceed alone.\n\n**agree** \n, \nplayer 0: I can reach my goal independently with my current chips: 14 red and 2 green. My path requires 5 red and 1 green, leaving me with 9 red and 1 green. Final score: 20 + 5×9 + 5×1 = 70.\n\nThe other player can also reach their goal with their chips: 14 blue and 2 green, requiring 5 blue and 1 green. They’ll get 70 as well.\n\nI have no incentive to trade — I will strictly benefit from not cooperating, as I can achieve 70 without any risk. Any trade would only expose me to risk (e.g., if I give chips and they don’t follow through), and I gain nothing.\n\nThus, I will not agree to any trade.\n\nI proceed alone.\n\n**agree** \n",
+          "agreement_status": true,
+          "player_0_agreed": true,
+          "player_1_agreed": true
+        }
+      },
+      "1": {
+        "players": {
+          "0": {
+            "position": {
+              "start": [
+                0,
+                1
+              ],
+              "end": [
+                0,
+                2
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 2,
+                "R": 13
+              },
+              "end": {
+                "B": 0,
+                "G": 2,
+                "R": 12
+              }
+            },
+            "move_made": [
+              0,
+              2
+            ],
+            "move_type": "regular"
+          },
+          "1": {
+            "position": {
+              "start": [
+                0,
+                0
+              ],
+              "end": [
+                0,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              }
+            }
+          }
+        }
+      },
+      "2": {
+        "players": {
+          "0": {
+            "position": {
+              "start": [
+                0,
+                2
+              ],
+              "end": [
+                0,
+                3
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 2,
+                "R": 12
+              },
+              "end": {
+                "B": 0,
+                "G": 2,
+                "R": 11
+              }
+            },
+            "move_made": [
+              0,
+              3
+            ],
+            "move_type": "regular"
+          },
+          "1": {
+            "position": {
+              "start": [
+                0,
+                0
+              ],
+              "end": [
+                0,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              }
+            }
+          }
+        }
+      },
+      "3": {
+        "players": {
+          "0": {
+            "position": {
+              "start": [
+                0,
+                3
+              ],
+              "end": [
+                1,
+                3
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 2,
+                "R": 11
+              },
+              "end": {
+                "B": 0,
+                "G": 2,
+                "R": 10
+              }
+            },
+            "move_made": [
+              1,
+              3
+            ],
+            "move_type": "regular"
+          },
+          "1": {
+            "position": {
+              "start": [
+                0,
+                0
+              ],
+              "end": [
+                0,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              }
+            }
+          }
+        }
+      },
+      "4": {
+        "players": {
+          "0": {
+            "position": {
+              "start": [
+                1,
+                3
+              ],
+              "end": [
+                2,
+                3
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 2,
+                "R": 10
+              },
+              "end": {
+                "B": 0,
+                "G": 2,
+                "R": 9
+              }
+            },
+            "move_made": [
+              2,
+              3
+            ],
+            "move_type": "regular"
+          },
+          "1": {
+            "position": {
+              "start": [
+                0,
+                0
+              ],
+              "end": [
+                0,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              }
+            }
+          }
+        }
+      },
+      "5": {
+        "players": {
+          "0": {
+            "position": {
+              "start": [
+                2,
+                3
+              ],
+              "end": [
+                3,
+                3
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 2,
+                "R": 9
+              },
+              "end": {
+                "B": 0,
+                "G": 1,
+                "R": 9
+              }
+            },
+            "move_made": [
+              3,
+              3
+            ],
+            "move_type": "regular"
+          },
+          "1": {
+            "position": {
+              "start": [
+                0,
+                0
+              ],
+              "end": [
+                0,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              }
+            }
+          }
+        }
+      },
+      "6": {
+        "players": {
+          "0": {
+            "position": {
+              "start": [
+                3,
+                3
+              ],
+              "end": [
+                3,
+                3
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 1,
+                "R": 9
+              },
+              "end": {
+                "B": 0,
+                "G": 1,
+                "R": 9
+              }
+            }
+          },
+          "1": {
+            "position": {
+              "start": [
+                0,
+                0
+              ],
+              "end": [
+                0,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              }
+            }
+          }
+        }
+      },
+      "7": {
+        "players": {
+          "0": {
+            "position": {
+              "start": [
+                3,
+                3
+              ],
+              "end": [
+                3,
+                3
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 1,
+                "R": 9
+              },
+              "end": {
+                "B": 0,
+                "G": 1,
+                "R": 9
+              }
+            }
+          },
+          "1": {
+            "position": {
+              "start": [
+                0,
+                0
+              ],
+              "end": [
+                0,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    "final_state": {
+      "players": {
+        "0": {
+          "position": [
+            3,
+            3
+          ],
+          "goal": [
+            3,
+            3
+          ],
+          "reached_goal": true,
+          "chips": {
+            "B": 0,
+            "G": 1,
+            "R": 9
+          },
+          "route": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              1
+            ],
+            [
+              0,
+              2
+            ],
+            [
+              0,
+              3
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              2,
+              3
+            ],
+            [
+              3,
+              3
+            ]
+          ]
+        },
+        "1": {
+          "position": [
+            0,
+            0
+          ],
+          "goal": [
+            3,
+            3
+          ],
+          "reached_goal": false,
+          "chips": {
+            "B": 14,
+            "G": 2,
+            "R": 0
+          },
+          "route": [
+            [
+              0,
+              0
+            ]
+          ]
+        }
+      },
+      "total_turns": "7",
+      "scores": {
+        "Player 0": 70,
+        "Player 1": 0
+      },
+      "metrics": {
+        "total_scores": 70,
+        "total_accuracy": 0.5,
+        "gini_coefficient": 0.5,
+        "max_possible_score": 140,
+        "total_trades_proposed": 0,
+        "total_trades_proposed_0": 0,
+        "total_trades_proposed_1": 0,
+        "total_trades_accepted": 0,
+        "total_trades_accepted_0": 0,
+        "total_trades_accepted_1": 0,
+        "total_trades_rejected": 0,
+        "total_trades_rejected_0": 0,
+        "total_trades_rejected_1": 0,
+        "amount_received_by_0_from_trades": 0,
+        "amount_received_by_1_from_trades": 0,
+        "total_trades_failed": 0,
+        "total_p4p_arrangements_proposed": 0,
+        "total_p4p_arrangements_proposed_0": 0,
+        "total_p4p_arrangements_proposed_1": 0,
+        "total_p4p_arrangements_accepted": 0,
+        "total_p4p_arrangements_accepted_0": 0,
+        "total_p4p_arrangements_accepted_1": 0,
+        "total_p4p_arrangements_rejected": 0,
+        "total_p4p_arrangements_rejected_0": 0,
+        "total_p4p_arrangements_rejected_1": 0,
+        "total_p4p_promises_kept": 0,
+        "total_p4p_promises_kept_0": 0,
+        "total_p4p_promises_kept_1": 0,
+        "total_p4p_promises_broken": 0,
+        "total_p4p_promises_broken_0": 0,
+        "total_p4p_promises_broken_1": 0,
+        "total_p4p_amounts_promised_to_receive": 0,
+        "total_p4p_amounts_promised_to_receive_0": 0,
+        "total_p4p_amounts_promised_to_receive_1": 0,
+        "total_p4p_amounts_received": 0,
+        "total_p4p_amounts_received_0": 0,
+        "total_p4p_amounts_received_1": 0,
+        "contract_accepted": 1,
+        "contract_negotiaion_length": 2,
+        "num_tiles_in_contract": null,
+        "num_tiles_promised_to_receive_from_contract_0": 0,
+        "num_tiles_promised_to_receive_from_contract_1": 0,
+        "moves_made_under_strict_contract_0": 0,
+        "moves_made_under_strict_contract_1": 0,
+        "contract_moves_blocked_by_partner_shortfall_0": 0,
+        "contract_moves_blocked_by_partner_shortfall_1": 0,
+        "points_for_completion_promised_to_0": 0,
+        "points_for_completion_promised_to_1": 0,
+        "format_errors_total": 0,
+        "format_errors_by_type": {},
+        "format_errors_by_player": {},
+        "format_errors_by_turn": {}
+      },
+      "api_calls": {
+        "total": 44,
+        "by_player": {
+          "player_0": 14,
+          "player_1": 17
+        },
+        "judge": 13
+      }
+    }
+  }
+}

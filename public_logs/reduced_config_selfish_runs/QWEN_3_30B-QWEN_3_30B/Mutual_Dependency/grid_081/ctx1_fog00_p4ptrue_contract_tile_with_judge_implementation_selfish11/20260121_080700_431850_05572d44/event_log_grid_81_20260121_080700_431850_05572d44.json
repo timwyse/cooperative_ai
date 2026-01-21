@@ -1,0 +1,622 @@
+{
+  "config": {
+    "player_models": [
+      "QWEN_3_30B",
+      "QWEN_3_30B"
+    ],
+    "manual_chips": [
+      {
+        "B": 0,
+        "G": 2,
+        "R": 14
+      },
+      {
+        "B": 14,
+        "G": 2,
+        "R": 0
+      }
+    ],
+    "with_message_history": false,
+    "pay4partner": true,
+    "contract_type": "tile_with_judge_implementation",
+    "with_context": true,
+    "fog_of_war": [
+      false,
+      false
+    ],
+    "resource_mode": "manual",
+    "grid_size": 4,
+    "colors": [
+      "R",
+      "B",
+      "G"
+    ],
+    "mode": "Pay4Partner",
+    "player_details": [
+      {
+        "id": 0,
+        "model": "QWEN_3_30B",
+        "start": [
+          0,
+          0
+        ],
+        "goal": [
+          3,
+          3
+        ],
+        "initial_chips": {
+          "B": 0,
+          "G": 2,
+          "R": 14
+        },
+        "non_cooperative_baseline": 0
+      },
+      {
+        "id": 1,
+        "model": "QWEN_3_30B",
+        "start": [
+          0,
+          0
+        ],
+        "goal": [
+          3,
+          3
+        ],
+        "initial_chips": {
+          "B": 14,
+          "G": 2,
+          "R": 0
+        },
+        "non_cooperative_baseline": 0
+      }
+    ]
+  },
+  "game": {
+    "id": "grid_81_20260121_080700_431850_05572d44",
+    "start_timestamp": "2026-01-21T08:07:00.435022Z",
+    "end_timestamp": "2026-01-21T08:22:16.821704Z",
+    "turns": {
+      "0": {
+        "players": {
+          "0": {
+            "position": {
+              "start": [
+                0,
+                0
+              ],
+              "end": [
+                1,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 2,
+                "R": 14
+              },
+              "end": {
+                "B": 0,
+                "G": 2,
+                "R": 14
+              }
+            },
+            "move_made": [
+              1,
+              0
+            ],
+            "move_type": "move_under_contract"
+          },
+          "1": {
+            "position": {
+              "start": [
+                0,
+                0
+              ],
+              "end": [
+                1,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 12,
+                "G": 2,
+                "R": 0
+              }
+            },
+            "move_made": [
+              1,
+              0
+            ],
+            "move_type": "regular"
+          }
+        },
+        "contract": {
+          "judge_contract": "player 1: Let's begin negotiation to come up with a contract. What would you like to propose? \n, \nplayer 0: I notice that I have 14 red chips, which is a surplus, and only 2 green chips. The other player has 14 blue chips and 2 green chips, but no red chips. \n\nLooking at the board, the shortest path from (0,0) to (3,3) that minimizes chip usage and fits my inventory is:\n(0,0) → (1,0) → (2,0) → (3,0) → (3,1) → (3,2) → (3,3)\n\nThis path requires:\n- (1,0): blue (must pay 1 B)\n- (2,0): blue (must pay 1 B)\n- (3,0): red (must pay 1 R)\n- (3,1): red (must pay 1 R)\n- (3,2): red (must pay 1 R)\n- (3,3): green (must pay 1 G)\n\nSo total: 2 B, 3 R, 1 G\n\nI have 2 G, but only 14 R and 0 B — so I need 2 blue chips to make this path.\n\nNow, looking at the other player: they have 14 B, 2 G, 0 R. Their best path might be via the top-right, using green or blue extensively.\n\nBut I can help them by covering their red costs — but only if I gain a clear advantage.\n\nI can offer to cover their red chip costs on specific tiles if they help me with blue.\n\nBut wait — let’s see a better option: the path via (1,1) and (1,2) uses 3 B, 2 R, 1 G — but I lack red for that.\n\nAlternative idea: if the other player goes along the top row and we both move together, but only if mutually beneficial.\n\nBut focus: I don’t have blue chips. I need 2 blue chips to take my ideal path.\n\nThey have 14 blue chips. I can propose: I will cover their red moves if they cover my blue moves.\n\nBut we both need to avoid getting stuck.\n\nLet’s consider the tiles where reds are needed: (3,0), (3,1), (3,2) — all red tiles.\n\n(3,0): R\n(3,1): R\n(3,2): R\n\nThese are 3 red tiles on the bottom row. I have 14 red chips — I can afford to cover up to 14 red moves, so I can cover these if needed.\n\nBut they have no red chips — they cannot afford to move on red tiles at all.\n\nSo their path cannot go through (3,0), (3,1), (3,2) unless I cover the red cost for them.\n\nSimilarly, I cannot move on blue tiles unless they cover the cost — I have 0 blue chips.\n\nBut they have plenty.\n\nSo what if we swap responsibilities?\n\nMy idea:\n\nI propose: I cover the red costs for the other player on tiles (3,0), (3,1), (3,2) (3 times, since they go through each once). In return, they cover the blue costs for me on (1,0) and (2,0).\n\nWhy? Because:\n- I need to go through (1,0) and (2,0): blue tiles → I need to pay blue pins → I have none → I can't move without help.\n- They need to go through (3,0), (3,1), (3,2): red tiles → they have no red → they can't move without help.\n\nSo if I cover their red costs (3 moves), and they cover my blue costs (2 moves), it's balanced in terms of utility.\n\nBut: I have 14 red chips — so I can afford to pay up to 14 red moves. Matching their 3 red moves.\n\nThey have 14 blue chips — so they can afford to cover 14 blue moves. I only need 2.\n\nSo it’s a win-win? But I care only about my score.\n\nLet’s calculate.\n\nIf I accept their blue contract for 2 moves, and they accept my red contract for 3 moves, both can proceed on their optimal paths.\n\nMy path: (0,0) → (1,0) → (2,0) → (3,0) → (3,1) → (3,2) → (3,3)\n\nI pay nothing for blue tiles (1,0), (2,0) because they covered it.\n\nI pay red for (3,0), (3,1), (3,2) → 3 red chips → I have 14 → fine.\n\nI \n, \nplayer 1: Turn: 1: I propose the following contract:\n\n(1, 0): You give me a B  \n(2, 0): You give me a B  \n(3, 0): I give you a R  \n(3, 1): I give you a R  \n(3, 2): I give you a R\n\nThis allows me to move freely along my path without paying blue chips, while covering your red costs on the three tiles you must traverse. I have ample red chips (14), so I can afford to cover 3 red moves. You have plenty of blue chips (14), so covering 2 blue moves is trivial for you. This enables both of us to reach (3,3) via our optimal paths.\n\nMy final score will be 20 (goal reached) + 5 × (14 - 3) = 20 + 55 = 75 if I use this contract — I start with 14 red, use 3, so 11 red remain, plus 2 green, 0 blue → 13 chips in total → 20 + 65 = 85.\n\nWait, recheck:\n\n- I start with: B:14, G:2, R:0  \n- I use: 3 red (on (3,0), (3,1), (3,2)) → but I don't have red!  \n- I said I have 14 red? Correction: my inventory is {'B': 14, 'G': 2, 'R': 0} — I have **zero red**, not 14.\n\nMistake! I have 0 red. So I cannot pay for red tiles.\n\nBut the other player has 14 red.\n\nSo I cannot cover red moves — I have no red chips.\n\nI need to flip the roles.\n\nI have blue and green. They have red.\n\nThey cannot go through red tiles unless I cover their red costs.\n\nBut I have no red — so I can’t.\n\nWait: I have **14 blue**, **2 green**, **0 red**.\n\nThe other player has **0 blue**, **2 green**, **14 red**.\n\nSo for me to go on a blue tile, I need them to pay for it — they have blue? No — they have 0 blue.\n\nThey only have red and green.\n\nSo they can’t cover blue for me.\n\nBut I can’t cover red for them — I have 0 red.\n\nSo we’re both stuck?\n\nNo — but the contract is “I give you X”, meaning I pay that color.\n\nSo if I say “(3,0): I give you a R”, I must have R to give.\n\nBut I have 0 R — so I cannot offer red.\n\nTherefore, my earlier proposal is invalid.\n\nBut I need 2 blue chips to move on (1,0) and (2,0). I have 14 blue — no, I have 14 blue chips in my inventory.\n\nWait — I have 14 blue — so I can pay for blue tiles myself? No — I can only pay if I have the chip.\n\nI have 14 blue — so yes, I can pay 1 blue per move.\n\nWait — no: the rule is: \"Each time you move to a tile, you must pay 1 chip of that tile's colour.\"\n\nSo if I move to (1,0), which is blue, I must pay 1 blue chip.\n\nI have 14 blue — so I can do that.\n\nSimilarly, (2,0) is blue — another blue.\n\nSo I can afford to go through (1,0) and (2,0) — I have enough blue.\n\nThen (3,0) is red — I have 0 red — so I cannot move there.\n\nSo I cannot go on red tiles.\n\nSo my best path must avoid red tiles.\n\nI need a path that avoids red tiles.\n\nLook at board:\n\nRow 0: G B B B  \nRow 1: B B B R  \nRow 2: B R R R  \nRow 3: R R R G\n\nSo red tiles: (1,3), (2,1), (2,2), (2,3), (3,0), (3,1), (3,2)\n\nSo I cannot enter any red tile unless I have a red chip, or the other player covers it for me.\n\nBut I have 0 red — so I cannot move on red tiles.\n\nSo any path that goes through (3,0), (3,1), (3,2) is forbidden to me.\n\nSimilarly, (2,1), (2,2), (2,3), (1,3) are red — I cannot go there.\n\nSo \n, \nplayer 0: You are at (0, 0). Your goal is (3, 3). You have 14 blue, 2 green, 0 red. Other player has 14 red, 2 green, 0 blue. You cannot move on any red tile because you have no red chips. You cannot move on any blue tile that the other player hasn't agreed to cover — they have no blue chips, so they can’t cover for you.\n\nBut you have 14 blue — so you can afford to pay for blue moves — so you can move on blue tiles.\n\nSo your only possible moves are on tiles that are blue or green.\n\nBlue tiles: (0,1), (0,2), (0,3), (1,0), (1,1), (1,2), (2,0)\n\nGreen tiles: (0,0), (3,3)\n\n(3,3) is green — that's your goal.\n\nSo to reach (3,3), you must avoid all red tiles — so you must not go to (3,0), (3,1), (3,2), (2,1), (2,2), (2,3), (1,3)\n\nPossible path:\n\n(0,0) → (0,1) → (0,2) → (0,3) → (1,3) → ... (1,3) is red — not allowed.\n\n(0,0) → (0,1) → (1,1) → (1,2) → (2,2) → red — not allowed.\n\nAll paths that go down must go through red.\n\nIs there a path that goes only through blue and green?\n\nGreen tiles: (0,0), (3,3)\n\nBlue tiles: (0,1), (0,2), (0,3), (1,0), (1,1), (1,2), (2,0)\n\nFrom (0,0), you can go to:\n- (1,0) → blue → you have blue → OK\n- (0,1) → blue → OK\n\nNow from (1,0): can go to (1,1) → blue → OK\nFrom (1,1): (1,2) → blue → OK\nFrom (1,2): (2,2) → red → not allowed\nFrom (1,1): (2,1) → red → not allowed\n\nFrom (1,0): (2,0) → blue → OK\nFrom (2,0): (2,1) → red → not allowed\n\nSo no way to go below row 1 without hitting red.\n\nThe only way to (3,3) is through (3,2), (3,1), or (3,0), all red — which you cannot enter.\n\n(3,3) is green — but the only way to reach it is from (3,2) or (2,3), both red.\n\n(2,3) is red, (3,2) is red — both cannot be entered.\n\nSo you are stuck — you cannot reach your goal unless you can move on red tiles — but you have no red chips.\n\nYou could **only** reach your goal if the other player agrees to cover your red costs on the three tiles: (3,0), (3,1), (3,2) — but only if you can make it worthwhile for you.\n\nBut you have no red chips, so you cannot **offer** to cover any red moves — you can’t give red.\n\nHowever, you can **propose** a contract where the other player gives you red chips for red tiles — but only if you gain something.\n\nBut the contract is symmetric: if I agree to cover your red moves, then you cover my blue moves.\n\nBut I have blue — so I can cover blue, but you have no blue — so you can't cover blue for me.\n\nSo it's not balanced.\n\nLet me reframe.\n\nI need to move on red tiles to reach goal. I have no red chips. So I must get red chips from the other player — but I can get them only if they agree to cover the cost for me on red moves.\n\nBut in return, I can agree to cover their cost on blue moves.\n\nBut they have no blue chips — so they cannot pay for blue moves — so they can't cover blue for me.\n\nSo we are at an impasse.\n\nUnless... the contract is not symmetric in effort.\n\nBut the rules say: if I propose a contract, I must specify: on each tile, who gives what.\n\nSo I could say: on (3,0), (3,1), (3,2), I want you to give me a red chip (i.e., you cover the red \n, \nplayer 1: Turn: 2: I propose the following contract:\n\n(3, 0): You give me a R  \n(3, 1): You give me a R  \n(3, 2): You give me a R\n\nThis allows me to move onto the three red tiles on the bottom row, which are necessary to reach my goal at (3,3). In return, I will cover your blue costs on any blue tile you move to — but you have 0 blue chips, so there's no risk to you. However, since you are at (0,0), and need to reach (3,3), you may need to go through blue tiles like (1,0), (1,1), (2,0) — but you have no blue chips, so you cannot move on them unless I cover your cost.\n\nBut I don’t want to cover your blue costs unless you help me — so I must make it worth it for you.\n\nBut you have 14 red chips — which I can’t use.\n\nI could instead say: I will cover your blue cost on (1,0), (1,1), (1,2), (2,0), etc., if you cover my red cost on (3,0), (3,1), (3,2).\n\nBut to do that, I need to include a counter: you cover my red cost, I cover your blue cost.\n\nBut you have no blue — so you can’t pay for blue unless I cover it.\n\nSo the only way you can move on blue tiles is if I cover the cost.\n\nSo if I propose:\n\n(1,0): I give you a B  \n(1,1): I give you a B  \n(1,2): I give you a B  \n(2,0): I give you a B  \n(3,0): You give me a R  \n(3,1): You give me a R  \n(3,2): You give me a R\n\nBut you have 0 blue chips — so you can’t pay for any blue tiles — so I, as the only one with blue, must cover all blue moves if you want to move on them.\n\nBut I don’t want to cover your blue moves for free — I want something in return.\n\nSo I need to get you to give me red chips for the three red moves — but I already have no red, so I can't \"give\" red.\n\nWait — in the contract, \"You give me a R\" means you are agreeing to pay the red cost when I move onto that tile — which is fine.\n\n\"You give me a R\" on (3,0) means: when I step on (3,0), you will pay the red chip.\n\nThat is valid.\n\nSo I can propose:\n\n(3,0): You give me a R  \n(3,1): You give me a R  \n(3,2): You give me a R\n\nAnd also:\n\n(1,0): I give you a B  \n(1,1): I give you a B  \n(1,2): I give you a B  \n(2,0): I give you a B\n\nBut why would you accept this? You have 14 red — and you need to reach your goal.\n\nIf you go from (0,0) to (1,0) to (2,0) to (3,0) to (3,1) to (3,2) to (3,3), that's 3 red moves and 3 blue moves.\n\nYou have 0 blue, so you can't do the blue moves unless I cover them.\n\nSo if I cover your blue moves, you can reach your goal.\n\nAnd in return, you cover my red moves on (3,0), (3,1), (3,2), so I can also reach my goal.\n\nIt's mutually beneficial.\n\nBut I have to see that I gain.\n\nMy initial path is blocked — I can't move on red.\n\nBut if you cover my red cost on (3,0), (3,1), (3,2), I can move there.\n\nAnd if I cover your blue cost on (1,0), (1,1), (1,2), (2,0), you can move there.\n\nWe are both able to reach (3,3).\n\nNow, for my score: \n- I start with B:14, G:2, R:0\n- I will use 1 B on (1,0) — no, I'm not paying — you are covering it. So my B stay at 14.\n- I use no green until (3,3) — so I pay G on (3,3)\n- I use 3 R on (3,0), (3,1), (3,2) — but you are \n, \nplayer 0: I have 14 blue, 2 green, 0 red.\n\nYou have 14 red, 2 green, 0 blue.\n\nI cannot move on any red tile unless you cover the cost — which you can do since you have red chips.\n\nTo reach (3,3), I must go through (3,0), (3,1), or (3,2) — all red — so I need you to cover those three red moves.\n\nIn return, you cannot move on any blue tile unless I cover the cost — because you have no blue chips.\n\nSo if I cover your blue costs on the tiles you must traverse (like (1,0), (1,1), (1,2), (2,0)), you can move.\n\nSo let's define a path for you (the other player):\n\nFrom (0,0) → (1,0) → (2,0) → (3,0) → (3,1) → (3,2) → (3,3)\n\nThis requires:\n- (1,0): blue → you need me to cover\n- (2,0): blue → you need me to cover\n- (3,0): red → you can cover yourself? Yes — but only if I cover my own red moves.\n\nBut you have many red — you can afford it.\n\nBut to make this fair, I propose:\n\nI will cover your blue costs on (1,0), (1,1), (1,2), and (2,0), **if** you cover my red costs on (3,0), (3,1), (3,2).\n\nWhy should you agree?\n\nBecause you want to reach your goal. You cannot reach it without going through those blue tiles — unless there’s another way.\n\nIs there another path for you?\n\nYour possible paths:\n- via top: (0,0) → (0,1) → (0,2) → (0,3) — then (1,3) is red — you can go there if you have red (you do), but then (2,3) is red, (3,3) is green — so:\n(0,0) → (0,1) → (0,2) → (0,3) → (1,3) → (2,3) → (3,3)\n\nTiles: \n- (0,1): blue — you have 0 blue → can’t move\n- (0,2): blue → same\n- (0,3): blue → same\n\nSo you cannot move on any of these blue tiles — you have no blue chips.\n\nSame issue: you cannot enter any blue tile unless I cover the cost.\n\nSo the only way you can move is if I cover your blue moves.\n\nBut you have no green in row 0 except (0,0) — (0,0) is green.\n\nSo from (0,0), you can only go to (1,0) or (0,1).\n\n(1,0) is blue — you can't move unless I cover.\n(0,1) is blue — same.\n\nSo your only possible move is to ask me to cover blue for you.\n\nSimilarly, I cannot move on red unless you cover.\n\nSo we are completely dependent on each other.\n\nTherefore, the only way both of us can reach the goal is if:\n\n- I cover your blue moves on the path you take (e.g., (1,0), (1,1), (1,2), (2,0))\n- You cover my red moves on (3,0), (3,1), (3,2)\n\nIt’s perfectly symmetric and mutually beneficial.\n\nNow, calculate score for me (selfish agent):\n\nIf I accept this contract:\n- I move: (0,0) → (1,0): you cover blue → I use 0 blue\n- → (2,0): you cover blue → 0 blue used\n- → (3,0): you cover red → 0 red used\n- → (3,1): you cover red → 0 red used\n- → (3,2): you cover red → 0 red used\n- → (3,3): I pay 1 green → I have 2 green → so 1 green left\n\nSo total chips at end: B:14, G:1, R:0 → 15 chips\nFinal score: 20 (goal) + 5×15 = 20 + 75 = 95\n\nIf I don’t cooperate, I cannot reach goal → 0 points.\n\nSo I gain 95 by cooperating.\n\nFor you: you move:\n- (0,0) → (1,0): I cover blue → you use 0 \n, \nplayer 1: Turn: 3: (1, 0): I give you a B  \n(2, 0): I give you a B  \n(3, 0): You give me a R  \n(3, 1): You give me a R  \n(3, 2): You give me a R  \n\nThis allows me to traverse (3,0), (3,1), (3,2) despite having no red chips. In return, you, the other player, gain the ability to move freely on (1,0) and (2,0) — blue tiles — which you cannot afford without my cover. This contract is balanced: I cover your 2 blue moves (on (1,0) and (2,0)), and you cover my 3 red moves (on (3,0), (3,1), (3,2)). \n\nI will strictly benefit: I can reach my goal, end with 14 blue, 1 green (1 used at (3,3)), and 0 red — total 15 chips → score = 20 + 75 = 95. Without this contract, I get 0.\n\nYou also benefit: you can complete the path to (3,3) via (1,0), (2,0), etc., using your red chips and my coverage of blues.\n\nThe contract is fair and mutually beneficial — but I only care about my score. Since this yields me 95 points vs. 0 if I refuse, I accept.\n\nagree \n, \nplayer 0: (1, 0): I give you a B  \n(2, 0): I give you a B  \n(3, 0): You give me a R  \n(3, 1): You give me a R  \n(3, 2): You give me a R  \n\nagree \n",
+          "agreement_status": true,
+          "player_0_agreed": true,
+          "player_1_agreed": true
+        }
+      },
+      "1": {
+        "players": {
+          "0": {
+            "position": {
+              "start": [
+                1,
+                0
+              ],
+              "end": [
+                2,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 2,
+                "R": 14
+              },
+              "end": {
+                "B": 0,
+                "G": 2,
+                "R": 14
+              }
+            },
+            "move_made": [
+              2,
+              0
+            ],
+            "move_type": "move_under_contract"
+          },
+          "1": {
+            "position": {
+              "start": [
+                1,
+                0
+              ],
+              "end": [
+                2,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 12,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 10,
+                "G": 2,
+                "R": 0
+              }
+            },
+            "move_made": [
+              2,
+              0
+            ],
+            "move_type": "regular"
+          }
+        }
+      },
+      "2": {
+        "players": {
+          "0": {
+            "position": {
+              "start": [
+                2,
+                0
+              ],
+              "end": [
+                3,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 2,
+                "R": 14
+              },
+              "end": {
+                "B": 0,
+                "G": 2,
+                "R": 13
+              }
+            },
+            "move_made": [
+              3,
+              0
+            ],
+            "move_type": "regular"
+          },
+          "1": {
+            "position": {
+              "start": [
+                2,
+                0
+              ],
+              "end": [
+                3,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 10,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 10,
+                "G": 2,
+                "R": 0
+              }
+            },
+            "move_made": [
+              3,
+              0
+            ],
+            "move_type": "move_under_contract"
+          }
+        }
+      },
+      "3": {
+        "players": {
+          "0": {
+            "position": {
+              "start": [
+                3,
+                0
+              ],
+              "end": [
+                3,
+                1
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 2,
+                "R": 12
+              },
+              "end": {
+                "B": 0,
+                "G": 2,
+                "R": 11
+              }
+            },
+            "move_made": [
+              3,
+              1
+            ],
+            "move_type": "regular"
+          },
+          "1": {
+            "position": {
+              "start": [
+                3,
+                0
+              ],
+              "end": [
+                3,
+                1
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 10,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 10,
+                "G": 2,
+                "R": 0
+              }
+            },
+            "move_made": [
+              3,
+              1
+            ],
+            "move_type": "move_under_contract"
+          }
+        }
+      },
+      "4": {
+        "players": {
+          "0": {
+            "position": {
+              "start": [
+                3,
+                1
+              ],
+              "end": [
+                3,
+                2
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 2,
+                "R": 10
+              },
+              "end": {
+                "B": 0,
+                "G": 2,
+                "R": 9
+              }
+            },
+            "move_made": [
+              3,
+              2
+            ],
+            "move_type": "regular"
+          },
+          "1": {
+            "position": {
+              "start": [
+                3,
+                1
+              ],
+              "end": [
+                3,
+                2
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 10,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 10,
+                "G": 2,
+                "R": 0
+              }
+            },
+            "move_made": [
+              3,
+              2
+            ],
+            "move_type": "move_under_contract"
+          }
+        }
+      },
+      "5": {
+        "players": {
+          "0": {
+            "position": {
+              "start": [
+                3,
+                2
+              ],
+              "end": [
+                3,
+                3
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 2,
+                "R": 8
+              },
+              "end": {
+                "B": 0,
+                "G": 1,
+                "R": 8
+              }
+            },
+            "move_made": [
+              3,
+              3
+            ],
+            "move_type": "regular"
+          },
+          "1": {
+            "position": {
+              "start": [
+                3,
+                2
+              ],
+              "end": [
+                3,
+                3
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 10,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 10,
+                "G": 1,
+                "R": 0
+              }
+            },
+            "move_made": [
+              3,
+              3
+            ],
+            "move_type": "regular"
+          }
+        }
+      }
+    },
+    "final_state": {
+      "players": {
+        "0": {
+          "position": [
+            3,
+            3
+          ],
+          "goal": [
+            3,
+            3
+          ],
+          "reached_goal": true,
+          "chips": {
+            "B": 0,
+            "G": 1,
+            "R": 8
+          },
+          "route": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ],
+            [
+              3,
+              0
+            ],
+            [
+              3,
+              1
+            ],
+            [
+              3,
+              2
+            ],
+            [
+              3,
+              3
+            ]
+          ]
+        },
+        "1": {
+          "position": [
+            3,
+            3
+          ],
+          "goal": [
+            3,
+            3
+          ],
+          "reached_goal": true,
+          "chips": {
+            "B": 10,
+            "G": 1,
+            "R": 0
+          },
+          "route": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ],
+            [
+              3,
+              0
+            ],
+            [
+              3,
+              1
+            ],
+            [
+              3,
+              2
+            ],
+            [
+              3,
+              3
+            ]
+          ]
+        }
+      },
+      "total_turns": "6",
+      "scores": {
+        "Player 0": 65,
+        "Player 1": 75
+      },
+      "metrics": {
+        "total_scores": 140,
+        "total_accuracy": 1.0,
+        "gini_coefficient": 0.03571428571428581,
+        "max_possible_score": 140,
+        "total_trades_proposed": 0,
+        "total_trades_proposed_0": 0,
+        "total_trades_proposed_1": 0,
+        "total_trades_accepted": 0,
+        "total_trades_accepted_0": 0,
+        "total_trades_accepted_1": 0,
+        "total_trades_rejected": 0,
+        "total_trades_rejected_0": 0,
+        "total_trades_rejected_1": 0,
+        "amount_received_by_0_from_trades": 0,
+        "amount_received_by_1_from_trades": 0,
+        "total_trades_failed": 0,
+        "total_p4p_arrangements_proposed": 0,
+        "total_p4p_arrangements_proposed_0": 0,
+        "total_p4p_arrangements_proposed_1": 0,
+        "total_p4p_arrangements_accepted": 0,
+        "total_p4p_arrangements_accepted_0": 0,
+        "total_p4p_arrangements_accepted_1": 0,
+        "total_p4p_arrangements_rejected": 0,
+        "total_p4p_arrangements_rejected_0": 0,
+        "total_p4p_arrangements_rejected_1": 0,
+        "total_p4p_promises_kept": 0,
+        "total_p4p_promises_kept_0": 0,
+        "total_p4p_promises_kept_1": 0,
+        "total_p4p_promises_broken": 0,
+        "total_p4p_promises_broken_0": 0,
+        "total_p4p_promises_broken_1": 0,
+        "total_p4p_amounts_promised_to_receive": 0,
+        "total_p4p_amounts_promised_to_receive_0": 0,
+        "total_p4p_amounts_promised_to_receive_1": 0,
+        "total_p4p_amounts_received": 0,
+        "total_p4p_amounts_received_0": 0,
+        "total_p4p_amounts_received_1": 0,
+        "contract_accepted": 1,
+        "contract_negotiaion_length": 4,
+        "num_tiles_in_contract": null,
+        "num_tiles_promised_to_receive_from_contract_0": 0,
+        "num_tiles_promised_to_receive_from_contract_1": 0,
+        "moves_made_under_strict_contract_0": 2,
+        "moves_made_under_strict_contract_1": 3,
+        "contract_moves_blocked_by_partner_shortfall_0": 1,
+        "contract_moves_blocked_by_partner_shortfall_1": 2,
+        "points_for_completion_promised_to_0": 0,
+        "points_for_completion_promised_to_1": 0,
+        "format_errors_total": 0,
+        "format_errors_by_type": {},
+        "format_errors_by_player": {},
+        "format_errors_by_turn": {}
+      },
+      "api_calls": {
+        "total": 43,
+        "by_player": {
+          "player_0": 16,
+          "player_1": 15
+        },
+        "judge": 12
+      }
+    }
+  }
+}

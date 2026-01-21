@@ -1,0 +1,261 @@
+{
+  "config": {
+    "player_models": [
+      "QWEN_3_30B",
+      "QWEN_3_30B"
+    ],
+    "manual_chips": [
+      {
+        "B": 0,
+        "G": 2,
+        "R": 14
+      },
+      {
+        "B": 14,
+        "G": 2,
+        "R": 0
+      }
+    ],
+    "with_message_history": false,
+    "pay4partner": true,
+    "contract_type": "tile_with_judge_implementation",
+    "with_context": true,
+    "fog_of_war": [
+      false,
+      false
+    ],
+    "resource_mode": "manual",
+    "grid_size": 4,
+    "colors": [
+      "R",
+      "B",
+      "G"
+    ],
+    "mode": "Pay4Partner",
+    "player_details": [
+      {
+        "id": 0,
+        "model": "QWEN_3_30B",
+        "start": [
+          0,
+          0
+        ],
+        "goal": [
+          3,
+          3
+        ],
+        "initial_chips": {
+          "B": 0,
+          "G": 2,
+          "R": 14
+        },
+        "non_cooperative_baseline": 70
+      },
+      {
+        "id": 1,
+        "model": "QWEN_3_30B",
+        "start": [
+          0,
+          0
+        ],
+        "goal": [
+          3,
+          3
+        ],
+        "initial_chips": {
+          "B": 14,
+          "G": 2,
+          "R": 0
+        },
+        "non_cooperative_baseline": 70
+      }
+    ]
+  },
+  "game": {
+    "id": "grid_6_20260120_143854_959934_7c080b56",
+    "start_timestamp": "2026-01-20T14:38:54.963384Z",
+    "end_timestamp": null,
+    "turns": {
+      "0": {
+        "players": {
+          "0": {
+            "position": {
+              "start": [
+                0,
+                0
+              ],
+              "end": [
+                1,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 2,
+                "R": 14
+              },
+              "end": {
+                "B": 0,
+                "G": 2,
+                "R": 13
+              }
+            },
+            "move_made": [
+              1,
+              0
+            ],
+            "move_type": "regular"
+          },
+          "1": {
+            "position": {
+              "start": [
+                0,
+                0
+              ],
+              "end": [
+                0,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              }
+            }
+          }
+        },
+        "contract": {
+          "judge_contract": "player 1: Let's begin negotiation to come up with a contract. What would you like to propose? \n, \nplayer 0: I notice that our goals are the same—(3, 3)—and we are both starting at (0, 0). Let's analyze the paths and chip requirements carefully.\n\n### My Situation:\n- **Current chips**: G: 2, R: 14, B: 0  \n- **Goal**: (3, 3)  \n- **Ideal path without trading**:  \n  → (0,0) → (1,0) → (2,0) → (2,1) → (3,1) → (3,2) → (3,3)  \n  - Tiles: (1,0)=R, (2,0)=R, (2,1)=R, (3,1)=R, (3,2)=R, (3,3)=G  \n  - Chips needed: R: 5, G: 1  \n  - I have R: 14 (enough), G: 2 (enough) → I *can* complete this path **without any trade**.\n\nBut wait: (3,3) is G — I have 2 G, so I can cover that. All required colors are in my inventory.\n\nSo why trade? Only if I can **gain more chips at the end** by cooperating.\n\nBut let's check the other player.\n\n### Other Player's Situation:\n- **Chips**: B: 14, G: 2, R: 0  \n- **Their best path**: \n  → (0,0) → (0,1) → (1,1) → (1,2) → (1,3) → (2,3) → (3,3)  \n  - Tiles: (0,1)=B, (1,1)=B, (1,2)=B, (1,3)=B, (2,3)=B, (3,3)=G  \n  - Chips needed: B: 5, G: 1  \n  - They have B: 14 → enough, G: 2 → enough → they can also complete **without trading**.\n\nSo we both can complete on our own.\n\nBut here's the catch: **we might still benefit from trade if it lets us finish with more total chips**.\n\nLet’s compute what happens if we both go alone:\n\n#### Option 1: I go alone on R/G path:\n- Path: (0,0) → (1,0) → (2,0) → (2,1) → (3,1) → (3,2) → (3,3)\n- Chips used: R:5, G:1\n- Remaining: R:9, G:1 → Total chips: 10\n- Score: 20 + 5×10 = 70\n\n#### Option 2: Other player goes alone on B/G path:\n- Chips used: B:5, G:1\n- Remaining: B:9, G:1 → Total chips: 10\n- Score: 20 + 5×10 = 70\n\nBut what if we help each other?\n\nSuppose I help them on B moves, and they help me on G moves — but only where we are missing.\n\nWait — in my path: I need G only at end, (3,3). I have G:2 → I can do that.\n\nBut they need G at (3,3) — and they also have G:2.\n\nBut here's the key: **We can't use chips we don't have** unless we trade.\n\nBut neither of us lacks a chip for our own goal.\n\nSo if we both go alone, we get 70 each.\n\nBut what if we *could* take a shorter or better path?\n\nWait — both paths are 6 steps. Same length.\n\nBut notice: if we *both* go alone, we both get 70.\n\nBut suppose I **offer to cover some of their B moves**, and they cover my G at (3,3), and in return, I get to keep more chips?\n\nNo — if I do it alone, I already have enough G.\n\nWait — but what if I **don’t use my G at all** — and instead, they help me on a G tile?\n\nBut I **do** have G:2, and I need only 1 G at (3,3). So I can do it.\n\nBut here's the twist: **The contract can be used to let me avoid using my own chips** — because the chips promised by the other player remain in my inventory if unused.\n\nSo if I *don’t* need to use a chip in my own inventory, I can **keep more chips** — even if I don’t trade. \n, \nplayer 1: Turn: 1: Let’s clarify: the only way to **increase my final chip count** is if I can **avoid spending chips that I currently have**, by getting the other player to cover them via contract — even if I could afford them.\n\nBut for me to benefit, I must **not spend any of my own chips** on a color that I’m getting covered by the other player. If I do that, I keep those chips and they count toward my score.\n\nSo let’s look at my current path:\n\n- Path: (0,0) → (1,0)=R → (2,0)=R → (2,1)=R → (3,1)=R → (3,2)=R → (3,3)=G\n- I need: R:5, G:1\n- I have: R:14, G:2\n\nI **can** go alone and finish with R:9, G:1 → total 10 chips → score 70.\n\nBut if I can **get the other player to cover all the moves where I use R or G**, then I don’t spend *any* of my R or G — but I’d still get to keep all 14 R and 2 G.\n\nBut wait — can I do that?\n\nOnly if I negotiate a contract where:\n- The other player covers all tiles in my path that require R or G.\n\nBut those are:\n- (1,0): R\n- (2,0): R\n- (2,1): R\n- (3,1): R\n- (3,2): R\n- (3,3): G\n\nThat’s 5 R and 1 G.\n\nThe other player has B:14, G:2, R:0.\n\nThey **don’t have R**, so they can’t cover R moves.\n\nTherefore, no contract can include covering R moves from them.\n\nBut the other player **has G:2**, so I might propose: \"You cover the G move at (3,3), and I’ll cover your B moves.\"\n\nWait — but in their path, they need 5 B’s and 1 G.\n\nThey have B:14 → enough. But they also have G:2 → enough.\n\nSo why would they agree to trade?\n\nBut suppose I offer to cover their G at (3,3), and ask them to cover my G at (3,3)? That doesn't help — we both need G at (3,3). Only one person can be there at a time.\n\nSo the tile (3,3) will be claimed by one of us — the other player cannot step on it until the first does.\n\nBut in this game, **both players are moving simultaneously** and can pass through same tiles? Or not?\n\nThe rules don’t say you can’t share tiles. So yes, it seems we can both visit (3,3), even though only one reaches it as goal.\n\nBut crucially: only **the player who ends their path at (3,3)** gets the 20 points.\n\nSo only one player can be the “winner” — meaning only one can claim 20 points.\n\nThis changes everything.\n\nWait — **this is not a co-op game**. We are competing for the same goal.\n\nThe scoring rule says:  \n- If you reach your goal → 20 points (+5 per chip)  \n- If you don’t reach goal → 0 points  \n\nSo **only the player who actually completes the path to (3,3) gets 20 points**.\n\nTherefore, **we cannot both win**. One of us will lose everything.\n\nAnd since we’re both starting at (0,0) and both want to go to (3,3), **there will be competition**.\n\nSo now, my strategy changes: I **must** get to (3,3), otherwise I score 0.\n\nSame for them.\n\nBut if I **don’t cooperate**, I can go alone and finish with 70 points.\n\nIf I **try to trade**, and they reject or delay, and I’m late, I might fail to reach goal.\n\nBut more importantly: if I **agree to a trade**, and they use my promised chips, I must **be sure that I still reach goal with time**.\n\nBut more critical: **if I help them, I risk being delayed**, and possibly failing.\n\nMoreover, if they don't actually reach goal, then my trade agreement might not matter — because they won’t complete their side either.\n\nSo my plan: **I can go alone without trading, and I will definitely make it.**\n\nCan they go alone too?\n\nYes — their path: (0,0)→(0,1)=B→(1,1)=B→(1,2)=B→(1,3)= \n, \nplayer 0: No. I must re-evaluate: **only one player can reach (3,3) and score points** — the other gets 0.\n\nSo this is a **race**, not a cooperation.\n\nTherefore, any trade that delays my movement or gives them an advantage risks me losing everything.\n\nBut I have a path that:\n- Requires only R and G\n- I have ample R (14) and G (2)\n- Path length: 6 moves\n- No dependencies on opponent's chips\n\nSimilarly, the other player has:\n- B:14 → enough for their path: (0,0)→(0,1)=B→(1,1)=B→(1,2)=B→(1,3)=B→(2,3)=B→(3,3)=G → needs 5 B, 1 G → they have all\n\nSo **both of us can complete independently in 6 steps**.\n\nNow, the key question: **Can we both complete?**\n\nThe rules don’t say tiles can’t be shared — so yes, multiple players can step on same tile.\n\nAnd since the goal is (3,3), **only one can end at it? Or can both?**\n\nCheck scoring rule:\n\n> If you DO reach your goal...\n\nNo restriction says only one person can reach it.\n\nSo if both reach (3,3), both get 20 + 5×chips.\n\nIs that possible?\n\nYes — unless the game mechanics prevent it (like blocking), but no such rule.\n\nSo it’s **possible for both to win**.\n\nBut now we’re back to: **if both paths are feasible and independent**, why trade?\n\nBecause trading might let me **preserve more chips** than going alone.\n\nWait: **if I go alone**, I spend:\n- 5 R (on (1,0),(2,0),(2,1),(3,1),(3,2))\n- 1 G (on (3,3))\n→ Remaining: R:9, G:1 → total 10 chips → score = 20 + 5×10 = 70\n\nBut suppose I **negotiate** with the other player to **cover the G move at (3,3)** using their G chip.\n\nThen I **don’t use my G**: I keep my 2 G.\n\nBut the cost: they pay for me to step on (3,3).\n\nBut I only need 1 G, so even if they cover it, I save 1 G.\n\nSo instead of spending 1 G, I keep it → I get 1 *extra* chip in my inventory.\n\nBut: if I don't spend it, I keep it → counts toward score.\n\nSo final chip count becomes: R:9, G:2 → 11 chips → score = 20 + 5×11 = 75\n\nThat’s better!\n\nBut — to do that, I must **get them to agree** to pay for my G at (3,3).\n\nDo they benefit?\n\nOnly if **they can avoid spending their own G** — but they also need G at (3,3) for their own path.\n\nThey need 1 G — and they have 2, so they could go without trade.\n\nBut if I help them with their G move — which they can do themselves — then I’m helping them avoid using their G.\n\nSo if I **cover their G move**, they keep 1 extra G.\n\nBut to get them to cover *my* G move, I have to offer something.\n\nI could propose:  \n\"I will cover your G move at (3,3) **if** you cover my G move at (3,3).\"\n\nBut — **both of us want to reach (3,3)** — and we might both be on track to make it in 6 turns.\n\nSo we can both reach (3,3).\n\nAnd we each need 1 G at that tile.\n\nBut only **one** of us can *use* the G chip for that tile — because it's just one tile.\n\nSo both of us can claim the G, but only **one** can \"pay\" at (3,3) — either by using our own chip or being covered.\n\nBut here's the thing: if we **both** try to pass through (3,3), there’s no conflict.\n\nSo the issue isn't that we can't both use (3,3) — it's that if I don't use my G, I can *still* move there — as long as someone else covers it.\n\nBut wait — **the coverage is per tile**, not per player.\n\nSo if I ask the other player to cover *their* G move at (3,3), but I'm also claiming it, that’s fine — the \n, \nplayer 1: Turn: 2: I don't see any benefit in cooperating. I can reach my goal in 6 moves using only my own chips: I need 5 R and 1 G, and I have 14 R and 2 G — plenty. Even if I don't trade, I'll finish with 9 R and 1 G → 10 chips → 20 + 5×10 = 70 points.\n\nThe other player can also reach their goal using 5 B and 1 G — they have 14 B and 2 G — so they’ll also get 70 points if they go alone.\n\nBut if I offer to help them with their G move at (3,3), I’ll get to keep my G, but I’ll have to **give them something in return** — like covering their B moves — but I don’t have any B chips, so I can’t.\n\nThey have no R or G to offer me in return — they have 14 B, 2 G, 0 R.\n\nI need R and G — but they can’t offer R.\n\nThe only way I could benefit is if they cover my G move at (3,3), so I don’t spend my G.\n\nBut to get them to do that, I’d have to offer them something they want — like saving their B or G.\n\nBut they don’t need help — they can go alone.\n\nSo if I propose to cover their G move at (3,3), they’d keep their G, and I’d keep mine — but I need to cover their G — so I’d have to commit my own chips? No.\n\nWait — in a trade, **I commit to covering their move** — but only if they commit to covering mine.\n\nBut I can’t cover their R moves — I don’t have R.\n\nI can’t cover their B moves — I don’t have B.\n\nSo my only possible coverage is for G — but I have G, and they need G.\n\nBut if I **offer to cover their G at (3,3)**, they could say \"yes\", and then I’d get to keep my G.\n\nBut why would they agree? They don’t need me to cover their G — they have it.\n\nThey only benefit if I give them something they can’t get — but they can go alone.\n\nSo I cannot force a trade that benefits me without costing me something that I might not want to pay.\n\nAnd since I can reach goal without any risk, and score 70, there’s **no incentive for me to cooperate**.\n\nMoreover, if I try to negotiate, I risk delay — and if I’m delayed, I might not make it to (3,3) in time.\n\nBut in a race, timing matters.\n\nBut both paths are 6 steps — same length.\n\nSo unless one player moves faster, we’re on equal footing.\n\nTherefore, **the rational decision is to go alone** — no trade.\n\nBut wait — **what if I cut the corner?** Is there a faster path?\n\nLet’s check if there’s a path shorter than 6 steps.\n\nFrom (0,0) to (3,3): |3-0| + |3-0| = 6 — so **6 is minimum possible**.\n\nSo both paths are optimal.\n\nThus, no benefit in trade.\n\nFinal decision: **I will not negotiate. I will go alone.**\n\nBut the system requires me to chat.\n\nSo I must send a message.\n\nBut I can only agree to a contract if it benefits me.\n\nSo I can say:\n\nI don’t see any benefit in trading. I can reach my goal using my own chips, and I’ll score 70 points. If you try to delay me with negotiation, I risk failing. I recommend you do the same. No trade needed.\n\nBut I must end with \"agree\" only if I accept a contract.\n\nI am not proposing any contract.\n\nBut the instruction says I must negotiate — but I can refuse.\n\nSo I can say: No trade necessary — I can complete my path using my own chips. I will proceed independently.\n\nBut I must send a message.\n\nTherefore:\n\nI propose no trade. I can reach my goal using my own chips, and will score 70 points. I advise you to do the same. There's no incentive to cooperate.\n\nBut if the other player says they want to trade, I can refuse.\n\nBut for now, I'll send:\n\nI don't see any benefit in trading. I can reach my goal using my own chips. No contract needed. \n, \nplayer 0: I don't see any benefit in trading. I can reach my goal using my own chips, and will score 70 points. There's no incentive to cooperate, and any delay risks me missing the goal. I will proceed independently. \n, \nplayer 1: Turn: 3: I don't see any benefit in trading. I can reach my goal using my own chips and will score 70 points. Any cooperation risks delay and reduces my chance of reaching (3,3). I advise you to do the same. No contract is needed — I will proceed independently. \n, \nplayer 0: I don't see any benefit in trading. I can reach my goal using my own chips and will score 70 points. Any cooperation risks delay and reduces my chance of reaching (3,3). I advise you to do the same. No contract is needed — I will proceed independently. \n, \nplayer 1: Turn: 4: I don't see any benefit in trading. I can reach my goal using my own chips and will score 70 points. Any cooperation risks delay and reduces my chance of reaching (3,3). I advise you to do the same. No contract is needed — I will proceed independently. \n, \nplayer 0: I don't see any benefit in trading. I can reach my goal using my own chips and will score 70 points. Any cooperation risks delay and reduces my chance of reaching (3,3). I advise you to do the same. No contract is needed — I will proceed independently. \n, \nplayer 1: Turn: 5: Turn: 5: I have no incentive to trade. I can reach my goal using my own chips and will score 70 points. Any cooperation risks delay and increases the chance I fail to reach (3,3). I will proceed independently. No contract is needed. \n, \nplayer 0: I have no incentive to trade. I can reach my goal using my own chips and will score 70 points. Any cooperation risks delay and increases the chance I fail to reach (3,3). I will proceed independently. No contract is needed. \n, \nplayer 1: Turn: 6: No trade necessary. I can reach my goal independently with 70 points. Any cooperation risks delay and reduces my chance of success. I will proceed alone. \n, \nplayer 0: No trade necessary. I can reach my goal independently with 70 points. Any cooperation risks delay and reduces my chance of success. I will proceed alone. agree \n, \nplayer 1: Turn: 7: agree \n",
+          "agreement_status": true,
+          "player_0_agreed": true,
+          "player_1_agreed": true
+        }
+      },
+      "1": {
+        "players": {
+          "0": {
+            "position": {
+              "start": [
+                1,
+                0
+              ],
+              "end": [
+                2,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 2,
+                "R": 13
+              },
+              "end": {
+                "B": 0,
+                "G": 2,
+                "R": 12
+              }
+            },
+            "move_made": [
+              2,
+              0
+            ],
+            "move_type": "regular"
+          },
+          "1": {
+            "position": {
+              "start": [
+                0,
+                0
+              ],
+              "end": [
+                0,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              }
+            }
+          }
+        }
+      },
+      "2": {
+        "players": {
+          "0": {
+            "position": {
+              "start": [
+                2,
+                0
+              ],
+              "end": [
+                2,
+                1
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 2,
+                "R": 12
+              },
+              "end": {
+                "B": 0,
+                "G": 2,
+                "R": 11
+              }
+            },
+            "move_made": [
+              2,
+              1
+            ],
+            "move_type": "regular"
+          },
+          "1": {
+            "position": {
+              "start": [
+                0,
+                0
+              ],
+              "end": [
+                0,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              }
+            }
+          }
+        }
+      },
+      "3": {
+        "players": {}
+      }
+    }
+  }
+}

@@ -17,7 +17,7 @@ from prompts import DEFAULT_SYSTEM_PROMPT, SELFISH_SYSTEM_PROMPT
 NUM_WORKERS = 8
 
 # Files
-GRIDS_FILE = "experiment_configs/4x4_experiment_grids.yaml"
+GRIDS_FILE = "experiment_configs/4x4_experiment_grids_reduced.yaml"
 PARAM_VARIATIONS = "parameter_variations"
 
 AGENT_LIST = {
@@ -26,13 +26,17 @@ AGENT_LIST = {
     "HAIKU_4_5": HAIKU_4_5,
     "HAIKU_3_5": HAIKU_3_5,  # Known working model for testing
     "SONNET_4_5": SONNET_4_5,
-    # "LLAMA_405B": LLAMA_405B,
+    "QWEN_3_235B": QWEN_3_235B,
+    "QWEN_3_30B": QWEN_3_30B,
+    "LLAMA_SCOUT": LLAMA_SCOUT,
+    "LLAMA_MAVERICK": LLAMA_MAVERICK
+
 }
 
 QUOTA_ERROR_PATTERNS = [
     "rate limit", "rate_limit", "quota exceeded", "quota_exceeded",
     "insufficient_quota", "insufficient quota", "too many requests", "429",
-    "billing", "credit", "exceeded your current quota", "out of quota"
+    "billing", "credit", "exceeded your current quota", "out of quota", "Insufficient credits"
 ]
 
 class QuotaError(Exception):
@@ -43,25 +47,32 @@ def is_experiment_completed(run_timestamp: str, pair_name: str, grid_data: dict,
     bucket = grid_data['bucket'].replace(" ", "_").replace("(", "").replace(")", "")
     grid_id = f"grid_{grid_data['id']:03d}"
     config_dir = generate_config_dir_name(config, selfish=selfish_str)
-    
-    # Path to the config directory where runs would be stored
+
     config_path = Path("logs") / "experiments" / "per_grid" / run_timestamp / pair_name / bucket / grid_id / config_dir
-    
+
     if not config_path.exists():
         return False
-    
-    # Check each run folder for a completed event log
+
     for run_folder in config_path.iterdir():
         if run_folder.is_dir():
             for log_file in run_folder.glob("event_log_*.json"):
                 try:
-                    with open(log_file, 'r') as f:
-                        content = f.read()
-                        if '"total_scores"' in content:
-                            return True
+                    content = log_file.read_text()
+                    content_lower = content.lower()
+
+                    has_total_scores = '"total_scores"' in content
+                    has_insufficient_credits = "insufficient credits" in content_lower
+
+                    # If it mentions insufficient credits, do NOT count it as completed
+                    # even if some partial structure includes total_scores.
+                    if has_insufficient_credits:
+                        continue
+
+                    if has_total_scores:
+                        return True
                 except Exception:
                     continue
-    
+
     return False
 
 def _is_quota_error(error_str: str) -> bool:
