@@ -130,7 +130,7 @@ def load_experiment_data(experiment_dir="logs/experiments/per_grid"):
 
             # Extract metrics
             row = {
-                'Model Pair': metadata.get('model_pair', '') if 'model_pair' in metadata else 'FOUR_1-FOUR_1',
+                'Model Pair': metadata.get('model_pair', '') if 'model_pair' in metadata else 'UNKNOWN',
                 'Grid ID': metadata.get('grid_id', grid_dir.replace('grid_', '')),
                 'Config ID': config_dir,
                 'Run ID': run_id,
@@ -214,6 +214,7 @@ def load_experiment_data(experiment_dir="logs/experiments/per_grid"):
                 'points_for_completion_promised_to_0': final_state.get('metrics', {}).get('points_for_completion_promised_to_0', 0),
                 'points_for_completion_promised_to_1': final_state.get('metrics', {}).get('points_for_completion_promised_to_1', 0),
             }
+            row.update(_compute_trade_metrics_from_event_log_json(data))
             # Add grid metrics if available
             if 'grid_metrics' in metadata:
                 row.update({
@@ -265,6 +266,99 @@ def load_experiment_data(experiment_dir="logs/experiments/per_grid"):
 
     # Return df along with where/when we saved, so caller can reuse timestamp for per-pair files
     return df, output_dir, timestamp
+
+
+def _sum_amount(color_qty_list) -> int:
+    # offer/request like [["B", 2]] (or empty)
+    if not color_qty_list:
+        return 0
+    return int(sum(qty for _color, qty in color_qty_list))
+
+def _trade_type(amount_offered: int, amount_requested: int) -> str:
+    if amount_offered == amount_requested:
+        return "parity"
+    if amount_offered < amount_requested:
+        return "concessionary"
+    return "extractive"  # offered > requested
+
+def _trade_type_from_offerer_pov(amount_offered: int, amount_requested: int) -> str:
+    """
+    Offerer's POV:
+      parity: offered == requested
+      concessionary: offered > requested  (offerer gives more than they ask)
+      extractive: offered < requested     (offerer asks for more than they give)
+    """
+    if amount_offered == amount_requested:
+        return "parity"
+    if amount_offered > amount_requested:
+        return "concessionary"
+    return "extractive"
+
+def _flip_trade_type_for_responder(ttype: str) -> str:
+    """Responder POV flips concessionary <-> extractive; parity stays parity."""
+    if ttype == "concessionary":
+        return "extractive"
+    if ttype == "extractive":
+        return "concessionary"
+    return "parity"
+
+def _compute_trade_metrics_from_event_log_json(data: dict) -> dict:
+    """
+    Compute 18 trade metrics:
+      parity/extractive/concessionary × offered/accepted/rejected × player(0/1)
+
+    Convention:
+      - offered_X is credited to the offerer X (offerer's POV classification)
+      - accepted_Y / rejected_Y is credited to the responder Y, BUT classified from responder's POV
+        (i.e., concessionary<->extractive flip, parity unchanged)
+    """
+    trade_types = ["parity", "extractive", "concessionary"]
+    outcomes = ["offered", "accepted", "rejected"]
+    players = ["0", "1"]
+
+    metrics = {f"{t}_trades_{o}_{p}": 0 for t in trade_types for o in outcomes for p in players}
+
+    turns = (data.get("game") or {}).get("turns", {})
+    if not isinstance(turns, dict):
+        return metrics
+
+    for _turn_str, turn_obj in turns.items():
+        players_obj = (turn_obj or {}).get("players", {})
+        if not isinstance(players_obj, dict):
+            continue
+
+        for player_id, pobj in players_obj.items():
+            offerer_id = str(player_id)
+            if offerer_id not in ("0", "1"):
+                continue
+
+            trade = (pobj or {}).get("trade")
+            if not trade:
+                continue
+
+            responder_id = "1" if offerer_id == "0" else "0"
+
+            offer = trade.get("offer", [])
+            request = trade.get("request", [])
+            outcome = str(trade.get("outcome", "")).lower()
+
+            amt_offered = _sum_amount(offer)
+            amt_requested = _sum_amount(request)
+
+            offerer_type = _trade_type_from_offerer_pov(amt_offered, amt_requested)
+            responder_type = _flip_trade_type_for_responder(offerer_type)
+
+            # Offered metric: offerer's POV
+            metrics[f"{offerer_type}_trades_offered_{offerer_id}"] += 1
+
+            # Accept/reject metric: responder's POV (flipped)
+            if outcome == "accepted":
+                metrics[f"{responder_type}_trades_accepted_{responder_id}"] += 1
+            elif outcome == "rejected":
+                metrics[f"{responder_type}_trades_rejected_{responder_id}"] += 1
+
+    return metrics
+
 
 
 def analyze_experiments(experiment_dir=None):
