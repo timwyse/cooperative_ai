@@ -1136,7 +1136,7 @@ class Game:
             offset = TILE_SIZE // (len(colors))
             for i, color in enumerate(colors):
                 offset_y = i * offset
-                text = font.render(f"S_{color}", True, COLOR_MAP['BK'])
+                text = font.render(f"Start {color}", True, COLOR_MAP['BK'])
                 self.screen.blit(text, (sc * TILE_SIZE + 5 + label_space, sr * TILE_SIZE + 5 + offset_y + label_space))
 
         # Draw goal tiles with overlapping text handling
@@ -1155,7 +1155,7 @@ class Game:
             offset = TILE_SIZE // (len(colors))
             for i, color in enumerate(colors):
                 offset_y = i * offset
-                text = font.render(f"G_{color}", True, COLOR_MAP['BK'])
+                text = font.render(f"Goal {color}", True, COLOR_MAP['BK'])
                 self.screen.blit(text, (gc * TILE_SIZE + 5 + label_space, gr * TILE_SIZE + 5 + offset_y + label_space))
         
         # Draw players and handle multiple players on the same tile
@@ -1221,6 +1221,6 @@ def draw_player_circle(screen, player, position, radius, offset=(0, 0)):
 
     # Render the player's name inside the circle
     font = pygame.font.Font(None, 24)  # Adjust font size as needed
-    text = font.render(str(player.id), True, COLOR_MAP['BK'])  # Render the player's name in black
+    text = font.render(str(player.color_name), True, COLOR_MAP['BK'])  # Render the player's name in black
     text_rect = text.get_rect(center=(px * TILE_SIZE + TILE_SIZE // 2 + offset_x, py * TILE_SIZE + TILE_SIZE // 2 + offset_y))
     screen.blit(text, text_rect)
