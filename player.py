@@ -47,7 +47,9 @@ class Player:
         self.game = game
 
         self.id = str(id)
-        self.name = f"Player {id}"
+        self.color_name = 'R' if id == 0 else 'B'
+        self.color_name_full = 'Red' if id == 0 else 'Blue'
+        self.name = f"P-{self.color_name_full}"
         self.model = agent.value
         self.model_name = agent.name
         self.model_api = agent.api
