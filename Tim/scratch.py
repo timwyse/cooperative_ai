@@ -158,3 +158,146 @@ completion = client.chat.completions.create(
 print(completion.choices[0].message.content)
 # %%
 
+
+import json
+from pathlib import Path
+from typing import Iterable
+
+def trade_no_contract_mentions(log: dict) -> list[dict]:
+    results: list[dict] = []
+
+    game = log.get("game", {})
+    turns = game.get("turns", {})
+
+    keywords = [
+        "contract",
+        "agreement",
+        "agreed",
+        "judge",
+        "tile_with_judge",
+        "already agreed",
+        "guarantees",
+    ]
+
+    for turn_str, turn_data in turns.items():
+        try:
+            turn_idx = int(turn_str)
+        except (TypeError, ValueError):
+            continue
+
+        actions = turn_data.get("actions", []) or []
+        for action in actions:
+            if action.get("action_type") != "TRADE_PROPOSAL":
+                continue
+
+            parsed = (action.get("agent_response") or {}).get("parsed") or {}
+            want_to_trade = parsed.get("want_to_trade", None)
+            if want_to_trade is not False:
+                continue
+
+            rationale = parsed.get("rationale", "") or ""
+            r_low = rationale.lower()
+            mentions_contract = any(kw in r_low for kw in keywords)
+
+            results.append(
+                {
+                    "turn": turn_idx,
+                    "player": action.get("player"),
+                    "want_to_trade": want_to_trade,
+                    "rationale": rationale,
+                    "mentions_contract": mentions_contract,
+                }
+            )
+
+    return results
+
+
+def iter_target_logs(root: Path) -> Iterable[Path]:
+    target_contract_dirs = {
+        "ctx1_fog00_p4pfalse_contract_tile_with_judge_implementation_selfish11",
+        "ctx1_fog00_p4pfalse_contract_strict_selfish11",
+    }
+
+    for path in root.rglob("verbose*.json"):
+        if not path.name.startswith("verbose"):
+            continue
+
+        parts = path.parts
+        if "Mutual_Dependency" not in parts:
+            continue
+
+        contract_dir = None
+        for p in parts:
+            if p in target_contract_dirs:
+                contract_dir = p
+                break
+        if contract_dir is None:
+            continue
+
+        yield path, contract_dir
+
+
+def analyze_logs_for_no_trade_contract_reason(root: Path) -> None:
+    # overall totals
+    total_no_trade = 0
+    total_with_contract_mention = 0
+
+    # per-contract-dir totals
+    per_contract = {}
+
+    for path, contract_dir in iter_target_logs(root):
+        with path.open("r", encoding="utf-8") as f:
+            log = json.load(f)
+
+        records = trade_no_contract_mentions(log)
+        if not records:
+            continue
+
+        file_no_trade = len(records)
+        file_with_contract = sum(r["mentions_contract"] for r in records)
+
+        total_no_trade += file_no_trade
+        total_with_contract_mention += file_with_contract
+
+        # init per-contract bucket
+        if contract_dir not in per_contract:
+            per_contract[contract_dir] = {
+                "no_trade": 0,
+                "with_contract": 0,
+                "files": 0,
+            }
+        per_contract[contract_dir]["no_trade"] += file_no_trade
+        per_contract[contract_dir]["with_contract"] += file_with_contract
+        per_contract[contract_dir]["files"] += 1
+
+        print(f"\nFile: {path.relative_to(root)}")
+        print(f"  contract_dir: {contract_dir}")
+        print(f"  no-trade TRADE_PROPOSAL actions: {file_no_trade}")
+        print(f"  of which mention contract:       {file_with_contract}")
+        for r in records:
+            mark = "YES" if r["mentions_contract"] else "NO "
+            print(f"    [turn {r['turn']}, {r['player']}] contract_mention={mark}")
+            print(f"      {r['rationale'][:200].replace('\\n',' ')}"
+                  f"{'...' if len(r['rationale'])>200 else ''}")
+
+    print("\n=== Overall summary ===")
+    print(f"Total no-trade TRADE_PROPOSAL actions: {total_no_trade}")
+    print(f"Total mentioning contract:            {total_with_contract_mention}")
+
+    print("\n=== Per-contract summary ===")
+    for contract_dir, stats in per_contract.items():
+        n_no = stats["no_trade"]
+        n_yes = stats["with_contract"]
+        frac = n_yes / n_no if n_no else 0.0
+        print(f"\nContract dir: {contract_dir}")
+        print(f"  files with at least one no-trade: {stats['files']}")
+        print(f"  no-trade actions:                 {n_no}")
+        print(f"  mentioning contract:              {n_yes} ({frac:.2%})")
+
+
+# Example usage from a notebook:
+from pathlib import Path
+root = Path("/Users/timwyse/cooperative_ai/public_logs/reduced_config_selfish_runs")
+analyze_logs_for_no_trade_contract_reason(root)
+
+# %%
