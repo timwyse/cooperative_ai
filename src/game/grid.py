@@ -1,0 +1,56 @@
+import random
+
+from src.game.constants import AVAILABLE_COLORS
+
+class Tile:
+    def __init__(self, color):
+        self.color = color
+
+
+class Grid:
+    def __init__(self, size, colors, grid=None):
+        self.size = size
+        if any(color not in AVAILABLE_COLORS for color in colors):
+                raise ValueError(f"The colors list inputted uses invalid colors. Please ensure all colors are taken from {AVAILABLE_COLORS}.")
+        if grid is None:
+            print(f"Generating a random grid of size {size} with colors {colors}.")
+            self.tiles = self.generate_tiles(size, colors)
+            
+        else:
+            if len(grid) != size or any(len(row) != size for row in grid):
+                raise ValueError("Grid must be a square of the specified size.")
+            if any(color not in colors for row in grid for color in row):
+                raise ValueError(f"Grid contains colors not in colors list. Only colors from {colors} are allowed.")
+            
+            self.tiles = [[Tile(color) for color in row] for row in grid]
+        self.tile_colors = [[tile.color for tile in row] for row in self.tiles]
+
+
+    def generate_tiles(self, size, colors):
+        num_tiles = size * size
+        num_colors = len(colors)
+        tiles_per_color = num_tiles // num_colors
+        remaining_tiles = num_tiles % num_colors
+
+        tiles = []
+        for color in colors:
+            tiles.extend([color] * tiles_per_color)
+        tiles.extend(colors[:remaining_tiles])
+        random.shuffle(tiles)
+
+        return [[Tile(tiles.pop()) for _ in range(size)] for _ in range(size)]
+
+
+    def get_color(self, r, c):
+        return self.tiles[r][c].color
+
+
+    def get_adjacent(self, pos):
+        r, c = pos
+        adj = []
+        for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+            nr, nc = r + dr, c + dc
+            if 0 <= nr < self.size and 0 <= nc < self.size:
+                adj.append((nr, nc))
+        return adj
+    
