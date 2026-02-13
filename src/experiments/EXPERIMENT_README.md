@@ -9,16 +9,16 @@
 source .venv/bin/activate
 
 # Run experiments for a single model pair
-python run_experiments.py --pairs FOUR_1,FOUR_1 --start-id 0 --end-id 99
+python -m src.experiments.run_experiments --pairs FOUR_1,FOUR_1 --start-id 0 --end-id 99
 
 # Run experiments for multiple model pairs
-python run_experiments.py --pairs SONNET_4_5,SONNET_4_5 --pairs HAIKU_4_5,HAIKU_4_5 --start-id 0 --end-id 99
+python -m src.experiments.run_experiments --pairs SONNET_4_5,SONNET_4_5 --pairs HAIKU_4_5,HAIKU_4_5 --start-id 0 --end-id 99
 
 # Add experiments to an existing run folder
-python run_experiments.py --pairs FOUR_1,FOUR_1 --run-folder 2026_01_08_17 --skip-completed
+python -m src.experiments.run_experiments --pairs FOUR_1,FOUR_1 --run-folder 2026_01_08_17 --skip-completed
 
 # Run with more workers for faster execution
-python run_experiments.py --pairs FOUR_1,FOUR_1 --workers 12 --start-id 0 --end-id 50
+python -m src.experiments.run_experiments --pairs FOUR_1,FOUR_1 --workers 12 --start-id 0 --end-id 50
 ```
 
 ### Available Model Pairs
@@ -49,7 +49,7 @@ After running experiments, generate CSV files with metrics:
 
 ```bash
 # Generate from a specific run folder
-python analyze_experiments.py --dir logs/experiments/per_grid/2026_01_08_17
+python -m src.experiments.analyze_experiments --dir logs/experiments/per_grid/2026_01_08_17
 ```
 
 This creates:
