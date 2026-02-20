@@ -143,7 +143,10 @@ def load_experiment_data(experiment_dir="public_logs/reduced_config_runs"):
                 'Pay4Partner': metadata.get('config', {}).get('pay4partner', p4p),
                 'Contract Type': metadata.get('config', {}).get('contract_type', contract),
                 'Total Turns': total_turns,
-                'Format Errors': final_state.get('format_errors_total', 0),
+                'Format Errors': final_state.get('metrics', {}).get('format_errors_total', 0),
+                'Format Errors P-Red': _get_per_player_format_error_counts(final_state, 'P-Red'),
+                'Format Errors P-Blue': _get_per_player_format_error_counts(final_state, 'P-Blue'),
+                'Format Errors Judge': _get_per_player_format_error_counts(final_state, 'Judge'),
                 'Non-Cooperative Baseline P-Red': data['config']['player_details'][0].get('non_cooperative_baseline',
                                                                                             0),
                 'Non-Cooperative Baseline P-Blue': data['config']['player_details'][1].get('non_cooperative_baseline',
@@ -281,6 +284,28 @@ def _trade_type(amount_offered: int, amount_requested: int) -> str:
         return "concessionary"
     return "extractive"  # offered > requested
 
+def _get_per_player_format_error_counts(final_state, player: dict) -> int:
+    player_map = {'P-Red': '0', 'P-Blue': '1', 'Judge': 'Judge'}
+    error_types = ['api_error_move',
+                   'api_error_trade_proposal',
+                   'move_out_of_bounds',
+                   'move_not_adjacent',
+                   'move_format_error',
+                   'trade_parse_error',
+                   'api_structured_response_error', 
+                   'api_error_p4p_honor',
+                   'contract_wrong_type',
+                   'check_if_move_is_in_contract_error',
+                   'api_error_contract',
+                   'trade_validation_failed',
+                   'contract_formatting_error'
+    ]
+
+    errors = 0
+    for error_type in error_types:
+        errors += final_state.get('metrics', {}).get('format_errors_by_player', {}).get(player_map[player], {}).get(error_type, 0)
+    return errors
+ 
 def _trade_type_from_offerer_pov(amount_offered: int, amount_requested: int) -> str:
     """
     Offerer's POV:
