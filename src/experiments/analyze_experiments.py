@@ -5,9 +5,10 @@ from pathlib import Path
 from collections import defaultdict
 from datetime import datetime
 import re
+import yaml
 
 OUTPUT_DIR = 'results'
-
+_REMAPPED_ID_CACHE: dict[int, int] | None = None
 
 def _safe_filename(name: str) -> str:
     name = re.sub(r'[^A-Za-z0-9._-]+', '-', str(name).strip())
@@ -132,6 +133,10 @@ def load_experiment_data(experiment_dir="public_logs/reduced_config_runs"):
             row = {
                 'Model Pair': metadata.get('model_pair', '') if 'model_pair' in metadata else 'UNKNOWN',
                 'Grid ID': metadata.get('grid_id', grid_dir.replace('grid_', '')),
+                'Remapped Grid ID': _load_remapped_ids().get(
+                    int(metadata.get('grid_id', -1)),
+                    metadata.get('grid_id', -1)
+                ),
                 'Config ID': config_dir,
                 'Run ID': run_id,
                 'System Prompt': system_prompt,
@@ -388,6 +393,18 @@ def _compute_trade_metrics_from_event_log_json(data: dict) -> dict:
                 metrics[f"{responder_type}_trades_rejected_{responder_lbl}"] += 1
 
     return metrics
+
+def _load_remapped_ids(
+    config_path: str | Path = "configs/experiment_configs/4x4_experiment_grids_reduced.yaml",
+) -> dict[int, int]:
+    """Load grid id -> remapped_id mapping from the YAML config. Cached after first call."""
+    global _REMAPPED_ID_CACHE
+    if _REMAPPED_ID_CACHE is not None:
+        return _REMAPPED_ID_CACHE
+    with open(config_path, "r") as f:
+        grids = yaml.safe_load(f)
+    _REMAPPED_ID_CACHE = {g["id"]: g["remapped_id"] for g in grids}
+    return _REMAPPED_ID_CACHE
 
 
 
