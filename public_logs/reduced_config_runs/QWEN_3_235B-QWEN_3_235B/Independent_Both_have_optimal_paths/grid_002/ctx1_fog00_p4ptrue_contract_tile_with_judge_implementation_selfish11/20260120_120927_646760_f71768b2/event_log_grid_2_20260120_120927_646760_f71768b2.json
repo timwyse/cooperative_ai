@@ -1,0 +1,534 @@
+{
+  "config": {
+    "player_models": [
+      "QWEN_3_235B",
+      "QWEN_3_235B"
+    ],
+    "manual_chips": [
+      {
+        "B": 0,
+        "G": 2,
+        "R": 14
+      },
+      {
+        "B": 14,
+        "G": 2,
+        "R": 0
+      }
+    ],
+    "with_message_history": false,
+    "pay4partner": true,
+    "contract_type": "tile_with_judge_implementation",
+    "with_context": true,
+    "fog_of_war": [
+      false,
+      false
+    ],
+    "resource_mode": "manual",
+    "grid_size": 4,
+    "colors": [
+      "R",
+      "B",
+      "G"
+    ],
+    "mode": "Pay4Partner",
+    "player_details": [
+      {
+        "id": 0,
+        "model": "QWEN_3_235B",
+        "start": [
+          0,
+          0
+        ],
+        "goal": [
+          3,
+          3
+        ],
+        "initial_chips": {
+          "B": 0,
+          "G": 2,
+          "R": 14
+        },
+        "non_cooperative_baseline": 70
+      },
+      {
+        "id": 1,
+        "model": "QWEN_3_235B",
+        "start": [
+          0,
+          0
+        ],
+        "goal": [
+          3,
+          3
+        ],
+        "initial_chips": {
+          "B": 14,
+          "G": 2,
+          "R": 0
+        },
+        "non_cooperative_baseline": 70
+      }
+    ]
+  },
+  "game": {
+    "id": "grid_2_20260120_120927_646760_f71768b2",
+    "start_timestamp": "2026-01-20T12:09:27.647640Z",
+    "end_timestamp": "2026-01-20T12:26:19.804138Z",
+    "turns": {
+      "0": {
+        "players": {
+          "0": {
+            "position": {
+              "start": [
+                0,
+                0
+              ],
+              "end": [
+                1,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 2,
+                "R": 14
+              },
+              "end": {
+                "B": 0,
+                "G": 2,
+                "R": 14
+              }
+            },
+            "move_made": [
+              1,
+              0
+            ],
+            "move_type": "move_under_contract"
+          },
+          "1": {
+            "position": {
+              "start": [
+                0,
+                0
+              ],
+              "end": [
+                1,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 12,
+                "G": 2,
+                "R": 0
+              }
+            },
+            "move_made": [
+              1,
+              0
+            ],
+            "move_type": "regular"
+          }
+        },
+        "contract": {
+          "judge_contract": "player 1: Let's begin negotiation to come up with a contract. What would you like to propose? \n, \nplayer 0: I see that your inventory is strong in Blue (B:14) and weak in Red (R:0), while I have plenty of Red (R:14) and no Blue (B:0). My goal is (3,3), same as yours.\n\nI am currently at (0,0), and the most efficient path for me to reach (3,3) is:\n(0,0) → (0,1) [R] → (1,1) [R] → (1,2) [R] → (1,3) [R] → (2,3) [R] → (3,3) [G]\n\nThis path requires 5 Red and 1 Green. I have exactly 14 Red and 2 Green — so I can cover all costs **without any trade**, if necessary.\n\nHowever, your best path likely involves Blue, which you have plenty of. A natural path for you would be:\n(0,0) → (1,0) [B] → (2,0) [B] → (3,0) [B] → (3,1) [B] → (3,2) [B] → (3,3) [G]\n\nThat path requires 5 Blue and 1 Green. You have 14 Blue and 2 Green — so again, you can self-fund.\n\nBut here’s the key: I have no Blue chips, and you have no Red chips.\n\nSuppose **I** wanted to take a Blue-heavy path (like yours), or **you** wanted to take a Red-heavy path (like mine). You cannot take my path without Red chips. I cannot take your path without Blue chips.\n\nBut neither of us needs to! We each have a self-sufficient path.\n\nSo why trade?\n\nRight now, there is **no benefit to me** to cooperate — I can reach my goal using only my chips. Any trade would only risk losing chips without increasing my chance of success or my final score.\n\nHowever, let's consider if a trade can **strictly benefit me**.\n\nSince I have 14 Red chips and only need 5 for my optimal path, I have **9 extra Red chips**. These are useless unless I can use them in a trade where I get something I **cannot get otherwise**.\n\nBut I don’t need anything. I can reach my goal and still have:\n- 14 - 5 = 9 Red\n- 2 - 1 = 1 Green\nTotal chips: 10 → 10 × 5 = 50 points + 20 = **70 points**\n\nIf I were to trade, I would only do so if:\n- I could get more total points (i.e., more leftover chips at the end), **and**\n- I still reach my goal.\n\nBut I already have a surplus. Trading away Red for Blue gives me no benefit — I don’t need Blue.\n\nLikewise, offering to cover Blue moves for you gives me no benefit — I get nothing in return.\n\nUnless you propose a trade that somehow increases my **final chip count beyond 10**, there’s no reason for me to cooperate.\n\nBut wait: suppose you offer to cover one of my Red moves **in exchange for me covering one of your Blue moves**. That would cost me nothing — I have plenty of Red and Blue are not my problem.\n\nBut if you need Red to take a shorter path, but cannot, because you lack Red — then you might pay me to help you.\n\nBut again — why should I care about your score? Only if it benefits **me**.\n\nLet me reframe.\n\nSuppose you are on a Red-heavy path. You would need Red chips. But you have 0. So you **cannot** take any path requiring Red unless I cover those moves.\n\nBut your current position is (0,0), same as mine.\n\nIf you try to move to (0,1), that's Red. You cannot pay. So if you want to go that way, you need me to cover it.\n\nBut you don’t have to — you can go down your Blue path instead.\n\nSo again, you have a self-sufficient route.\n\n**Therefore, there is no reason for either of us to cooperate.**\n\nBut let’s explore: suppose I propose a contract that gives me a **benefit**.\n\nHere’s a twist: suppose **I** want to take a longer path that uses **more Red**, just so I can **use up more Red and gain more value per trade**? No — that’s bad, because I want to **maximize leftover chips**. I don’t want to waste chips.\n\nSo I want to spend as few chips as possible.\n\nMy current optimal plan: self-funded path using 5R + 1G → finish \n, \nplayer 1: Turn: 1: I have analyzed the situation and confirm that I can reach my goal at (3, 3) via the following path without any trades:\n\n(0,0) → (1,0) [B] → (2,0) [B] → (3,0) [B] → (3,1) [B] → (3,2) [B] → (3,3) [G]\n\nThis requires:\n- 5 Blue chips (I have 14)\n- 1 Green chip (I have 2)\n\nAfter completing this path, I will have:\n- 14 - 5 = 9 Blue\n- 2 - 1 = 1 Green  \nTotal chips: 10 → 10 × 5 = 50 points + 20 = **70 points**\n\nI do not need Red chips, and I cannot use any trade that would reduce my final chip count.\n\nHowever, I *do* have surplus Blue chips — 9 after my optimal path.\n\nBut I will only cooperate if I **strictly benefit**, meaning my final score is **greater than 70**.\n\nThe only way this can happen is if, through a trade, I end up with **more than 10 total chips** at the end (since 11 chips = 55 + 20 = 75 > 70).\n\nBut how?\n\nSuppose I agree to cover some of your Blue movements — but that doesn’t give me anything. I already *have* Blue. I don’t need anything in return unless it increases my chip surplus.\n\nBut you have Red and Green. I don’t need Green (I have 2, only use 1). I have no use for Red.\n\nHowever — here’s a possibility: suppose you propose to cover one of my Green moves.\n\nMy path ends with a Green step at (3,3). But I already have Green. If you cover that, I save 1 Green → I end with 2 Greens instead of 1 → total chips: 11 → 55 + 20 = **75**\n\nThat would **strictly benefit me**.\n\nBut only if:\n- You cover my Green move at (3,3)\n- In exchange, I must give you something.\n\nWhat would I give? I could cover one of your Red moves.\n\nYou need 5 Red moves. You have 14, so you can afford them. But if you are willing to let me cover one of your Red moves — say at (0,1) — and in return, you cover my Green move at (3,3), then:\n\n- I save 1 Green → end with 11 chips → score = 75\n- You spend 1 less Red → end with 14 - 4 = 10 chips? No — you still have 14, but one of your moves is covered, so you only consume 4 from inventory → end with 14 - 4 + 2 - 1 = 11 chips (same as before). So you also benefit.\n\nBut do I care? No — I only care that **I benefit**.\n\nSo let's structure it:\n\nProposal:\n- (3,3): You give me a Green (i.e. cover my move onto (3,3))\n- In return: I cover one of your Red moves, e.g. (0,1): I give you a Red\n\nBut I have 0 Red. I cannot give Red unless I have it.\n\nSo I **cannot** cover your Red move at (0,1) — I don't have Red chips.\n\nTherefore, I cannot make that trade.\n\nAlternative: you cover my Green move, and I cover one of your Blue moves — but you have no Blue. So if you move onto a Blue tile, I must cover it.\n\nIs there any Blue tile on your path?\n\nYour proposed path is: (0,0) → (0,1)[R] → (1,1)[R] → (1,2)[R] → (1,3)[R] → (2,3)[R] → (3,3)[G]\n\nNo Blue tiles.\n\nSo you never step on Blue.\n\nThus, I can never cover a Blue move for you — there are none.\n\nTherefore, there is **no tile** on your path where I can cover a cost for you using a chip I have in surplus (Blue).\n\nSimilarly, you cannot cover any of my Blue moves — but I don’t need that. I have Blue.\n\nThe only move I cannot self-fund? None — I can self-fund everything.\n\nBut if you were to cover one of my **Blue** moves, I would save a Blue chip.\n\nFor example, if you agree to cover my move to ( \n, \nplayer 0: Wait — I need to correct my thinking. Earlier I said my optimal path uses Red and Green, not Blue. Let's clarify:\n\nMy proposed optimal path:\n(0,0) → (0,1)[R] → (1,1)[R] → (1,2)[R] → (1,3)[R] → (2,3)[R] → (3,3)[G]\n\nThis path uses **Red and Green**, not Blue. I have plenty of Red (14), so I can pay all 5 Red costs. I have 2 Green, so I can pay the Green cost at (3,3).\n\nSo I do **not** need Blue for this path.\n\nBut what if I were to take the **Blue-heavy path** like you? That would be:\n\n(0,0) → (1,0)[B] → (2,0)[B] → (3,0)[B] → (3,1)[B] → (3,2)[B] → (3,3)[G]\n\nThis requires 5 Blue and 1 Green.\n\nBut I have **0 Blue** — so I cannot take this path without someone covering the Blue moves.\n\nSo if you cover any of my Blue moves, it could enable me to take this path — but why would I want to? I already have a viable Red-based path.\n\nBut suppose you **offer** to cover all 5 of my Blue moves — then I could take the Blue path, save all 5 Red chips, and still have my 2 Green minus 1 = 1 Green.\n\nBut I would end up with:\n- 14 Red (unused)\n- 0 Blue\n- 1 Green\nTotal: 15 chips → 15 × 5 = 75 + 20 = **95 points**\n\nWhereas on my current path: 9 Red + 1 Green = 10 chips → 70 points\n\nSo if you cover all 5 Blue moves on the path (1,0), (2,0), (3,0), (3,1), (3,2), and my Green move at (3,3), I would save both Blue and Green? No — Green is still my responsibility unless you cover it.\n\nBut I have Green, so I can pay it.\n\nSo better: only ask you to cover the 5 Blue moves.\n\nThen I take the Blue path, spend nothing from my inventory (since you cover Blue, I pay Green myself), so I end with:\n- 14 Red\n- 2 Green (using 1, keeping 1)\nTotal: 15 chips → 75 + 20 = **95 points** — massive gain.\n\nBut what do I give in return?\n\nI must cover some of your costs.\n\nYou need to move on Red tiles: (0,1), (1,1), (1,2), (1,3), (2,3) — all Red.\n\nYou have 14 Red, so you can pay them all.\n\nBut if I could cover some of those, you would save Red chips — so you end with more.\n\nBut I have 14 Red — so I *can* cover Red moves.\n\nSo here's a deal:\n\nProposal:\n- You cover my movement on all 5 Blue tiles: (1,0), (2,0), (3,0), (3,1), (3,2) → each requires 1 Blue, which you have\n- In return, I cover your movement on 5 Red tiles: (0,1), (1,1), (1,2), (1,3), (2,3)\n\nLet’s verify:\n\nFor me:\n- I take path: (0,0) → (1,0)[B: covered by you] → (2,0)[B: covered] → (3,0)[B: covered] → (3,1)[B: covered] → (3,2)[B: covered] → (3,3)[G: paid by me]\n- I spend only 1 Green → end with: 14R + 1G = 15 chips → 75 + 20 = 95 points\n\nFor you:\n- You take path: (0,0) → (0,1)[R: covered by me] → (1,1)[R: covered] → (1,2)[R: covered] → (1,1,3)[R: covered] → (2,3)[R: covered] → (3,3)[G: paid by you]\n- You spend only 1 Green → end with: 14B + 1G = 15 chips → 75 + 20 = 95 points\n\nPerfect — both of us benefit massively.\n\nBut wait — do we both reach (3,3)? Yes.\n\nAre we both able to make the moves? Yes — under 'pay for other' mode, when I move to (1,0), you pay the Blue chip from your inventory. Same for others.\n\nAnd when you move to (0,1), I pay the Red chip from my inventory.\n\nSo the contract should specify:\n\n(1,0): You give me a B  \n(2,0): You give me a B  \n(3,0): You give me a B  \n(3,1): You give me a B  \n(3,2): You give me a B  \n\n(0,1): I give you a R  \n(1,1): I give you a R  \n(1,2): I give you a R  \n(1,3): I give you a R  \n(2,3): I give you a R  \n\nWe each cover 5 moves for the other.\n\nThis is mutually beneficial and strictly increases my score from 70 to 95.\n\nI accept this **only if** you agree to all terms.\n\nI propose this contract.\n\nIf you accept, please reaffirm with the same structure or a counter.\n\nOtherwise, I will not agree.\n\nDo you accept? Or do you want to modify?  \n\nI am willing to adjust if needed, but this is optimal.\n\nWait — but we both start at (0,0). The first move: if you move to (1,0), and I move to (0,1), we can both make the move only if the cost is covered.\n\nBut in the contract, I need you to cover my Blue moves — which you will, when I step on them.\n\nSimilarly, I will cover your Red moves when you step on them.\n\nSo timing is fine — as long as we both follow the paths, it works.\n\nNo issue.\n\nFinal proposal:\n\n(1,0): You give me a B  \n(2,0): You give me a B  \n(3,0): You give me a B  \n(3,1): You give me a B  \n(3,2): You give me a B  \n\n(0,1): I give you a R  \n(1,1): I give you a R  \n(1,2): I give you a R  \n(1,3): I give you a R  \n(2,3): I give you a R  \n\nagree \n, \nplayer 1: Turn: 2: (1,0): You give me a B  \n(2,0): You give me a B  \n(3,0): You give me a B  \n(3,1): You give me a B  \n(3,2): You give me a B  \n\n(0,1): I give you a R  \n(1,1): I give you a R  \n(1,2): I give you a R  \n(1,3): I give you a R  \n(2,3): I give you a R  \n\nagree \n",
+          "agreement_status": true,
+          "player_0_agreed": true,
+          "player_1_agreed": true
+        }
+      },
+      "1": {
+        "players": {
+          "0": {
+            "format_errors": [
+              {
+                "type": "api_error_move",
+                "details": {
+                  "error": "Failed to get valid JSON response after 3 attempts. Last error: Error code: 402 - {'error': {'message': 'Insufficient credits. Add more using https://openrouter.ai/settings/credits', 'code': 402}}"
+                },
+                "timestamp": "2026-01-20T12:26:18.113052Z"
+              }
+            ],
+            "position": {
+              "start": [
+                1,
+                0
+              ],
+              "end": [
+                1,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 2,
+                "R": 14
+              },
+              "end": {
+                "B": 0,
+                "G": 2,
+                "R": 14
+              }
+            }
+          },
+          "1": {
+            "format_errors": [
+              {
+                "type": "api_error_move",
+                "details": {
+                  "error": "Failed to get valid JSON response after 3 attempts. Last error: Error code: 402 - {'error': {'message': 'Insufficient credits. Add more using https://openrouter.ai/settings/credits', 'code': 402}}"
+                },
+                "timestamp": "2026-01-20T12:26:18.284181Z"
+              }
+            ],
+            "position": {
+              "start": [
+                1,
+                0
+              ],
+              "end": [
+                1,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 12,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 12,
+                "G": 2,
+                "R": 0
+              }
+            }
+          }
+        }
+      },
+      "2": {
+        "players": {
+          "0": {
+            "format_errors": [
+              {
+                "type": "api_error_trade_proposal",
+                "details": {
+                  "error": "Failed to get valid JSON response after 3 attempts. Last error: Error code: 402 - {'error': {'message': 'Insufficient credits. Add more using https://openrouter.ai/settings/credits', 'code': 402}}"
+                },
+                "timestamp": "2026-01-20T12:26:18.433743Z"
+              },
+              {
+                "type": "api_error_move",
+                "details": {
+                  "error": "Failed to get valid JSON response after 3 attempts. Last error: Error code: 402 - {'error': {'message': 'Insufficient credits. Add more using https://openrouter.ai/settings/credits', 'code': 402}}"
+                },
+                "timestamp": "2026-01-20T12:26:18.749406Z"
+              }
+            ],
+            "position": {
+              "start": [
+                1,
+                0
+              ],
+              "end": [
+                1,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 2,
+                "R": 14
+              },
+              "end": {
+                "B": 0,
+                "G": 2,
+                "R": 14
+              }
+            }
+          },
+          "1": {
+            "format_errors": [
+              {
+                "type": "api_error_trade_proposal",
+                "details": {
+                  "error": "Failed to get valid JSON response after 3 attempts. Last error: Error code: 402 - {'error': {'message': 'Insufficient credits. Add more using https://openrouter.ai/settings/credits', 'code': 402}}"
+                },
+                "timestamp": "2026-01-20T12:26:18.601141Z"
+              },
+              {
+                "type": "api_error_move",
+                "details": {
+                  "error": "Failed to get valid JSON response after 3 attempts. Last error: Error code: 402 - {'error': {'message': 'Insufficient credits. Add more using https://openrouter.ai/settings/credits', 'code': 402}}"
+                },
+                "timestamp": "2026-01-20T12:26:18.945987Z"
+              }
+            ],
+            "position": {
+              "start": [
+                1,
+                0
+              ],
+              "end": [
+                1,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 12,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 12,
+                "G": 2,
+                "R": 0
+              }
+            }
+          }
+        }
+      },
+      "3": {
+        "players": {
+          "0": {
+            "format_errors": [
+              {
+                "type": "api_error_trade_proposal",
+                "details": {
+                  "error": "Failed to get valid JSON response after 3 attempts. Last error: Error code: 402 - {'error': {'message': 'Insufficient credits. Add more using https://openrouter.ai/settings/credits', 'code': 402}}"
+                },
+                "timestamp": "2026-01-20T12:26:19.145948Z"
+              },
+              {
+                "type": "api_error_move",
+                "details": {
+                  "error": "Failed to get valid JSON response after 3 attempts. Last error: Error code: 402 - {'error': {'message': 'Insufficient credits. Add more using https://openrouter.ai/settings/credits', 'code': 402}}"
+                },
+                "timestamp": "2026-01-20T12:26:19.585562Z"
+              }
+            ],
+            "position": {
+              "start": [
+                1,
+                0
+              ],
+              "end": [
+                1,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 2,
+                "R": 14
+              },
+              "end": {
+                "B": 0,
+                "G": 2,
+                "R": 14
+              }
+            }
+          },
+          "1": {
+            "format_errors": [
+              {
+                "type": "api_error_trade_proposal",
+                "details": {
+                  "error": "Failed to get valid JSON response after 3 attempts. Last error: Error code: 402 - {'error': {'message': 'Insufficient credits. Add more using https://openrouter.ai/settings/credits', 'code': 402}}"
+                },
+                "timestamp": "2026-01-20T12:26:19.377162Z"
+              },
+              {
+                "type": "api_error_move",
+                "details": {
+                  "error": "Failed to get valid JSON response after 3 attempts. Last error: Error code: 402 - {'error': {'message': 'Insufficient credits. Add more using https://openrouter.ai/settings/credits', 'code': 402}}"
+                },
+                "timestamp": "2026-01-20T12:26:19.795155Z"
+              }
+            ],
+            "position": {
+              "start": [
+                1,
+                0
+              ],
+              "end": [
+                1,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 12,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 12,
+                "G": 2,
+                "R": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    "final_state": {
+      "players": {
+        "0": {
+          "position": [
+            1,
+            0
+          ],
+          "goal": [
+            3,
+            3
+          ],
+          "reached_goal": false,
+          "chips": {
+            "B": 0,
+            "G": 2,
+            "R": 14
+          },
+          "route": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ]
+        },
+        "1": {
+          "position": [
+            1,
+            0
+          ],
+          "goal": [
+            3,
+            3
+          ],
+          "reached_goal": false,
+          "chips": {
+            "B": 12,
+            "G": 2,
+            "R": 0
+          },
+          "route": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ]
+        }
+      },
+      "total_turns": "3",
+      "scores": {
+        "Player 0": 0,
+        "Player 1": 0
+      },
+      "metrics": {
+        "total_scores": 0,
+        "total_accuracy": 0.0,
+        "gini_coefficient": 0,
+        "max_possible_score": 140,
+        "total_trades_proposed": 0,
+        "total_trades_proposed_0": 0,
+        "total_trades_proposed_1": 0,
+        "total_trades_accepted": 0,
+        "total_trades_accepted_0": 0,
+        "total_trades_accepted_1": 0,
+        "total_trades_rejected": 0,
+        "total_trades_rejected_0": 0,
+        "total_trades_rejected_1": 0,
+        "amount_received_by_0_from_trades": 0,
+        "amount_received_by_1_from_trades": 0,
+        "total_trades_failed": 0,
+        "total_p4p_arrangements_proposed": 0,
+        "total_p4p_arrangements_proposed_0": 0,
+        "total_p4p_arrangements_proposed_1": 0,
+        "total_p4p_arrangements_accepted": 0,
+        "total_p4p_arrangements_accepted_0": 0,
+        "total_p4p_arrangements_accepted_1": 0,
+        "total_p4p_arrangements_rejected": 0,
+        "total_p4p_arrangements_rejected_0": 0,
+        "total_p4p_arrangements_rejected_1": 0,
+        "total_p4p_promises_kept": 0,
+        "total_p4p_promises_kept_0": 0,
+        "total_p4p_promises_kept_1": 0,
+        "total_p4p_promises_broken": 0,
+        "total_p4p_promises_broken_0": 0,
+        "total_p4p_promises_broken_1": 0,
+        "total_p4p_amounts_promised_to_receive": 0,
+        "total_p4p_amounts_promised_to_receive_0": 0,
+        "total_p4p_amounts_promised_to_receive_1": 0,
+        "total_p4p_amounts_received": 0,
+        "total_p4p_amounts_received_0": 0,
+        "total_p4p_amounts_received_1": 0,
+        "contract_accepted": 1,
+        "contract_negotiaion_length": 2,
+        "num_tiles_in_contract": null,
+        "num_tiles_promised_to_receive_from_contract_0": 0,
+        "num_tiles_promised_to_receive_from_contract_1": 0,
+        "moves_made_under_strict_contract_0": 1,
+        "moves_made_under_strict_contract_1": 0,
+        "contract_moves_blocked_by_partner_shortfall_0": 0,
+        "contract_moves_blocked_by_partner_shortfall_1": 1,
+        "points_for_completion_promised_to_0": 0,
+        "points_for_completion_promised_to_1": 0,
+        "format_errors_total": 10,
+        "format_errors_by_type": {
+          "api_error_move": 6,
+          "api_error_trade_proposal": 4
+        },
+        "format_errors_by_player": {
+          "0": {
+            "api_error_move": 3,
+            "api_error_trade_proposal": 2
+          },
+          "1": {
+            "api_error_move": 3,
+            "api_error_trade_proposal": 2
+          }
+        },
+        "format_errors_by_turn": {
+          "1": {
+            "api_error_move": 2
+          },
+          "2": {
+            "api_error_move": 2,
+            "api_error_trade_proposal": 2
+          },
+          "3": {
+            "api_error_move": 2,
+            "api_error_trade_proposal": 2
+          }
+        }
+      },
+      "api_calls": {
+        "total": 38,
+        "by_player": {
+          "player_0": 18,
+          "player_1": 18
+        },
+        "judge": 2
+      }
+    }
+  }
+}

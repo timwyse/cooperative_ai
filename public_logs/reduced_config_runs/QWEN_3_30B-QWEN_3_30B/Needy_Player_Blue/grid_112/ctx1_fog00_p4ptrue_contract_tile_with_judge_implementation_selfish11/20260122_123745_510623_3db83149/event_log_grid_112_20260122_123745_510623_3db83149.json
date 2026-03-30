@@ -1,0 +1,978 @@
+{
+  "config": {
+    "player_models": [
+      "QWEN_3_30B",
+      "QWEN_3_30B"
+    ],
+    "manual_chips": [
+      {
+        "B": 0,
+        "G": 2,
+        "R": 14
+      },
+      {
+        "B": 14,
+        "G": 2,
+        "R": 0
+      }
+    ],
+    "with_message_history": false,
+    "pay4partner": true,
+    "contract_type": "tile_with_judge_implementation",
+    "with_context": true,
+    "fog_of_war": [
+      false,
+      false
+    ],
+    "resource_mode": "manual",
+    "grid_size": 4,
+    "colors": [
+      "R",
+      "B",
+      "G"
+    ],
+    "mode": "Pay4Partner",
+    "player_details": [
+      {
+        "id": 0,
+        "model": "QWEN_3_30B",
+        "start": [
+          0,
+          0
+        ],
+        "goal": [
+          3,
+          3
+        ],
+        "initial_chips": {
+          "B": 0,
+          "G": 2,
+          "R": 14
+        },
+        "non_cooperative_baseline": 70
+      },
+      {
+        "id": 1,
+        "model": "QWEN_3_30B",
+        "start": [
+          0,
+          0
+        ],
+        "goal": [
+          3,
+          3
+        ],
+        "initial_chips": {
+          "B": 14,
+          "G": 2,
+          "R": 0
+        },
+        "non_cooperative_baseline": 0
+      }
+    ]
+  },
+  "game": {
+    "id": "grid_112_20260122_123745_510623_3db83149",
+    "start_timestamp": "2026-01-22T12:37:45.516784Z",
+    "end_timestamp": "2026-01-22T13:00:20.736934Z",
+    "turns": {
+      "0": {
+        "players": {
+          "1": {
+            "format_errors": [
+              {
+                "type": "trade_validation_failed",
+                "details": {
+                  "message": "Player 1 does not have enough R to offer.",
+                  "proposed_trade": {
+                    "rationale": "I CAN REACH MY GOAL USING A PATH THAT REQUIRES ONLY 1 RED CHIP AND 1 GREEN CHIP, AVOIDING BLUE TILES ENTIRELY. HOWEVER, I CAN ACHIEVE A HIGHER FINAL SCORE BY TAKING A DIFFERENT PATH THAT USES 4 BLUE TILES. BY NEGOTIATING WITH THE OTHER PLAYER TO COVER BLUE FOR ME ON THESE 4 TILES, I USE ONLY 1 RED CHIP INSTEAD OF 5, SAVING 4 RED CHIPS. IN RETURN, I COVER RED FOR THEM ON ONE MOVE, WHICH COSTS ME 1*",
+                    "chips_to_offer": [
+                      [
+                        "R",
+                        1
+                      ]
+                    ],
+                    "chips_to_receive": [
+                      [
+                        "B",
+                        4
+                      ]
+                    ],
+                    "message": "Player 1 offers [R:1] for [B:4] (Rationale: I CAN REACH MY GOAL USING A PATH THAT REQUIRES ONLY 1 RED CHIP AND 1 GREEN CHIP, AVOIDING BLUE TILES ENTIRELY. HOWEVER, I CAN ACHIEVE A HIGHER FINAL SCORE BY TAKING A DIFFERENT PATH THAT USES 4 BLUE TILES. BY NEGOTIATING WITH THE OTHER PLAYER TO COVER BLUE FOR ME ON THESE 4 TILES, I USE ONLY 1 RED CHIP INSTEAD OF 5, SAVING 4 RED CHIPS. IN RETURN, I COVER RED FOR THEM ON ONE MOVE, WHICH COSTS ME 1*)"
+                  }
+                },
+                "timestamp": "2026-01-22T12:39:59.474771Z"
+              }
+            ],
+            "position": {
+              "start": [
+                0,
+                0
+              ],
+              "end": [
+                0,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              }
+            },
+            "arrangement_proposed": {
+              "promised_to_cover": [
+                [
+                  "R",
+                  1
+                ]
+              ],
+              "requested_coverage": [
+                [
+                  "B",
+                  4
+                ]
+              ],
+              "outcome": "invalid"
+            }
+          },
+          "0": {
+            "position": {
+              "start": [
+                0,
+                0
+              ],
+              "end": [
+                0,
+                1
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 2,
+                "R": 14
+              },
+              "end": {
+                "B": 0,
+                "G": 2,
+                "R": 13
+              }
+            },
+            "move_made": [
+              0,
+              1
+            ],
+            "move_type": "regular"
+          }
+        },
+        "contract": {
+          "judge_contract": "player 1: Let's begin negotiation to come up with a contract. What would you like to propose? \n, \nplayer 0: I notice that we are both starting at (0, 0), and our goal is (3, 3). I have 14 red chips and 2 green chips, but no blue chips. The other player has 14 blue chips and 2 green chips, but no red chips.\n\nLooking at the board:\n\nRow 0: G R B B  \nRow 1: R B R B  \nRow 2: R R B B  \nRow 3: B R R G  \n\nMy current path to goal (0,0) → (1,0) → (2,0) → (2,1) → (3,1) → (3,2) → (3,3) requires:\n- R: 5 (at (1,0), (2,0), (2,1), (3,1), (3,2))\n- G: 1 (at (0,0) — only if we count the first move, but we're starting there, so no cost for initial tile)\nWait — correction: we pay 1 chip when we *move into* a tile. So starting at (0,0), we pay nothing on turn 0.\n\nSo my path:\n- (0,0) → (1,0): R (1 chip)\n- (1,0) → (2,0): R (1)\n- (2,0) → (2,1): R (1)\n- (2,1) → (3,1): R (1)\n- (3,1) → (3,2): R (1)\n- (3,2) → (3,3): G (1)\n\nTotal: R: 5, G: 1 → I can’t do this path because I have no red chips to pay for the red tiles. Wait — I have 14 red chips, so I can cover R: 5. But I don’t have any blue chips. So if I take a path with blue tiles, I’m stuck.\n\nWait — let's recheck: I have R: 14, G: 2, B: 0 — so I can cover red and green moves, but not blue.\n\nThe other player has B: 14, G: 2, R: 0 — so they can cover blue and green, but not red.\n\nNow, look at the other path I could take: (0,0) → (0,1) → (0,2) → (0,3) → (1,3) → (2,3) → (3,3)\n\nLet’s check each move:\n\n- (0,0) → (0,1): tile (0,1) = R → I need red\n- (0,1) → (0,2): tile (0,2) = B → I need blue → I don’t have blue → cannot pay\nSo I can’t take this path alone.\n\nCan I find any path that only uses red and green tiles? Let's try:\n\n- (0,0) → (1,0): R → I have red → okay\n- (1,0) → (2,0): R → okay\n- (2,0) → (2,1): R → okay\n- (2,1) → (3,1): R → okay\n- (3,1) → (3,2): R → okay\n- (3,2) → (3,3): G → I have green → okay\n\nThis path uses only R (5) and G (1) — which I have. I have enough chips for this path. So I can reach the goal without trading.\n\nBut I only have 2 green chips. I need 1 green chip at (3,3) → so that’s fine. And 5 red chips — I have 14. So yes, I can do this path with no trading.\n\nNow, what about the other player? They need to go to (3,3). Their path:\n\nLet’s find a path using only B and G:\n\n- (0,0) → (0,1): R → they have no R → stuck\n- (0,0) → (1,0): R → no R → stuck\n\nAll direct moves from (0,0) are R or B — (0,1)=R, (1,0)=R — both require red — but they have R=0. So they cannot move at all unless they trade.\n\nSo the other player is stuck unless they trade.\n\nBut I don’t need to trade. I can reach goal with my own chips.\n\nBut if I don’t cooperate, the other player can't move, so they can't reach goal. That means they \n, \nplayer 1: Turn: 1: I can reach my goal at (3, 3) using the path:  \n(0,0) → (1,0) → (2,0) → (2,1) → (3,1) → (3,2) → (3,3)  \nThis requires:  \n- 5 red chips (for tiles (1,0), (2,0), (2,1), (3,1), (3,2))  \n- 1 green chip (for tile (3,3))  \n\nI have 14 red and 2 green — sufficient.  \nThus, I can complete the game successfully **without any cooperation**.  \n\nThe other player has 14 blue, 2 green, 0 red.  \nFrom (0,0), their only possible moves are to (0,1) = R or (1,0) = R — both require red.  \nBut they have 0 red chips. So unless they get red chips, they cannot move.  \n\nThey are currently stuck and cannot reach goal unless they trade.  \n\nHowever, I do not care about their ability to reach goal — only my own score matters.  \nIf I act selfishly and cooperate only if I **strictly benefit**, then:  \n\n- If I cooperate, I must give them red chips for moves they make.  \n- But I have plenty of red chips — giving them red coverage won’t cost me anything.  \n- In return, I can get blue chip coverage for myself — but I don’t need blue chips.  \n- I do not need to use any blue tiles.  \n- Furthermore, if I trade, I have to commit to covering their moves on red tiles — meaning I’d have to pay for their red moves, which I have. But they don’t need me to cover red — they need red, but I have it, so I can’t **help** them use red — unless I give them red chips.  \n\nWait — no: in this system, **I pay for them when they move onto a tile of a color I agree to cover**.  \nIf I **agree to cover green** for them, then when they move onto a green tile, I pay.  \nBut they don’t need green — they need red.  \n\nSo the only way I can help them is if I cover **red** tiles for them.  \nBut if I agree to cover red for them, then when they move onto a red tile, I pay a red chip.  \nBut I have 14 red chips — so I can afford to cover some red moves.  \nBut I don’t *need* to.  \n\nAnd in return, I would want them to cover **blue** for me.  \nBut I don’t have any blue tiles in my path — so they would pay for blue moves I never make.  \nNo benefit to me.  \n\nAlternatively, could I go a different path that includes blue tiles?  \nThe only paths with blue tiles go through (0,2), (0,3), (1,2), (1,3), (2,2), (2,3), (3,0), etc.  \nBut my current path avoids blue entirely.  \nIf I took a path with blue tiles, like (0,0) → (0,1) → (0,2) → (0,3) → (1,3) → (2,3) → (3,3), then I’d need:  \n- (0,1): R → red  \n- (0,2): B → blue → I have 0 blue → can’t pay  \n- (0,3): B → blue → need to pay  \n- (1,3): B → blue  \n- (2,3): B → blue  \n- (3,3): G → green  \n\nSo I’d need: R:1, B:4, G:1  \nBut I have no blue — so I can’t use this path without help.  \n\nBut if I were to use a trade, I’d need to get blue coverage from the other player.  \nBut if I do that, I pay 4 blue chips’ worth for blue tiles — but the other player has 14 blue — so they can cover it.  \nBut in return, I would have to cover *their* red moves.  \nBut I don’t *need* to cover their red moves unless they use red tiles.  \n\nBut if I take a longer path that goes through blue tiles, I’d use 4 blue chips — I don’t have them.  \nSo I need to get blue coverage from them.  \n\nBut if they agree to cover blue for me on those 4 blue tiles, then I can use that path.  \nBut then I must pay *for their* red moves on the tiles where I agree to \n, \nplayer 0: I can reach my goal without any cooperation, using my existing chips:  \n- Path: (0,0) → (1,0) → (2,0) → (2,1) → (3,1) → (3,2) → (3,3)  \n- Requires: 5 red chips, 1 green chip  \n- I have: 14 red, 2 green → sufficient  \n\nThe other player cannot move from (0,0) without red chips, but they have 0 red.  \nTheir only possible moves are to (0,1) or (1,0), both red tiles.  \nThus, they are stuck unless they trade.  \n\nHowever, I do not need to trade to reach my goal.  \nAny trade that helps me requires me to give up chips (by agreeing to cover for them), but I don’t need to.  \nIf I agree to cover any color for them, it would cost me chips if they use that color — but I have excess red, and the only color they might use is red — so I would have to pay for red moves they make.  \nBut I have enough red chips — so it wouldn’t hurt me.  \n\nBut in return, I need them to cover a color for me — but I have no need for blue or green if I stay on my current path.  \n\nNow, suppose I consider a different path that uses *blue* tiles — e.g., going via (0,0) → (0,1) → (0,2) → (0,3) → (1,3) → (2,3) → (3,3).  \nThis path requires:  \n- (0,1): R — red → I need red  \n- (0,2): B — blue → I need blue  \n- (0,3): B — blue  \n- (1,3): B — blue  \n- (2,3): B — blue  \n- (3,3): G — green  \n\nTotal: R:1, B:4, G:1  \n\nI have: R:14, G:2, B:0 — so I need blue coverage for 4 tiles.  \n\nIf I negotiate with the other player to cover blue for me on those 4 blue tiles: (0,2), (0,3), (1,3), (2,3), then I can take this path.  \nIn return, I must cover red for them — but only if they move onto red tiles.  \n\nBut if I take this path, I do not go through any red tiles except (0,1).  \nSo I'd need to cover red only for the move (0,0) → (0,1), which is 1 red chip.  \n\nSo if I agree to cover red for them on *one move* (to (0,1)), and they cover blue for me on 4 tiles, it would be a balanced trade? Let’s check the chip cost:  \n\n- I would use 4 blue chips *paid by them*  \n- In return, I pay 1 red chip for their move — I have 14 red, so it’s minimal cost  \n- But I don’t need to do this — I can go the short path with red and green only, and complete the game with 5 red and 1 green used.  \n\nIn that case, I finish with:  \n- 14 - 5 = 9 red  \n- 2 - 1 = 1 green  \n- 0 blue  \n→ Total chips: 10 → 5 points per chip → 50 points  \n+ 20 for goal → total 70  \n\nIf I take the long path (6 steps vs 6 steps — same length), I’d pay:  \n- 1 red → I use 1 red  \n- 1 green → I use 1 green  \n- 4 blue → covered by them  \nSo chips used: 1 red, 1 green → 13 red, 1 green left → total 14 chips → 70 points from chips + 20 → 90 points  \n\nWait — 14 chips × 5 = 70 + 20 = 90, yes.  \n\nBut I have 14 red — if I use only 1 instead of 5, I save 4 red chips — so I finish with 13 red, 1 green → 14 chips → 70 points from chips → +20 = 90.  \n\nBut in the first path, I use 5 red → finish with 9 red + 1 green = 10 chips → 50 + 20 = 70  \n\nSo by taking the longer path, I get \n, \nplayer 1: Turn: 2: I can reach my goal using my current path (0,0) → (1,0) → (2,0) → (2,1) → (3,1) → (3,2) → (3,3), which requires 5 red chips and 1 green chip. I have 14 red and 2 green — sufficient.  \n\nBut if I take the alternative path: (0,0) → (0,1) → (0,2) → (0,3) → (1,3) → (2,3) → (3,3), I would use only 1 red chip (at (0,1)), 1 green chip (at (3,3)), and 4 blue chips on (0,2), (0,3), (1,3), (2,3).  \n\nI have no blue chips, so I must negotiate coverage from the other player for these 4 blue tiles.  \n\nIn return, they would need me to cover red moves — but their path to goal likely involves red tiles, since they have no red chips of their own.  \n\nHowever, to make this trade **strictly beneficial to me**, I must ensure that:  \n- I cover fewer or equal red chips than the blue chips I receive.  \n- The total number of chips I keep at the end is maximized.  \n\nUnder this plan:  \n- I save 4 red chips (using only 1 red instead of 5).  \n- I gain 4 blue chips’ worth of coverage (not paid by me).  \n- I still finish with 13 red + 1 green = 14 chips → 70 points from chips  \n- Plus 20 points for goal → 90 points  \n\nWhereas the original path gives me only 9 red + 1 green = 10 chips → 50 + 20 = 70 points  \n\nSo taking the longer path via blue tiles gives me **20 more points** — a significant improvement.  \n\nNow, can I convince the other player to cover blue for me?  \nThey have 14 blue chips and 2 green, 0 red.  \nTheir path is blocked unless they get red chips.  \n\nIf I agree to cover any red move they make, it’ll cost me 1 red chip.  \nBut they can only move if we both agree to help each other.  \n\nLet’s propose a symmetric mutual deal:  \n- I agree to cover red for them on **one move**: (0,0) → (0,1)  \n- In return, they agree to cover blue for me on **four tiles**: (0,2), (0,3), (1,3), (2,3)  \n\nWhy is this better for me?  \n- I use only 1 red chip (instead of 5)  \n- I don’t pay for any blue tile  \n- I keep 13 red + 1 green = 14 chips → 70 pts from chips  \n- Plus 20 → 90 pts  \n\nThe other player benefits too — they can now move to (0,1) because I cover red for them.  \nFrom there, if they take their path: (0,1) → (0,2) → (0,3) → (1,3) → (2,3) → (3,3), we’d need to cover:  \n- (0,1): R — covered by me  \n- (0,2): B — covered by them  \n- (0,3): B — them  \n- (1,3): B — them  \n- (2,3): B — them  \n- (3,3): G — they have green, so okay  \n\nSo yes, they can complete the game with this agreement.  \n\nBut crucially, I care only about **my own score**.  \nEven if they benefit, as long as *I* strictly benefit — which I do (from 70 to 90) — then this trade is acceptable.  \n\nAnd they will accept, because otherwise they cannot move at all.  \n\nSo I propose:  \n(0,1): I will cover red for you  \n(0,2): You will cover blue for me  \n(0,3): You will cover blue for me  \n(1,3): You will cover blue for me  \n(2,3): You will cover blue for me  \n\nNote: I am covering red only on (0,1), which is one move — cost me 1 red chip (I have 14, so no problem).  \nThey are covering blue on 4 tiles — no cost to me.  \n\nThis allows me to:\n- Take a path where I only use 1 red chip\n- Save 4 \n, \nplayer 0: (0,1): I will cover red for you  \n(0,2): You will cover blue for me  \n(0,3): You will cover blue for me  \n(1,3): You will cover blue for me  \n(2,3): You will cover blue for me  \nagree \n, \nplayer 1: Turn: 3: (0,1): I will cover red for you  \n(0,2): You will cover blue for me  \n(0,3): You will cover blue for me  \n(1,3): You will cover blue for me  \n(2,3): You will cover blue for me  \nagree \n",
+          "agreement_status": true,
+          "player_0_agreed": true,
+          "player_1_agreed": true
+        },
+        "events": {
+          "trade_validation_failed": {
+            "timestamp": "2026-01-22T12:39:59.473356Z",
+            "player": "Player 1",
+            "message": "Player 1 does not have enough R to offer."
+          }
+        }
+      },
+      "1": {
+        "players": {
+          "0": {
+            "position": {
+              "start": [
+                0,
+                1
+              ],
+              "end": [
+                0,
+                1
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 2,
+                "R": 13
+              },
+              "end": {
+                "B": 0,
+                "G": 2,
+                "R": 13
+              }
+            }
+          },
+          "1": {
+            "position": {
+              "start": [
+                0,
+                0
+              ],
+              "end": [
+                0,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              }
+            }
+          }
+        }
+      },
+      "2": {
+        "players": {
+          "1": {
+            "format_errors": [
+              {
+                "type": "trade_validation_failed",
+                "details": {
+                  "message": "Player 1 does not have enough R to offer.",
+                  "proposed_trade": {
+                    "rationale": "I CAN REACH MY GOAL USING A PATH THAT REQUIRES ONLY 1 RED CHIP AND 1 GREEN CHIP, WHICH I HAVE. HOWEVER, BY NEGOTIATING TO COVER BLUE CHIPS FOR ME ON TILES (0,2), (0,3), (1,3), AND (2,3), I CAN AVOID USING 4 RED CHIPS. THIS ALLOWS ME TO RETAIN 13 RED CHIPS INSTEAD OF 9, INCREASING MY FINAL CHIP COUNT FROM 10 TO 14. MY SCORE INCREASES FROM 70 TO 90 POINTS. IN RETURN, I COVER ONE RED CHIP FOR THE OTHER PLAYER ON (0,1). SINCE I HAVE 14 RED CHIPS, THIS IS A MINIMAL COST. THIS AGREEMENT STRICTLY BENEFITS ME BY MAXIMIZING REMAINING CHIPS WHILE STILL ALLOWING ME TO COMPLETE THE GAME.",
+                    "chips_to_offer": [
+                      [
+                        "R",
+                        1
+                      ]
+                    ],
+                    "chips_to_receive": [
+                      [
+                        "B",
+                        4
+                      ]
+                    ],
+                    "message": "Player 1 offers [R:1] for [B:4] (Rationale: I CAN REACH MY GOAL USING A PATH THAT REQUIRES ONLY 1 RED CHIP AND 1 GREEN CHIP, WHICH I HAVE. HOWEVER, BY NEGOTIATING TO COVER BLUE CHIPS FOR ME ON TILES (0,2), (0,3), (1,3), AND (2,3), I CAN AVOID USING 4 RED CHIPS. THIS ALLOWS ME TO RETAIN 13 RED CHIPS INSTEAD OF 9, INCREASING MY FINAL CHIP COUNT FROM 10 TO 14. MY SCORE INCREASES FROM 70 TO 90 POINTS. IN RETURN, I COVER ONE RED CHIP FOR THE OTHER PLAYER ON (0,1). SINCE I HAVE 14 RED CHIPS, THIS IS A MINIMAL COST. THIS AGREEMENT STRICTLY BENEFITS ME BY MAXIMIZING REMAINING CHIPS WHILE STILL ALLOWING ME TO COMPLETE THE GAME.)"
+                  }
+                },
+                "timestamp": "2026-01-22T12:46:47.680287Z"
+              }
+            ],
+            "position": {
+              "start": [
+                0,
+                0
+              ],
+              "end": [
+                0,
+                1
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 13,
+                "G": 2,
+                "R": 0
+              }
+            },
+            "arrangement_proposed": {
+              "promised_to_cover": [
+                [
+                  "R",
+                  1
+                ]
+              ],
+              "requested_coverage": [
+                [
+                  "B",
+                  4
+                ]
+              ],
+              "outcome": "invalid"
+            },
+            "move_made": [
+              0,
+              1
+            ],
+            "move_type": "move_under_contract"
+          },
+          "0": {
+            "position": {
+              "start": [
+                0,
+                1
+              ],
+              "end": [
+                0,
+                2
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 2,
+                "R": 13
+              },
+              "end": {
+                "B": 0,
+                "G": 2,
+                "R": 13
+              }
+            },
+            "arrangement_proposed": {
+              "promised_to_cover": [
+                [
+                  "R",
+                  1
+                ]
+              ],
+              "requested_coverage": [
+                [
+                  "B",
+                  4
+                ]
+              ],
+              "outcome": "rejected"
+            },
+            "move_made": [
+              0,
+              2
+            ],
+            "move_type": "move_under_contract"
+          }
+        },
+        "events": {
+          "trade_validation_failed": {
+            "timestamp": "2026-01-22T12:46:47.677271Z",
+            "player": "Player 1",
+            "message": "Player 1 does not have enough R to offer."
+          }
+        }
+      },
+      "3": {
+        "players": {
+          "1": {
+            "format_errors": [
+              {
+                "type": "trade_validation_failed",
+                "details": {
+                  "message": "Player 1 does not have enough R to offer.",
+                  "proposed_trade": {
+                    "rationale": "I CAN REACH MY GOAL USING A PATH THAT REQUIRES 5 RED AND 1 GREEN CHIP, WHICH I HAVE IN EXCESS. HOWEVER, I CAN ACHIEVE A HIGHER SCORE BY TAKING A LONGER PATH THAT USES 4 BLUE TILES (0,2), (0,3), (1,3), (2,3). I CURRENTLY HAVE 0 BLUE CHIPS, BUT THE OTHER PLAYER HAS 12. BY AGREEING TO COVER RED FOR THEM ON (0,1) (1 RED CHIP), I CAN RECEIVE BLUE COVERAGE FOR THOSE 4 TILES. THIS ALLOWS ME TO SAVE 4 RED",
+                    "chips_to_offer": [
+                      [
+                        "R",
+                        1
+                      ]
+                    ],
+                    "chips_to_receive": [
+                      [
+                        "B",
+                        4
+                      ]
+                    ],
+                    "message": "Player 1 offers [R:1] for [B:4] (Rationale: I CAN REACH MY GOAL USING A PATH THAT REQUIRES 5 RED AND 1 GREEN CHIP, WHICH I HAVE IN EXCESS. HOWEVER, I CAN ACHIEVE A HIGHER SCORE BY TAKING A LONGER PATH THAT USES 4 BLUE TILES (0,2), (0,3), (1,3), (2,3). I CURRENTLY HAVE 0 BLUE CHIPS, BUT THE OTHER PLAYER HAS 12. BY AGREEING TO COVER RED FOR THEM ON (0,1) (1 RED CHIP), I CAN RECEIVE BLUE COVERAGE FOR THOSE 4 TILES. THIS ALLOWS ME TO SAVE 4 RED)"
+                  }
+                },
+                "timestamp": "2026-01-22T12:48:33.332708Z"
+              }
+            ],
+            "position": {
+              "start": [
+                0,
+                1
+              ],
+              "end": [
+                0,
+                2
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 13,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 11,
+                "G": 2,
+                "R": 0
+              }
+            },
+            "arrangement_proposed": {
+              "promised_to_cover": [
+                [
+                  "R",
+                  1
+                ]
+              ],
+              "requested_coverage": [
+                [
+                  "B",
+                  4
+                ]
+              ],
+              "outcome": "invalid"
+            },
+            "move_made": [
+              0,
+              2
+            ],
+            "move_type": "regular"
+          },
+          "0": {
+            "position": {
+              "start": [
+                0,
+                2
+              ],
+              "end": [
+                0,
+                3
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 2,
+                "R": 12
+              },
+              "end": {
+                "B": 0,
+                "G": 2,
+                "R": 12
+              }
+            },
+            "arrangement_proposed": {
+              "promised_to_cover": [
+                [
+                  "R",
+                  1
+                ]
+              ],
+              "requested_coverage": [
+                [
+                  "B",
+                  4
+                ]
+              ],
+              "outcome": "accepted"
+            },
+            "move_made": [
+              0,
+              3
+            ],
+            "move_type": "move_under_contract"
+          }
+        },
+        "events": {
+          "trade_validation_failed": {
+            "timestamp": "2026-01-22T12:48:33.330888Z",
+            "player": "Player 1",
+            "message": "Player 1 does not have enough R to offer."
+          }
+        }
+      },
+      "4": {
+        "players": {
+          "0": {
+            "position": {
+              "start": [
+                0,
+                3
+              ],
+              "end": [
+                1,
+                3
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 2,
+                "R": 12
+              },
+              "end": {
+                "B": 0,
+                "G": 2,
+                "R": 12
+              }
+            },
+            "arrangement_proposed": {
+              "promised_to_cover": [
+                [
+                  "R",
+                  1
+                ]
+              ],
+              "requested_coverage": [
+                [
+                  "B",
+                  4
+                ]
+              ],
+              "outcome": "accepted"
+            },
+            "move_made": [
+              1,
+              3
+            ],
+            "move_type": "move_under_contract"
+          },
+          "1": {
+            "position": {
+              "start": [
+                0,
+                2
+              ],
+              "end": [
+                0,
+                3
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 11,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 9,
+                "G": 2,
+                "R": 0
+              }
+            },
+            "move_made": [
+              0,
+              3
+            ],
+            "move_type": "regular"
+          }
+        }
+      },
+      "5": {
+        "players": {
+          "0": {
+            "position": {
+              "start": [
+                1,
+                3
+              ],
+              "end": [
+                2,
+                3
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 2,
+                "R": 12
+              },
+              "end": {
+                "B": 0,
+                "G": 2,
+                "R": 12
+              }
+            },
+            "move_made": [
+              2,
+              3
+            ],
+            "move_type": "move_under_contract"
+          },
+          "1": {
+            "position": {
+              "start": [
+                0,
+                3
+              ],
+              "end": [
+                1,
+                3
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 9,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 7,
+                "G": 2,
+                "R": 0
+              }
+            },
+            "move_made": [
+              1,
+              3
+            ],
+            "move_type": "regular"
+          }
+        }
+      },
+      "6": {
+        "players": {
+          "1": {
+            "format_errors": [
+              {
+                "type": "trade_validation_failed",
+                "details": {
+                  "message": "Player 1 does not have enough R to offer.",
+                  "proposed_trade": {
+                    "rationale": "I CAN REACH MY GOAL USING A PATH THAT REQUIRES ONLY 1 RED CHIP AND 1 GREEN CHIP, WHICH I HAVE IN EXCESS. BY NEGOTIATING TO COVER BLUE CHIPS FOR ME ON TILES (0,2), (0,3), (1,3), AND (2,3), I AVOID USING ANY BLUE CHIPS FROM MY INVENTORY. IN RETURN, I ONLY NEED TO COVER ONE RED CHIP FOR THE OTHER PLAYER, WHICH COST ME LITTLE SINCE I HAVE 14 RED CHIPS. THIS ALLOWS ME TO SAVE 4 RED CHIPS COMPARED TO MY ORIGINAL PATH, INCREASING MY FINAL CHIP COUNT TO 14 (13 RED + 1 GREEN), GIVING ME 70 POINTS FROM CHIPS PLUS 20 FOR GOAL — TOTAL 90 POINTS. THIS IS STRICTLY BETTER THAN MY DEFAULT PATH, WHICH WOULD GIVE ONLY 70 POINTS. THUS, THIS TRADE BENEFITS ME SIGNIFICANTLY.",
+                    "chips_to_offer": [
+                      [
+                        "R",
+                        1
+                      ]
+                    ],
+                    "chips_to_receive": [
+                      [
+                        "B",
+                        4
+                      ]
+                    ],
+                    "message": "Player 1 offers [R:1] for [B:4] (Rationale: I CAN REACH MY GOAL USING A PATH THAT REQUIRES ONLY 1 RED CHIP AND 1 GREEN CHIP, WHICH I HAVE IN EXCESS. BY NEGOTIATING TO COVER BLUE CHIPS FOR ME ON TILES (0,2), (0,3), (1,3), AND (2,3), I AVOID USING ANY BLUE CHIPS FROM MY INVENTORY. IN RETURN, I ONLY NEED TO COVER ONE RED CHIP FOR THE OTHER PLAYER, WHICH COST ME LITTLE SINCE I HAVE 14 RED CHIPS. THIS ALLOWS ME TO SAVE 4 RED CHIPS COMPARED TO MY ORIGINAL PATH, INCREASING MY FINAL CHIP COUNT TO 14 (13 RED + 1 GREEN), GIVING ME 70 POINTS FROM CHIPS PLUS 20 FOR GOAL \\u2014 TOTAL 90 POINTS. THIS IS STRICTLY BETTER THAN MY DEFAULT PATH, WHICH WOULD GIVE ONLY 70 POINTS. THUS, THIS TRADE BENEFITS ME SIGNIFICANTLY.)"
+                  }
+                },
+                "timestamp": "2026-01-22T12:54:16.113693Z"
+              }
+            ],
+            "position": {
+              "start": [
+                1,
+                3
+              ],
+              "end": [
+                2,
+                3
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 7,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 6,
+                "G": 2,
+                "R": 0
+              }
+            },
+            "arrangement_proposed": {
+              "promised_to_cover": [
+                [
+                  "R",
+                  1
+                ]
+              ],
+              "requested_coverage": [
+                [
+                  "B",
+                  4
+                ]
+              ],
+              "outcome": "invalid"
+            },
+            "move_made": [
+              2,
+              3
+            ],
+            "move_type": "regular"
+          },
+          "0": {
+            "position": {
+              "start": [
+                2,
+                3
+              ],
+              "end": [
+                3,
+                3
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 2,
+                "R": 12
+              },
+              "end": {
+                "B": 0,
+                "G": 1,
+                "R": 12
+              }
+            },
+            "move_made": [
+              3,
+              3
+            ],
+            "move_type": "regular"
+          }
+        },
+        "events": {
+          "trade_validation_failed": {
+            "timestamp": "2026-01-22T12:54:16.107210Z",
+            "player": "Player 1",
+            "message": "Player 1 does not have enough R to offer."
+          }
+        }
+      },
+      "7": {
+        "players": {
+          "0": {
+            "position": {
+              "start": [
+                3,
+                3
+              ],
+              "end": [
+                3,
+                3
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 1,
+                "R": 12
+              },
+              "end": {
+                "B": 0,
+                "G": 1,
+                "R": 12
+              }
+            }
+          },
+          "1": {
+            "position": {
+              "start": [
+                2,
+                3
+              ],
+              "end": [
+                3,
+                3
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 6,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 6,
+                "G": 1,
+                "R": 0
+              }
+            },
+            "move_made": [
+              3,
+              3
+            ],
+            "move_type": "regular"
+          }
+        }
+      }
+    },
+    "final_state": {
+      "players": {
+        "0": {
+          "position": [
+            3,
+            3
+          ],
+          "goal": [
+            3,
+            3
+          ],
+          "reached_goal": true,
+          "chips": {
+            "B": 0,
+            "G": 1,
+            "R": 12
+          },
+          "route": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              1
+            ],
+            [
+              0,
+              2
+            ],
+            [
+              0,
+              3
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              2,
+              3
+            ],
+            [
+              3,
+              3
+            ]
+          ]
+        },
+        "1": {
+          "position": [
+            3,
+            3
+          ],
+          "goal": [
+            3,
+            3
+          ],
+          "reached_goal": true,
+          "chips": {
+            "B": 6,
+            "G": 1,
+            "R": 0
+          },
+          "route": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              1
+            ],
+            [
+              0,
+              2
+            ],
+            [
+              0,
+              3
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              2,
+              3
+            ],
+            [
+              3,
+              3
+            ]
+          ]
+        }
+      },
+      "total_turns": "8",
+      "scores": {
+        "Player 0": 85,
+        "Player 1": 55
+      },
+      "metrics": {
+        "total_scores": 140,
+        "total_accuracy": 1.0,
+        "gini_coefficient": 0.1071428571428572,
+        "max_possible_score": 140,
+        "total_trades_proposed": 0,
+        "total_trades_proposed_0": 0,
+        "total_trades_proposed_1": 0,
+        "total_trades_accepted": 0,
+        "total_trades_accepted_0": 0,
+        "total_trades_accepted_1": 0,
+        "total_trades_rejected": 0,
+        "total_trades_rejected_0": 0,
+        "total_trades_rejected_1": 0,
+        "amount_received_by_0_from_trades": 0,
+        "amount_received_by_1_from_trades": 0,
+        "total_trades_failed": 4,
+        "total_p4p_arrangements_proposed": 3,
+        "total_p4p_arrangements_proposed_0": 3,
+        "total_p4p_arrangements_proposed_1": 0,
+        "total_p4p_arrangements_accepted": 2,
+        "total_p4p_arrangements_accepted_0": 0,
+        "total_p4p_arrangements_accepted_1": 2,
+        "total_p4p_arrangements_rejected": 1,
+        "total_p4p_arrangements_rejected_0": 0,
+        "total_p4p_arrangements_rejected_1": 1,
+        "total_p4p_promises_kept": 0,
+        "total_p4p_promises_kept_0": 0,
+        "total_p4p_promises_kept_1": 0,
+        "total_p4p_promises_broken": 0,
+        "total_p4p_promises_broken_0": 0,
+        "total_p4p_promises_broken_1": 0,
+        "total_p4p_amounts_promised_to_receive": 10,
+        "total_p4p_amounts_promised_to_receive_0": 8,
+        "total_p4p_amounts_promised_to_receive_1": 2,
+        "total_p4p_amounts_received": 0,
+        "total_p4p_amounts_received_0": 0,
+        "total_p4p_amounts_received_1": 0,
+        "contract_accepted": 1,
+        "contract_negotiaion_length": 3,
+        "num_tiles_in_contract": null,
+        "num_tiles_promised_to_receive_from_contract_0": 0,
+        "num_tiles_promised_to_receive_from_contract_1": 0,
+        "moves_made_under_strict_contract_0": 4,
+        "moves_made_under_strict_contract_1": 1,
+        "contract_moves_blocked_by_partner_shortfall_0": 0,
+        "contract_moves_blocked_by_partner_shortfall_1": 4,
+        "points_for_completion_promised_to_0": 0,
+        "points_for_completion_promised_to_1": 0,
+        "format_errors_total": 4,
+        "format_errors_by_type": {
+          "trade_validation_failed": 4
+        },
+        "format_errors_by_player": {
+          "1": {
+            "trade_validation_failed": 4
+          }
+        },
+        "format_errors_by_turn": {
+          "0": {
+            "trade_validation_failed": 1
+          },
+          "2": {
+            "trade_validation_failed": 1
+          },
+          "3": {
+            "trade_validation_failed": 1
+          },
+          "6": {
+            "trade_validation_failed": 1
+          }
+        }
+      },
+      "api_calls": {
+        "total": 54,
+        "by_player": {
+          "player_0": 17,
+          "player_1": 22
+        },
+        "judge": 15
+      }
+    }
+  }
+}
