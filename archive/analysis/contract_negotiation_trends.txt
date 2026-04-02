@@ -1,0 +1,306 @@
+CONTRACT NEGOTIATION TRENDS ANALYSIS
+================================================================================
+Based on systematic analysis of all verbose log files across 6 model pairs,
+2 board types, and 2 contract conditions.
+
+Total files analyzed: ~676 (332 strict, 344 finishing)
+Total agreements reached: 652 out of 676 (96.4%)
+
+================================================================================
+1. AGREEMENT RATES BY MODEL
+================================================================================
+
+Model                          | Agreed | Total | Rate
+-------------------------------|--------|-------|------
+FOUR_1-FOUR_1                  |   115  |  119  | 97%
+HAIKU_4_5-HAIKU_4_5            |    83  |   84  | 99%
+LLAMA_MAVERICK-LLAMA_MAVERICK  |   112  |  117  | 96%
+LLAMA_SCOUT-LLAMA_SCOUT        |   108  |  109  | 99%
+QWEN_3_235B-QWEN_3_235B        |   115  |  122  | 94%
+QWEN_3_30B-QWEN_3_30B          |   119  |  125  | 95%
+
+Key finding: HAIKU and LLAMA_SCOUT are the most reliable negotiators (99%
+agreement). QWEN_3_235B and QWEN_3_30B fail slightly more often (94-95%),
+mostly in the strict condition on Needy_Player_Blue boards.
+
+
+================================================================================
+2. AVERAGE CONVERSATION LENGTH BY MODEL
+================================================================================
+
+Model                          | Avg Messages (non-system)
+-------------------------------|-------------------------
+FOUR_1-FOUR_1                  | 6.0
+HAIKU_4_5-HAIKU_4_5            | 9.9
+LLAMA_MAVERICK-LLAMA_MAVERICK  | 7.3
+LLAMA_SCOUT-LLAMA_SCOUT        | 8.3
+QWEN_3_235B-QWEN_3_235B        | 7.7
+QWEN_3_30B-QWEN_3_30B          | 7.1
+
+Key finding: FOUR_1 (GPT-4.1) is the most efficient negotiator, resolving
+deals in an average of 6 messages. HAIKU is the most verbose at 9.9 messages,
+engaging in extensive analytical back-and-forth even when deals are
+straightforward.
+
+
+================================================================================
+3. STRICT CONDITION: CHIP EXCHANGE PATTERNS
+================================================================================
+
+In the strict condition, contracts specify exactly which tiles each player
+covers (giving a chip of a specific color to the other player).
+
+Overall strict condition:
+- Agreement rate: 319/332 (96%)
+- Average P0 gives: 2.06 tiles
+- Average P1 gives: 2.41 tiles
+- P1 tends to give slightly more, reflecting the Needy_Player_Blue
+  asymmetry where Player 1 (Blue) often needs more help.
+
+By model (Mutual_Dependency - both players need each other):
+Model                          | P0 Gives | P1 Gives | Items
+-------------------------------|----------|----------|------
+FOUR_1-FOUR_1                  |   2.4    |   2.0    |  4.5
+HAIKU_4_5-HAIKU_4_5            |   2.4    |   2.1    |  4.5
+LLAMA_MAVERICK-LLAMA_MAVERICK  |   2.1    |   2.1    |  4.2
+LLAMA_SCOUT-LLAMA_SCOUT        |   1.3    |   2.2    |  3.5
+QWEN_3_235B-QWEN_3_235B        |   2.2    |   2.1    |  4.4
+QWEN_3_30B-QWEN_3_30B          |   2.4    |   2.6    |  5.0
+
+Key finding: In Mutual_Dependency, most models achieve roughly balanced
+exchanges (2-2.5 chips each). LLAMA_SCOUT stands out with asymmetric deals
+(P0 gives 1.3, P1 gives 2.2) - Player 0 consistently gets a better deal.
+QWEN_3_30B creates the largest contracts (5.0 total items).
+
+By model (Needy_Player_Blue - P0 usually self-sufficient, P1 needs help):
+Model                          | P0 Gives | P1 Gives | Items
+-------------------------------|----------|----------|------
+FOUR_1-FOUR_1                  |   1.9    |   2.4    |  4.3
+HAIKU_4_5-HAIKU_4_5            |   2.0    |   2.4    |  4.4
+LLAMA_MAVERICK-LLAMA_MAVERICK  |   3.0    |   3.0    |  6.1
+LLAMA_SCOUT-LLAMA_SCOUT        |   1.3    |   1.9    |  3.2
+QWEN_3_235B-QWEN_3_235B        |   1.6    |   2.6    |  4.2
+QWEN_3_30B-QWEN_3_30B          |   2.2    |   2.8    |  4.9
+
+Key finding: LLAMA_MAVERICK creates the largest contracts in
+Needy_Player_Blue (6.1 total items, 3.0 each) - the most generous model.
+QWEN_3_235B shows the most asymmetric deals (P0 gives 1.6, P1 gives 2.6).
+
+
+================================================================================
+4. FINISHING CONDITION: POINT TRANSFER PATTERNS
+================================================================================
+
+In the finishing condition, contracts specify how many points each player
+transfers to the other when they reach their goal.
+
+Overall finishing condition:
+- Agreement rate: 333/344 (97%)
+- The most common pattern overall was (0, 0) with 127 instances - no
+  points exchanged at all.
+- The second most common was (0, 20) with 71 instances - Player 0 takes
+  everything from Player 1.
+- Equal splits (10, 10) occurred 36 times.
+
+MOST STRIKING FINDING: The two dominant strategies are diametrically opposed:
+either "no payment needed" (both independent) or "maximum extraction" (one
+player takes all 20 points from the other).
+
+By model (Mutual_Dependency):
+Model                          | P0 Gives | P1 Gives | Most Common
+-------------------------------|----------|----------|------------------
+FOUR_1-FOUR_1                  |   4.5    |   5.9    | (0,0) x5
+HAIKU_4_5-HAIKU_4_5            |   9.9    |  10.5    | (10,10) x2, (11,11) x2
+LLAMA_MAVERICK-LLAMA_MAVERICK  |   7.9    |   9.1    | (10,10) x5, (9,11) x5
+LLAMA_SCOUT-LLAMA_SCOUT        |   4.3    |   6.2    | (varied)
+QWEN_3_235B-QWEN_3_235B        |   5.5    |  12.2    | (10,10) x7, (0,20) x5
+QWEN_3_30B-QWEN_3_30B          |   5.3    |  16.6    | (0,20) x11
+
+By model (Needy_Player_Blue):
+Model                          | P0 Gives | P1 Gives | Most Common
+-------------------------------|----------|----------|------------------
+FOUR_1-FOUR_1                  |   0.2    |   7.9    | (0,0) x16, (0,20) x8
+HAIKU_4_5-HAIKU_4_5            |   7.9    |   9.5    | (0,0) x6, (10,10) x3
+LLAMA_MAVERICK-LLAMA_MAVERICK  |   6.7    |   9.4    | (10,10) x9, (8,8) x5
+LLAMA_SCOUT-LLAMA_SCOUT        |   3.9    |   4.6    | (0,0) x5, (5,5) x3
+QWEN_3_235B-QWEN_3_235B        |   1.7    |  15.7    | (0,20) x23
+QWEN_3_30B-QWEN_3_30B          |   3.1    |  14.6    | (0,20) x18
+
+
+================================================================================
+5. MODEL-SPECIFIC BEHAVIORAL PATTERNS
+================================================================================
+
+FOUR_1-FOUR_1 (GPT-4.1):
+- Most efficient negotiator (6.0 avg messages).
+- In Needy_Player_Blue finishing, the dominant pattern is (0, 0) - both
+  players agree to exchange no points (16 out of 41 times). When one
+  player is independent, FOUR_1 often concludes "no cooperation needed"
+  rather than extracting payment. This is the LEAST extractive model.
+- However, when it does extract, it goes for full (0, 20) 8 times.
+- Shows a binary pattern: either no deal or full extraction.
+
+HAIKU_4_5-HAIKU_4_5 (Haiku 4.5):
+- Most verbose negotiator (9.9 avg messages).
+- Engages in thorough analytical verification of claims.
+- Produces the most balanced outcomes in finishing condition (~10/10 splits).
+- Can be manipulated through persistent framing (see Example 1).
+- Attempted deception was observed (deliberately reversing contract terms)
+  but was caught (see Example 8).
+- Highest agreement rate (99%).
+
+LLAMA_MAVERICK-LLAMA_MAVERICK:
+- Most cooperative model overall. In NP finishing, (10,10) was the most
+  common outcome (9 times), (8,8) next (5 times).
+- Creates the largest strict contracts (6.1 items in NP) - willing to
+  do extensive chip exchanges.
+- Average point transfers in finishing are the most balanced among models.
+- Shows genuine "mutual benefit" reasoning rather than exploitation.
+
+LLAMA_SCOUT-LLAMA_SCOUT:
+- Moderate negotiator with 99% agreement rate.
+- Produces relatively small contracts (3.2-3.5 items in strict).
+- In finishing condition, tends toward lower point transfers (avg 3.9/4.6
+  in NP) - models negotiate conservatively.
+- Player 0 consistently gets slightly better deals across conditions.
+
+QWEN_3_235B-QWEN_3_235B:
+- THE MOST EXTRACTIVE MODEL. In NP finishing, 23 out of 35 agreements
+  were (0, 20) - maximum extraction by the self-sufficient player.
+- Even in Mutual_Dependency finishing, (0, 20) occurred 5 times.
+- When both need each other, can achieve fair splits (10,10) x7.
+- Shows a clear strategic pattern: if I don't need you, I take everything.
+- Occasional role confusion (mixing up which player has which chips)
+  but still reaches extractive outcomes.
+
+QWEN_3_30B-QWEN_3_30B:
+- Second most extractive model. (0, 20) was the dominant pattern in both
+  MD finishing (11 out of 22) and NP finishing (18 out of 40).
+- Highest failure rate in strict condition (6 failures in NP strict).
+- Can be both confused and brutally selfish - sometimes makes analytical
+  errors but still refuses to cooperate.
+- Average P1 gives 16.6 in MD finishing - the highest extraction rate.
+
+
+================================================================================
+6. BOARD TYPE DIFFERENCES
+================================================================================
+
+Mutual_Dependency:
+- Agreement rate: 230/233 (99%) - very high.
+- Both players need each other's chips, creating symmetric leverage.
+- Negotiations tend to be more balanced (avg P0 gives 1.58, P1 gives 1.62
+  in strict; more varied in finishing).
+- Models that try to exploit in MD often face pushback since both players
+  can threaten to walk away.
+
+Needy_Player_Blue:
+- Agreement rate: 422/443 (95%) - slightly lower.
+- Player 0 (Red-rich) is typically self-sufficient.
+- Player 1 (Blue-rich) often cannot reach the goal without Red chips.
+- This creates a clear power asymmetry that gets exploited, especially
+  by QWEN models.
+- Failures are concentrated here (13 out of 24 total failures).
+- The needy player often accepts heavily lopsided deals because the
+  alternative is scoring 0.
+
+
+================================================================================
+7. CONDITION DIFFERENCES (STRICT vs FINISHING)
+================================================================================
+
+Strict condition (tile-level exchanges):
+- Negotiations focus on specific path analysis and tile-by-tile coverage.
+- Models engage in more analytical reasoning about paths, chip costs,
+  and alternative routes.
+- Contracts tend to be more "fair" because both players must physically
+  cover tiles for each other - there's a natural reciprocity.
+- Average P0 gives 2.06, P1 gives 2.41 - relatively balanced.
+
+Finishing condition (point transfers):
+- Negotiations become more abstract game-theoretic arguments.
+- The self-sufficient player has enormous leverage: "I don't need you,
+  but you need me, so give me everything."
+- This leads to extreme outcomes: either (0, 0) when both are independent,
+  or (0, 20) when one player is desperate.
+- Average P0 gives 1.00, P1 gives 1.00 (in chip items) but the POINT
+  transfers are highly variable (0 to 20).
+- Models that are cooperative (MAVERICK) tend toward 10/10 splits.
+- Models that are extractive (QWEN) tend toward 0/20 splits.
+
+
+================================================================================
+8. FAILED NEGOTIATIONS
+================================================================================
+
+Total failures: 24 out of 676 (3.6%)
+
+By model:
+- FOUR_1: 4 failures (all NP strict)
+- HAIKU: 1 failure (NP finishing)
+- MAVERICK: 5 failures (2 strict, 3 finishing)
+- SCOUT: 1 failure (NP finishing)
+- QWEN_235B: 7 failures (1 MD strict, 1 MD finishing, 5 NP finishing)
+- QWEN_30B: 6 failures (all NP strict)
+
+Common failure patterns:
+1. Both players independent, refuse to trade: Both correctly calculate they
+   don't need help, but the system generates a contract anyway that neither
+   wants to sign.
+2. Self-sufficient player refuses to help: Player 0 can go solo and sees no
+   benefit in cooperation, even at zero cost. "I do not care" attitude.
+3. Contract terms don't match conversation: Players agree in conversation but
+   the judge-generated contract doesn't match what was discussed.
+4. Role confusion: QWEN models sometimes confuse which player they are,
+   leading to incoherent proposals.
+
+
+================================================================================
+9. COMMON NEGOTIATION TACTICS OBSERVED
+================================================================================
+
+1. ANCHORING: Opening with extreme demands (16/4, 0/20) to shift the
+   negotiation range. Most effective for QWEN models.
+
+2. PATH ANALYSIS: Detailed tile-by-tile calculations to prove need (or
+   lack thereof). Used by all models but especially FOUR_1 and HAIKU.
+
+3. POWER ASYMMETRY EXPLOITATION: "I can reach my goal without you, but you
+   cannot reach yours without me." The dominant tactic in Needy_Player_Blue.
+
+4. INCREMENTAL CONCESSIONS: Starting far apart and moving toward each other
+   in small steps. Characteristic of MAVERICK and HAIKU.
+
+5. TAKE-IT-OR-LEAVE-IT: Stating a demand and saying "agree" without waiting
+   for counter-proposals. Very common with QWEN models.
+
+6. DECEPTION: Attempting to reverse contract terms or misrepresent the
+   situation. Observed with HAIKU (caught) and QWEN_3_30B (confused).
+
+7. MUTUAL VERIFICATION: Both players independently computing paths and
+   checking each other's math. HAIKU's signature tactic.
+
+8. NO-DEAL WALK-AWAY: "No cooperation is necessary. I will proceed alone."
+   Used by FOUR_1 and QWEN when they have self-sufficient paths.
+
+
+================================================================================
+10. OVERALL SUMMARY
+================================================================================
+
+The most significant finding is the stark behavioral difference between
+model families:
+
+- COOPERATIVE SPECTRUM: MAVERICK > HAIKU > SCOUT > FOUR_1 > QWEN_30B > QWEN_235B
+
+MAVERICK negotiates the most fairly, consistently achieving near-equal splits
+even when it has bargaining leverage. QWEN_235B is the most extractive, with
+a dominant strategy of maximum extraction (0/20) whenever it has the upper hand.
+
+The two contract conditions create fundamentally different negotiation dynamics:
+- STRICT contracts enforce natural reciprocity (both must cover tiles).
+- FINISHING contracts enable extreme extraction (one player can demand all points).
+
+The Needy_Player_Blue board consistently produces the most dramatic negotiations,
+as it creates a clear power asymmetry that models handle very differently -
+from generous cooperation (MAVERICK) to ruthless exploitation (QWEN).

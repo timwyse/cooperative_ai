@@ -4,17 +4,18 @@ This repository provides a research framework for running **Colored Trails**-sty
 
 This framework is structured to let you:
 - Define and configure Colored Trails game instances.
-- Plug in different agent policies (e.g., scripted, learned, or human-in-the-loop).
+    - Can set the configurable parameters in `game/config.py`
 - Run controlled experiments and collect logs.
 - Analyze outcomes to understand cooperative capabilities.
 
 ## Project Layout
 
-- `game/` – core game logic (player, udge, agents, etc.).
-- `experiments/` – experiment scripts (e.g., batched runs, sweeps).
-- `configs/` - board types and parameter variations (eg contract type)
+- `src/game/` – core game logic (player, judge, agents, etc.).
+- `src/experiments/` – experiment scripts (running experiments and collecting data for analysis).
+- `configs/` - board types and parameter variations (eg contract type) for experiments
+- `public_logs` - existing logs of previous games between model pairs
 - `results/`  – outputs and summary statistics (path may vary).
-- `analysis/`  – scripts or notebooks for analyzing experiment outputs.
+- `analysis/`  – scripts and notebooks for analyzing experiment outputs.
 
 ## Setup
 
@@ -37,7 +38,7 @@ From the repo root, run:
 python -m src.game.main
 ```
 
-Configurations can be edited directly in `main.py`
+Configurations can be edited directly in `main.py` of `config.py`
 
 ## Running Experiments
 
@@ -48,6 +49,7 @@ Specify the parameters in configs/experiment_configs
 
 python -m src.experiments.run_experiments --pairs FOUR_1,FOUR_1 
 ```
+More details can be found in `experiments/`
 
 ## Analyzing Results
 
@@ -58,4 +60,4 @@ Initially run
 python -m src.experiments.analyze_experiments
 ```
 
-And perform analysis on all_runs.csv 
+And perform analysis on all_runs.csv Scripts in `analysis/` exist to recreate graphs.
