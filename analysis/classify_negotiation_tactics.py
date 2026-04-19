@@ -696,20 +696,13 @@ def generate_gpt41_board_x_contract_grid(df, output_path, log_counts=None):
 
     buckets = sorted(gpt["bucket"].unique())
     contract_types = sorted(gpt["contract_type"].unique())
-    key_tactics = [
-        "tactic_path_analysis",
-        "tactic_power_asymmetry",
-        "tactic_mutual_verification",
-        "tactic_incremental_concessions",
-        "tactic_anchoring",
-        "tactic_deception_suspected",
-    ]
+    key_tactics = TACTIC_COLUMNS
     tactic_labels = [TACTIC_DISPLAY[t].replace(" ", "\n") for t in key_tactics]
-    colors = ["#4e79a7", "#f28e2b", "#59a14f", "#e15759", "#b07aa1", "#76b7b2"]
+    colors = ["#4e79a7", "#f28e2b", "#e15759", "#ff9da7", "#59a14f", "#edc948", "#b07aa1", "#76b7b2"]
 
     fig, axes = plt.subplots(
         len(buckets), len(contract_types),
-        figsize=(14, 3 * len(buckets)), sharey=True,
+        figsize=(16, 3.2 * len(buckets)), sharey=True,
     )
 
     for r, bucket in enumerate(buckets):
@@ -728,7 +721,7 @@ def generate_gpt41_board_x_contract_grid(df, output_path, log_counts=None):
             bars = ax.bar(x, freqs, color=colors)
             ax.set_ylim(0, 1.05)
             ax.set_xticks(x)
-            ax.set_xticklabels(tactic_labels, fontsize=7, ha="center")
+            ax.set_xticklabels(tactic_labels, fontsize=6, ha="center")
 
             if r == 0:
                 ax.set_title(CONTRACT_DISPLAY.get(ct, ct), fontsize=11, fontweight="bold")
@@ -1094,7 +1087,76 @@ def generate_review_html(df, quotes, figures_dir, output_path, log_counts=None):
 <h2>5. Illustrative Quotes</h2>
 {quotes_html}
 
-<h2>6. Data Summary</h2>
+<h2>6. Classification Methodology</h2>
+<p>All tactics are classified using deterministic heuristics (keyword and pattern matching on negotiation transcripts). No LLM calls are used for classification. Each log file is parsed from <code>game.turns.&lt;N&gt;.contract_negotiation</code>, which contains two conversation histories (one per player) and the final agreement/contract.</p>
+
+<h3>Anchoring</h3>
+<p>Examines only the <strong>first assistant message</strong> in the negotiation.</p>
+<ul>
+    <li><strong>Finishing contracts:</strong> Triggered if any number between 16 and 20 appears near keywords ("point", "give", "transfer", "pay", "receive"), or if an explicit 0/20 pattern is found.</li>
+    <li><strong>Strict contracts:</strong> Triggered if the first proposal mentions tile/chip/resource counts in a ratio of 3:1 or greater.</li>
+</ul>
+
+<h3>Take-it-or-leave-it</h3>
+<p><code>agreement_status == True</code> AND total non-system messages in the conversation &lt;= 3.</p>
+
+<h3>No-deal Walk-away</h3>
+<p>Any of:</p>
+<ul>
+    <li><code>agreement_status == False</code></li>
+    <li>Parsed agreement response has status "rejected" or "disagreed"</li>
+    <li>Finishing contract with (0,0) transfer AND messages contain refusal phrases: "don't need", "no cooperation", "refuse", "won't cooperate", "not interested"</li>
+</ul>
+
+<h3>Power Asymmetry Exploitation</h3>
+<p>All non-system messages (both players) are searched for any of these phrases:</p>
+<p style="font-family: monospace; font-size: 0.85em; background: #f8f9fa; padding: 10px; border-radius: 4px;">
+"i can reach my goal without" | "i don't need you" | "you cannot reach" | "you can't reach" | "you need me" | "self-sufficient" | "independently" | "without any help" | "without your help" | "don't need cooperation" | "without assistance" | "reach my goal on my own"
+</p>
+
+<h3>Mutual Verification</h3>
+<p>Both players must independently satisfy two conditions in their own assistant messages:</p>
+<ol>
+    <li>At least one coordinate reference matching the pattern <code>(digit, digit)</code></li>
+    <li>At least one verification word: "verify", "confirm", "check", "correct", "recalculate", "double-check"</li>
+</ol>
+<p>The tactic is only flagged if <em>both</em> players meet both conditions.</p>
+
+<h3>Path Analysis</h3>
+<p>Searches all non-system messages for either:</p>
+<ul>
+    <li>Arrow notation: <code>(x,y) -&gt; (x,y)</code> (two or more coordinates connected by arrows)</li>
+    <li>4+ coordinate references AND at least one cost keyword ("cost", "chip", "spend", "require", "need", "use")</li>
+</ul>
+
+<h3>Deception (suspected)</h3>
+<p>Flagged for manual review if either:</p>
+<ul>
+    <li>Reversal language appears: "actually, i changed my mind", "let me revise", "on second thought", "i lied", "that's not true", "i was bluffing"</li>
+    <li>A player claims different chip counts for the same color at different points (e.g., "i have 5 red" then later "i have 3 red")</li>
+</ul>
+
+<h3>Incremental Concessions</h3>
+<p>Requires all of:</p>
+<ol>
+    <li>&gt;= 6 non-system messages in the conversation</li>
+    <li>Extract all numbers 0-20 from each message (taking the max per message as the "proposal")</li>
+    <li>Compute gaps between consecutive proposals; at least 2 instances where the gap decreases (indicating convergence)</li>
+</ol>
+
+<h3>Dominant Tactic</h3>
+<p>Each negotiation is assigned a single "dominant tactic" using a fixed priority order: No-deal Walk-away &gt; Take-it-or-leave-it &gt; Anchoring &gt; Power Asymmetry &gt; Incremental Concessions &gt; Mutual Verification &gt; Path Analysis &gt; Deception. The first matching tactic wins. Multiple tactics can be true simultaneously; the dominant tactic is just the highest-priority one.</p>
+
+<h3>Limitations</h3>
+<ul>
+    <li>All heuristics are keyword-based, so they can produce false positives (e.g., "independently" in a non-leverage context) and false negatives (e.g., anchoring phrased without the expected keywords).</li>
+    <li>The "Deception" classifier is particularly coarse -- inconsistent chip counts may reflect legitimate recalculation rather than deception.</li>
+    <li>Incremental Concessions relies on number extraction that doesn't distinguish point proposals from other numeric references (e.g., coordinates, chip counts).</li>
+</ul>
+
+<p>Full source: <code>analysis/classify_negotiation_tactics.py</code></p>
+
+<h2>7. Data Summary</h2>
 <table>
 <tr><th>Metric</th><th>Value</th></tr>
 <tr><td>Total logs on disk</td><td>{total_logs}</td></tr>
