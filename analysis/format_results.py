@@ -104,6 +104,8 @@ def format_data(in_df, p4p=True):
     # note that P-Blue keeping a p4p promise is equivalent to P-Red receiving a p4p payment
     df['p4p_volume_proportion_P-Red'] = df['Total P4P Promises Kept P-Blue'] / (df['Total P4P Promises Kept P-Blue'] + df['Total P4P Promises Kept P-Red'])
     df['strict_contract_tile_proportion_P-Red'] = df['num_tiles_promised_to_receive_from_contract_P-Red'] / (df['num_tiles_promised_to_receive_from_contract_P-Red'] + df['num_tiles_promised_to_receive_from_contract_P-Blue'])
+    df['net_tiles_promised_to_receive_from_contract_P-Red'] = df['num_tiles_promised_to_receive_from_contract_P-Red'] - df['num_tiles_promised_to_receive_from_contract_P-Blue']
+    df['net_tiles_promised_to_receive_from_contract_P-Blue'] = df['num_tiles_promised_to_receive_from_contract_P-Blue'] - df['num_tiles_promised_to_receive_from_contract_P-Red']
     df['strict_tile_gini'] = (df['num_tiles_promised_to_receive_from_contract_P-Red'] - df['num_tiles_promised_to_receive_from_contract_P-Blue']).abs() / ((2)*(df['num_tiles_promised_to_receive_from_contract_P-Red'] + df['num_tiles_promised_to_receive_from_contract_P-Blue']))
     df['strict_tile_even_split'] = (df['num_tiles_promised_to_receive_from_contract_P-Red'] == df['num_tiles_promised_to_receive_from_contract_P-Blue'])
     df['strict_tile_winner_take_all'] = ((df['num_tiles_promised_to_receive_from_contract_P-Red'] == 0) | (df['num_tiles_promised_to_receive_from_contract_P-Blue'] == 0)) & (df['num_tiles_promised_to_receive_from_contract_P-Red'] + df['num_tiles_promised_to_receive_from_contract_P-Blue'] > 0)
@@ -112,6 +114,8 @@ def format_data(in_df, p4p=True):
     df['contract_for_finishing_points_gini'] = (df['points_for_completion_promised_to_P-Red'] - df['points_for_completion_promised_to_P-Blue']).abs() / (2*(df['points_for_completion_promised_to_P-Red'] + df['points_for_completion_promised_to_P-Blue']))
     df['contract_for_finishing_points_even_split'] = (df['points_for_completion_promised_to_P-Red'] == df['points_for_completion_promised_to_P-Blue'])
     df['contract_for_finishing_points_winner_take_all'] = ((df['points_for_completion_promised_to_P-Red'] == 0) | (df['points_for_completion_promised_to_P-Blue'] == 0)) & (df['points_for_completion_promised_to_P-Red'] + df['points_for_completion_promised_to_P-Blue'] > 0)
+    df['net_points_for_completion_promised_to_P-Red'] = df['points_for_completion_promised_to_P-Red'] - df['points_for_completion_promised_to_P-Blue']
+    df['net_points_for_completion_promised_to_P-Blue'] = df['points_for_completion_promised_to_P-Blue'] - df['points_for_completion_promised_to_P-Red']
     
     contract_conditions = [(df['Contract Type'] == 'Prog-Points'), (df['Contract Type'] == 'Prog-Trading'), (df['Contract Type'] == 'NL-Trading')]
     contract_gini_choices = [df['contract_for_finishing_points_gini'], df['strict_tile_gini'], df['strict_tile_gini']]
