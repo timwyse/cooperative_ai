@@ -14,8 +14,7 @@ def test_for_significant_differenct(hyp_smaller_set, hyp_bigger_set):
     t_stat, p_ttest = stats.ttest_ind( hyp_smaller_set, hyp_bigger_set, alternative='less')
 
     print("=" * 55)
-    print("H1: 'No Contract' < 'Prog-Trading' (Total P4P Arrangements Accepted)")
-    print("=" * 55)
+    
     # print(f"  No Contract  — mean={no_contract.mean():.3f}, n={len(no_contract)}")
     # print(f"  Prog-Trading — mean={prog_trading.mean():.3f}, n={len(prog_trading)}")
     # print()
@@ -26,7 +25,7 @@ def test_for_significant_differenct(hyp_smaller_set, hyp_bigger_set):
         print("  ✓ Significant at α=0.05 (Mann-Whitney)")
     else:
         print("  ✗ Not significant at α=0.05 (Mann-Whitney)")
-
+    print("=" * 55)
 
 if __name__ == "__main__":
     df = format_data(FULL_DF, p4p=True)
