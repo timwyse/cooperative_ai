@@ -322,5 +322,5 @@ IMPORTANT RULES:
                     {"error": 'structured_output_error', "raw_response": response_data}
                 )
 
-        return move_in_contract
+        return move_in_contract, response_data
         

@@ -257,6 +257,9 @@ class Logger(BaseLogger):
                     "covered_by": player_data.get('covered_by'),
                     "covered_color": player_data.get('covered_color')
                 })
+            # Add judge decision for NL-Trading moves
+            if player_data.get('judge_decision') is not None:
+                move_info["judge_decision"] = player_data['judge_decision']
             player_turn_data.update(move_info)
         
         # Add to turn data

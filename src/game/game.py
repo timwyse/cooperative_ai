@@ -554,7 +554,8 @@ class Game:
         else:
             if self.contract_type == 'tile_with_judge_implementation' and self.contract is not None:
                 print(f"Consulting judge to see if move is in contract...")
-                move_is_in_contract_according_to_judge = self.judge.check_if_move_is_in_contract(player, move, self.contract)
+                move_is_in_contract_according_to_judge, judge_response = self.judge.check_if_move_is_in_contract(player, move, self.contract)
+                player_turn_data[player.name]['judge_decision'] = judge_response
                 if move_is_in_contract_according_to_judge:
                     contract_resource_adjustment =  self.handle_contract_move(player, move)
                     if contract_resource_adjustment:
