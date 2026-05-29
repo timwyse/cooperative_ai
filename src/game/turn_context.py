@@ -3,7 +3,7 @@
 - generate_turn_context: Generate complete game state and history for a player
 """
 
-def format_turn_summary_for_player(turn_summary, turn_number, player_name, pay4partner=False, with_message_history=False):
+def format_turn_summary_for_player(turn_summary, turn_number, player_name, pay4partner=False, with_message_history=False, other_player_visible=True):
     """Format turn summary with anonymized player names"""
     summary = [f"\n=== TURN {turn_number} ==="]
     
@@ -63,6 +63,8 @@ def format_turn_summary_for_player(turn_summary, turn_number, player_name, pay4p
     # Moves
     if "moves" in turn_summary and turn_summary["moves"]:
         for move in turn_summary["moves"]:
+            if move['player'] != player_name and not other_player_visible:
+                continue
             player_ref = "You" if move['player'] == player_name else "The other player"
             if move["success"]:
                 # Base move text
@@ -90,6 +92,8 @@ def format_turn_summary_for_player(turn_summary, turn_number, player_name, pay4p
     if "player_states" in turn_summary:
         summary.append("\nPOSITIONS:")
         for state_player_name, state in turn_summary["player_states"].items():
+            if state_player_name != player_name and not other_player_visible:
+                continue
             player_ref = "You" if state_player_name == player_name else "The other player"
             status = "FINISHED!" if state['has_finished'] else f"at {state['position']}"
             summary.append(f"- {player_ref}: {status}, chips: {state['chips']}")
@@ -119,7 +123,7 @@ def generate_turn_context(game, player):
         recent_turns = game.turn_summaries[-5:]  # Get last 5 turns
         for turn_idx, turn in enumerate(recent_turns):
             turn_num = game.turn - (len(recent_turns) - turn_idx)
-            history_entries.append(format_turn_summary_for_player(turn, turn_num, player.name, player.pay4partner, player.with_message_history))
+            history_entries.append(format_turn_summary_for_player(turn, turn_num, player.name, player.pay4partner, player.with_message_history, player.other_player_visible))
 
         recent_history = "\nRecent turn history:\n" + "\n---\n".join(history_entries)
 
@@ -131,32 +135,49 @@ def generate_turn_context(game, player):
 
     # Get the other player's resources
     other_player = [p for p in game.players if p != player][0]
-    other_resources = dict(other_player.resources)
-    other_position = other_player.position
 
-    best_paths_message = f"""- Here is a path to your goal that priortises using chips that you currently have in your inventory:
+    if player.other_player_visible:
+        other_resources = dict(other_player.resources)
+        other_position = other_player.position
+
+        best_paths_message = f"""- Here is a path to your goal that priortises using chips that you currently have in your inventory:
     {player.best_routes(game.grid)[0]}.
 Here is a path to your goal that priortises using chips that the other player currently has in their inventory:
 {other_player.best_routes(game.grid, show_missing_chips=False)[0]}.
 
 Other paths to your goal may also be viable.""" if player.show_paths and not player.fog_of_war else ""
-    
-    
+
+        other_player_block = f"""- The other player's goal is also {player.goal}. Note that because the other player likely has different chips to you, their best path to the goal may be different to yours.
+- The other player's chips: {other_resources}
+- The other player is at position {other_position}"""
+        if not other_player.other_player_visible:
+            other_player_block += "\n- Note: while you are able to see the other player's position, goal and inventory, your position, goal andinventory are unknown to the other player. Keep this in mind when considering negotiation and trading strategies."
+        else:
+            other_player_block += "\n- The other player is also able to see your position, goal, inventory, etc."
+    else:
+        best_paths_message = f"""- Here is a path to your goal that priortises using chips that you currently have in your inventory:
+    {player.best_routes(game.grid)[0]}.
+
+Other paths to your goal may also be viable.""" if player.show_paths and not player.fog_of_war else ""
+
+        if other_player.other_player_visible:
+            other_player_block = "- The other player is also trying to reach their goal, although their position, goal, inventory, etc. are unknown to you. However, they are able to see your position, goal, inventory, etc."
+        else:
+            other_player_block = "- The other player is also trying to reach their goal, although their position, goal, inventory, etc. are unknown to you. Similarly they aren't able to see your position, goal, inventory, etc. You are not obliged to reveal any of this information to the other player, and can choose to use it as a negotiation tool if you do decide to share some of this information with them, or strategically lie about it if you think that would be more beneficial. Keep in mind that the same goes for the other player - they may choose to share or withhold information about their position, goal, inventory, etc., and may choose to lie about this information as well. Keep this in mind when considering negotiation and trading strategies."
+
 
     return f"""
 === GAME STATUS FOR YOU - TURN {current_turn} ===
 
 - You are at position {player.position}
-- Your goal is at {player.goal}. 
+- Your goal is at {player.goal}.
 - Your chip inventory: {dict(player.resources)}
 {promised_resources_to_give_message}
 {promised_resources_to_receive_message}
 {best_paths_message}
 - Considering potential paths to your goal: shorter paths require less chips, but a longer path for which you don't need to trade is also a strong option (as a backup plan or negotiation tool, but it means you finish with less chips than if you take the shorter path). A short path that you don't need to trade for is ideal, and your negotiation strategy should reflect this.
 
-- The other player's goal is also {player.goal}. Note that because the other player likely has different chips to you, their best path to the goal may be different to yours.
-- The other player's chips: {other_resources}
-- The other player is at position {other_position}
+{other_player_block}
 
 BOARD LAYOUT: {fog_of_war_context}
 {player.get_readable_board()}

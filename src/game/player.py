@@ -82,6 +82,7 @@ class Player:
         self.score = 0
         self.grid = Grid(self.grid_size, self.colors, grid=self.config.grid)
         self.fog_of_war = False
+        self.other_player_visible = True
         self.non_cooperative_baseline = 0
         self.show_paths = config.show_paths
 

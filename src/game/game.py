@@ -48,7 +48,8 @@ class Game:
         self.players = [Player(i, player, self.logger, self.config, game = self) for i, player in enumerate(self.config.players)]
         self.n_players = len(self.players)
         self.initialize_fog_of_war()
-        
+        self.initialize_other_player_visibility()
+
         # Resource Distribution
         self.distribute_resources()
         
@@ -228,8 +229,21 @@ class Game:
                 if not isinstance(fog, bool):
                     raise ValueError("fog_of_war list must contain only boolean values (True/False).")
                 player.fog_of_war = fog
-    
-    
+
+
+    def initialize_other_player_visibility(self):
+        settings = self.config.other_player_visible
+        if settings is None:
+            return
+        if isinstance(settings, list):
+            if len(settings) != self.n_players:
+                raise ValueError(f"other_player_visible list must be the same length as number of players. There are {self.n_players} players but other_player_visible is of length {len(settings)}.")
+            for player, visible in zip(self.players, settings):
+                if not isinstance(visible, bool):
+                    raise ValueError("other_player_visible list must contain only boolean values (True/False).")
+                player.other_player_visible = visible
+
+
     def compute_non_cooperative_baselines(self):
         for player in self.players:
             player.non_cooperative_baseline = player.compute_non_cooperative_baseline()

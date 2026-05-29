@@ -102,7 +102,11 @@ def generate_config_dir_name(config, selfish="00"):
     contract_type = "none" if config.contract_type in [None, "none"] else str(config.contract_type)
     ctx = "ctx1" if config.with_context else "ctx0"
     fog = "fog" + "".join("1" if f else "0" for f in config.fog_of_war)
-    return f"{ctx}_{fog}_p4p{str(config.pay4partner).lower()}_contract_{contract_type}_selfish{selfish}"
+    base = f"{ctx}_{fog}_p4p{str(config.pay4partner).lower()}_contract_{contract_type}_selfish{selfish}"
+    opv = config.other_player_visible
+    if opv is not None and not all(opv):
+        base += "_opv" + "".join("1" if v else "0" for v in opv)
+    return base
 
 def now_ts():
     return datetime.now().strftime("%Y%m%d_%H%M%S_%f")
@@ -136,6 +140,7 @@ def _run_single_experiment(pair_name: str, agents: List, grid_data, variation, r
     selfish = variation.get("selfish", [False, False])
     selfish_str = _selfish_to_str(selfish)
     system_prompts = _get_system_prompts(selfish)
+    other_player_visible = variation.get("other_player_visible")
 
     config = GameConfig(
         grid_size=4,
@@ -151,6 +156,7 @@ def _run_single_experiment(pair_name: str, agents: List, grid_data, variation, r
         contract_type=variation["contract_type"],
         with_message_history=variation["with_message_history"],
         fog_of_war=variation["fog_of_war"],
+        other_player_visible=other_player_visible,
         system_prompts=system_prompts,
         display_gui=False,
         wait_for_enter=False,
@@ -170,7 +176,8 @@ def _run_single_experiment(pair_name: str, agents: List, grid_data, variation, r
         "config": {
             "pay4partner": variation["pay4partner"], "contract_type": variation["contract_type"],
             "with_context": config.with_context, "with_message_history": variation["with_message_history"],
-            "fog_of_war": [False, False], "selfish": selfish
+            "fog_of_war": [False, False], "selfish": selfish,
+            "other_player_visible": other_player_visible
         },
         "grid_metrics": {
             "b_min_trades_efficient_path": grid_data["b_min_trades_efficient_path"],
@@ -219,7 +226,7 @@ def find_latest_run_folder() -> str:
     latest = sorted(folders, key=lambda x: x.name, reverse=True)[0]
     return latest.name
 
-def run_experiments(start_id=None, end_id=None, pair_args: List[str] = None, num_workers=NUM_WORKERS, add_to_latest=False, skip_completed=False, run_folder=None):
+def run_experiments(start_id=None, end_id=None, pair_args: List[str] = None, num_workers=NUM_WORKERS, add_to_latest=False, skip_completed=False, run_folder=None, param_file_stem=PARAM_VARIATIONS):
     model_pairs = parse_pairs(pair_args or [])
     
     if run_folder:
@@ -238,7 +245,7 @@ def run_experiments(start_id=None, end_id=None, pair_args: List[str] = None, num
         print(f"\n{'='*60}\nStarting experiment batch: {run_timestamp}\n{'='*60}\n")
 
     # Load parameter variations
-    param_file = f"configs/experiment_configs/{PARAM_VARIATIONS}.yaml"
+    param_file = f"configs/experiment_configs/{param_file_stem}.yaml"
     with open(param_file, "r") as f:
         param_variations = yaml.safe_load(f)
     print(f"Loaded {len(param_variations)} variations from {param_file}")
@@ -277,6 +284,7 @@ def run_experiments(start_id=None, end_id=None, pair_args: List[str] = None, num
                         contract_type=variation["contract_type"],
                         with_message_history=variation["with_message_history"],
                         fog_of_war=variation["fog_of_war"],
+                        other_player_visible=variation.get("other_player_visible"),
                         with_context=True
                     )
                     
@@ -324,5 +332,7 @@ if __name__ == "__main__":
     parser.add_argument('--add', action='store_true', help='Add experiments to the most recent run folder instead of creating a new one')
     parser.add_argument('--skip-completed', action='store_true', help='Skip experiments that already have completed logs')
     parser.add_argument('--run-folder', type=str, help='Specify exact run folder to add to (e.g., 2026_01_08_17)')
+    parser.add_argument('--param-file', type=str, default=PARAM_VARIATIONS,
+                        help="Param-variations file stem under configs/experiment_configs/ (default: parameter_variations)")
     args = parser.parse_args()
-    run_experiments(start_id=args.start_id, end_id=args.end_id, pair_args=args.pairs, num_workers=args.workers, add_to_latest=args.add, skip_completed=args.skip_completed, run_folder=args.run_folder)
+    run_experiments(start_id=args.start_id, end_id=args.end_id, pair_args=args.pairs, num_workers=args.workers, add_to_latest=args.add, skip_completed=args.skip_completed, run_folder=args.run_folder, param_file_stem=args.param_file)
