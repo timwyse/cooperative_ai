@@ -93,7 +93,7 @@ The JSON format must be:
 }}
 }}
 
-Example:
+Example 1 - two tiles covered:
 {{
 "(1,1)": {{
 "giver": "Player 0",
@@ -106,6 +106,32 @@ Example:
 "color": "Blue"
 }}
 }}
+
+Example 2 - four tiles, both players give and receive:
+{{
+"(0,1)": {{
+"giver": "Player 0",
+"receiver": "Player 1",
+"color": "R"
+}},
+"(1,2)": {{
+"giver": "Player 0",
+"receiver": "Player 1",
+"color": "R"
+}},
+"(2,0)": {{
+"giver": "Player 1",
+"receiver": "Player 0",
+"color": "B"
+}},
+"(3,2)": {{
+"giver": "Player 1",
+"receiver": "Player 0",
+"color": "B"
+}}
+}}
+
+IMPORTANT: If the players agreed on specific tiles, you MUST output a non-empty JSON with those tiles. Do not return an empty JSON {{}} if there is an agreement.
 """
         elif contract_type == 'contract_for_finishing':
             contract_type_instructions = """Each entry should should specify how many points each player will give the other player if they reach their goal. The maximum points a player can give the other player is {POINTS_FOR_WIN} points. If a player picks a value higher than this, reduce it to {POINTS_FOR_WIN}.
@@ -164,30 +190,37 @@ Your task:
         elif contract_type == 'contract_for_finishing':
             schema_or_tool = ANTHROPIC_FINISHING_JUDGE_TOOL if self.model_api == "anthropic" else FINISHING_JUDGE_SCHEMA
         
-        contract_parsed, contract_raw = self._structured(judge_conversation, schema_or_tool=schema_or_tool, max_tokens=1000)
-        
-        # Handle API failure - return empty contract
-        if contract_parsed is None:
-            print(f"Judge API error: {contract_raw}")
-            if hasattr(self, 'logger') and self.logger:
-                self.logger.log_format_error("Judge", "api_error_contract", {"error": contract_raw or "Unknown API error"})
-            return {}  # Empty contract
-        
-        if type(contract_parsed) == dict:
-            # Fix for all models: unwrap if contract is nested in an extra layer
-            # e.g., {"contract": {...}}, {"parameter": {...}} instead of flat structure
-            contract_parsed = self._unwrap_nested_contract(contract_parsed)
-            return contract_parsed
-            
-        else:
-            print(f"contract put forward by judge: {contract_parsed}")
-            if hasattr(self, 'logger') and self.logger:
-                self.logger.log_format_error(
-                    "Judge",
-                    "contract_wrong_type",
-                    {"error": 'expected dict', "raw_response": str(contract_parsed)}
-                )
-            return {}  # Return empty contract instead of implicit None
+        max_retries = 2
+        for attempt in range(max_retries + 1):
+            contract_parsed, contract_raw = self._structured(judge_conversation, schema_or_tool=schema_or_tool, max_tokens=1000)
+
+            # Handle API failure
+            if contract_parsed is None:
+                print(f"Judge API error (attempt {attempt + 1}): {contract_raw}")
+                if hasattr(self, 'logger') and self.logger:
+                    self.logger.log_format_error("Judge", "api_error_contract", {"error": contract_raw or "Unknown API error"})
+                if attempt < max_retries:
+                    continue
+                return {}
+
+            if type(contract_parsed) == dict:
+                contract_parsed = self._unwrap_nested_contract(contract_parsed)
+                # Retry if contract is empty but players agreed (likely a parsing failure)
+                if len(contract_parsed) == 0 and contract_type == 'strict' and attempt < max_retries:
+                    print(f"Judge returned empty contract (attempt {attempt + 1}/{max_retries + 1}), retrying...")
+                    continue
+                return contract_parsed
+            else:
+                print(f"contract put forward by judge: {contract_parsed}")
+                if hasattr(self, 'logger') and self.logger:
+                    self.logger.log_format_error(
+                        "Judge",
+                        "contract_wrong_type",
+                        {"error": 'expected dict', "raw_response": str(contract_parsed)}
+                    )
+                if attempt < max_retries:
+                    continue
+                return {}
 
     def _unwrap_nested_contract(self, contract: dict) -> dict:
         """
@@ -322,5 +355,5 @@ IMPORTANT RULES:
                     {"error": 'structured_output_error', "raw_response": response_data}
                 )
 
-        return move_in_contract
+        return move_in_contract, response_data
         
