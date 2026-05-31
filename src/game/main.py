@@ -28,13 +28,14 @@ CONFIG = replace(
     display_gui=True,  # Disable Pygame window, only show console output
     with_context=True,  # Enable turn history between players
     with_message_history=False,  # Enable conversation memory for each player
-    # pay4partner=True,  # Enable 'pay for partner' mode
-    # contract_type='strict',  # Options: contract_for_finishing, strict, tile_with_judge_implementation
+    pay4partner=True,  # Enable 'pay for partner' mode
+    contract_type='strict',  # Options: contract_for_finishing, strict, tile_with_judge_implementation
     system_prompts={'0': p.SELFISH_SYSTEM_PROMPT, '1': p.SELFISH_SYSTEM_PROMPT},  # Custom system prompts for each player
     # fog_of_war=[True, True],  # Enable fog of war for both players
+    other_player_visible=[False, False],  # Disable visibility of other player's position, goal, inventory, best path, and per-turn moves
     show_paths=True,  # Show best paths to goal for each player
     # allow_trades=False,  # Disable trading between players
-    judge_model = QWEN_3_235B 
+    judge_model = FOUR_1 
 )
 
 

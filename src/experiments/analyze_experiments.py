@@ -41,7 +41,7 @@ def _save_per_model_pair_csvs(df: pd.DataFrame, output_dir: Path, timestamp: str
         print(f"  - {latest_path}")
 
 
-def load_experiment_data(experiment_dir="public_logs/reduced_config_runs"):
+def load_experiment_data(experiment_dir="public_logs/reduced_config_runs", output_dir=None):
     """
     Load all experiment data from per_grid directory and save global CSVs.
 
@@ -142,6 +142,7 @@ def load_experiment_data(experiment_dir="public_logs/reduced_config_runs"):
                 'System Prompt': system_prompt,
                 'Context': metadata.get('config', {}).get('with_context', context),
                 'Fog of War': metadata.get('config', {}).get('fog_of_war', fog),
+                'Other Player Visible': metadata.get('config', {}).get('other_player_visible', [True, True]),
                 'Grid': metadata.get('grid', ''),
                 'Bucket': metadata.get('bucket', bucket_dir),
                 'Sub-stratum': metadata.get('sub_stratum', ''),
@@ -254,7 +255,7 @@ def load_experiment_data(experiment_dir="public_logs/reduced_config_runs"):
     df = df.sort_values(['Bucket', 'Grid ID', 'Config ID', 'Run ID'])
     # Save with timestamp
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_dir = Path(OUTPUT_DIR)
+    output_dir = Path(output_dir if output_dir is not None else OUTPUT_DIR)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     df.to_csv(output_dir / f"all_runs_{timestamp}.csv", index=False)
@@ -408,12 +409,12 @@ def _load_remapped_ids(
 
 
 
-def analyze_experiments(experiment_dir=None):
+def analyze_experiments(experiment_dir=None, output_dir=None):
     """Load and analyze experiment data; save per-model-pair CSVs and print row counts only."""
     if experiment_dir is None:
         experiment_dir = "public_logs/reduced_config_runs"
 
-    df, output_dir, timestamp = load_experiment_data(experiment_dir)
+    df, output_dir, timestamp = load_experiment_data(experiment_dir, output_dir)
 
     _save_per_model_pair_csvs(df, output_dir, timestamp)
     _print_per_pair_counts(df)
@@ -426,5 +427,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Analyze experiment results')
     parser.add_argument('--dir', type=str, default="public_logs/reduced_config_runs",
                         help='Experiment directory to analyze (default: public_logs/reduced_config_runs)')
+    parser.add_argument('--output-dir', type=str, default=OUTPUT_DIR,
+                        help=f'Directory to write CSV outputs (default: {OUTPUT_DIR})')
     args = parser.parse_args()
-    analyze_experiments(args.dir)
+    analyze_experiments(args.dir, args.output_dir)

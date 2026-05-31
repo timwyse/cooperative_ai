@@ -1,4 +1,6 @@
 
+import argparse
+import os
 import pandas as pd
 import ast
 import matplotlib as mpl
@@ -308,9 +310,10 @@ def plot_panels_boards_overlaid(
     )
     fig.patches.append(box)
 
-    p4p_bool = df['Pay4Partner'].iloc[0] 
+    p4p_bool = df['Pay4Partner'].iloc[0]
     p4p = 'p4p' if p4p_bool else 'regular_trading'
     metrics_str = "_".join(m.replace(" ", "_") for m in metrics)
+    os.makedirs(output_folder, exist_ok=True)
     output_path = f"{output_folder}/{p4p}_{metrics_str}_panels.pdf"
     fig.savefig(output_path, format="pdf", bbox_inches="tight")
     print(f"Saved figure to {output_path}")
@@ -319,14 +322,21 @@ def plot_panels_boards_overlaid(
 
 
 if __name__ == "__main__":
-    df = format_data(FULL_DF, p4p=True)
-    
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--input-csv", default=None, help="Path to CSV to be formatted by format_data (default: use FULL_DF)")
+    parser.add_argument("--output-folder", default=OUTPUT_FOLDER, help=f"Output folder for figures (default: {OUTPUT_FOLDER})")
+    args = parser.parse_args()
+
+    input_df = FULL_DF if args.input_csv is None else pd.read_csv(args.input_csv)
+
+    df = format_data(input_df, p4p=True)
+
     ######################### FIG 4 ####################
     plot_panels_boards_overlaid(
         df=df,
         board_types=BUCKET_ORDER,
         contract_order=CONTRACT_ORDER,
-        output_folder=OUTPUT_FOLDER,
+        output_folder=args.output_folder,
         metrics=["Normalized Joint Reward", "Gini", "Both Finished", 'Both Beat Baseline'],
         figsize=(18, 6),
     )
@@ -338,7 +348,7 @@ if __name__ == "__main__":
         df=df,
         board_types=["Independent", "Mutually Dependent", "Asymmetric"],
         contract_order=['Prog-Points', 'Prog-Trading'],
-        output_folder=OUTPUT_FOLDER,
+        output_folder=args.output_folder,
         metrics=['contract_accepted', 'contract_negotiaion_length', 'Contract Gini', 'Contract Even Split', 'Contract Winner Take All'],
         figsize=(18, 6),
             metric_name_mapping={
@@ -350,9 +360,9 @@ if __name__ == "__main__":
             }
     )
 
-    
 
-    ##################### FIG 9 #################### 
+
+    ##################### FIG 9 ####################
     fma_df = df[df['Contract Type'].isin(['Prog-Points','Prog-Trading'])].copy()
 
     fma_df['Proportion to First Mover'] = np.where(
@@ -366,31 +376,31 @@ if __name__ == "__main__":
         board_types=["Independent", "Mutually Dependent", "Asymmetric"],
         contract_order=['Prog-Points','Prog-Trading'],
         metrics=['Proportion to First Mover'],
-        output_folder=OUTPUT_FOLDER,
+        output_folder=args.output_folder,
         figsize=(18, 6),
     )
 
-    
+
     ##################### FIG 10 ####################
     plot_panels_boards_overlaid(
         df=df,
         board_types=["Independent", "Mutually Dependent", "Asymmetric"],
         contract_order=CONTRACT_ORDER,
-        output_folder=OUTPUT_FOLDER,
+        output_folder=args.output_folder,
         metrics=["Defection Volume", 'Total P4P Promises Kept'],#,'Defection Rate'],
         figsize=(18, 6),
     )
 
 
-    
-    reg_trading_df = format_data(FULL_DF, p4p=False)
-    
+
+    reg_trading_df = format_data(input_df, p4p=False)
+
     ######################### FIG 14 ####################
     plot_panels_boards_overlaid(
         df=reg_trading_df,
         board_types=BUCKET_ORDER,
         contract_order=CONTRACT_ORDER,
-        output_folder=OUTPUT_FOLDER,
+        output_folder=args.output_folder,
         metrics=["Normalized Joint Reward", "Gini", "Both Finished", 'Both Beat Baseline'],
         figsize=(18, 6),
     )

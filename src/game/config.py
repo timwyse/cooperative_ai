@@ -23,9 +23,10 @@ class GameConfig:
     pay4partner: bool = False # if True, rather than direct trading, players pay their partner to move onto tiles of their color
     contract_type: Optional[str] = None  # if not None, must be one of 'contract_for_finishing', 'strict', 'natural_language'
     fog_of_war: Optional[List[bool]] = None  # if True, players can only see the colors of tiles adjacent to their current position; if list, must be same length as players and specifies fog_of_war for each player
+    other_player_visible: Optional[List[bool]] = None  # if list, must be same length as players; controls whether each player can see the other player's position, goal, inventory, best path, and per-turn moves
     show_paths: bool = True  # if True, each player is informed of their best paths to their goal at the start of each turn
     allow_trades: bool = True  # if False, players cannot trade resources
-    judge_model: a.Agent = a.QWEN_3_235B 
+    judge_model: a.Agent = a.FOUR_1 
 
     # RESOURCE SETTINGS
     surplus: float = 1.5 # Multiplier of the minimum steps required to complete the game. Used to determine how many resources each player starts with.
