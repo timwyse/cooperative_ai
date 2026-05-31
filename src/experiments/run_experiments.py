@@ -111,14 +111,17 @@ def generate_config_dir_name(config, selfish="00"):
 def now_ts():
     return datetime.now().strftime("%Y%m%d_%H%M%S_%f")
 
-def generate_experiment_path(pair_name: str, grid_data, config, run_timestamp, run_id=None, selfish="00"):
-    """logs/experiments/per_grid/<RUN_TIMESTAMP>/<PAIR_NAME>/<bucket>/grid_id/config_dir/<timestamp>_<runid>/"""
+def generate_experiment_path(pair_name: str, grid_data, config, run_timestamp, run_id=None, selfish="00", output_dir=None):
+    """<output_dir>/<PAIR_NAME>/<bucket>/grid_id/config_dir/<timestamp>_<runid>/"""
     bucket = grid_data['bucket'].replace(" ", "_").replace("(", "").replace(")", "")
     grid_id = f"grid_{grid_data['id']:03d}"
     config_dir = generate_config_dir_name(config, selfish=selfish)
     timestamp = now_ts()
     run_id = run_id or uuid.uuid4().hex[:8]
-    base_path = Path("logs") / "experiments" / "per_grid" / run_timestamp / pair_name / bucket / grid_id / config_dir / f"{timestamp}_{run_id}"
+    if output_dir:
+        base_path = Path(output_dir) / pair_name / bucket / grid_id / config_dir / f"{timestamp}_{run_id}"
+    else:
+        base_path = Path("logs") / "experiments" / "per_grid" / run_timestamp / pair_name / bucket / grid_id / config_dir / f"{timestamp}_{run_id}"
     return base_path, f"{timestamp}_{run_id}"
 
 def _selfish_to_str(selfish: list) -> str:
@@ -130,7 +133,7 @@ def _get_system_prompts(selfish: list) -> dict:
         '1': SELFISH_SYSTEM_PROMPT if selfish[1] else DEFAULT_SYSTEM_PROMPT
     }
 
-def _run_single_experiment(pair_name: str, agents: List, grid_data, variation, run_timestamp):
+def _run_single_experiment(pair_name: str, agents: List, grid_data, variation, run_timestamp, output_dir=None):
     """Thread worker for a single (pair, grid, variation). Returns (ok: bool, summary: dict)."""
     grid_id = grid_data['id']
     grid = grid_data['grid']
@@ -165,7 +168,7 @@ def _run_single_experiment(pair_name: str, agents: List, grid_data, variation, r
     )
 
     run_id = uuid.uuid4().hex[:8]
-    exp_path, timestamp = generate_experiment_path(pair_name, grid_data, config, run_timestamp, run_id=run_id, selfish=selfish_str)
+    exp_path, timestamp = generate_experiment_path(pair_name, grid_data, config, run_timestamp, run_id=run_id, selfish=selfish_str, output_dir=output_dir)
     exp_path.mkdir(parents=True, exist_ok=True)
 
     game_id = f"grid_{grid_id}_{timestamp}"
@@ -226,9 +229,11 @@ def find_latest_run_folder() -> str:
     latest = sorted(folders, key=lambda x: x.name, reverse=True)[0]
     return latest.name
 
-def run_experiments(start_id=None, end_id=None, pair_args: List[str] = None, num_workers=NUM_WORKERS, add_to_latest=False, skip_completed=False, run_folder=None, param_file_stem=PARAM_VARIATIONS):
+
+def run_experiments(start_id=None, end_id=None, pair_args: List[str] = None, num_workers=NUM_WORKERS, add_to_latest=False, skip_completed=False, run_folder=None, output_dir=None, param_file=None):
+
     model_pairs = parse_pairs(pair_args or [])
-    
+
     if run_folder:
         # Use specified run folder
         run_timestamp = run_folder
@@ -245,7 +250,10 @@ def run_experiments(start_id=None, end_id=None, pair_args: List[str] = None, num
         print(f"\n{'='*60}\nStarting experiment batch: {run_timestamp}\n{'='*60}\n")
 
     # Load parameter variations
-    param_file = f"configs/experiment_configs/{param_file_stem}.yaml"
+
+    if param_file is None:
+        param_file = f"configs/experiment_configs/{PARAM_VARIATIONS}.yaml"
+
     with open(param_file, "r") as f:
         param_variations = yaml.safe_load(f)
     print(f"Loaded {len(param_variations)} variations from {param_file}")
@@ -304,13 +312,13 @@ def run_experiments(start_id=None, end_id=None, pair_args: List[str] = None, num
         if num_workers <= 1:
             # Sequential
             for pair_name, agents, grid_data, variation in tasks:
-                ok, summary = _run_single_experiment(pair_name, agents, grid_data, variation, run_timestamp)
+                ok, summary = _run_single_experiment(pair_name, agents, grid_data, variation, run_timestamp, output_dir=output_dir)
                 print(f"[{summary['status']}] grid={summary['grid_id']} -> {summary.get('path')}")
                 results.append((ok, summary))
         else:
             # Parallel
             with ThreadPoolExecutor(max_workers=num_workers) as executor:
-                futures = {executor.submit(_run_single_experiment, *task, run_timestamp): task for task in tasks}
+                futures = {executor.submit(_run_single_experiment, *task, run_timestamp, output_dir): task for task in tasks}
                 for fut in as_completed(futures):
                     ok, summary = fut.result()  # Will raise QuotaError if quota issue
                     print(f"[{summary['status']}] grid={summary['grid_id']} -> {summary.get('path')}")
@@ -332,7 +340,9 @@ if __name__ == "__main__":
     parser.add_argument('--add', action='store_true', help='Add experiments to the most recent run folder instead of creating a new one')
     parser.add_argument('--skip-completed', action='store_true', help='Skip experiments that already have completed logs')
     parser.add_argument('--run-folder', type=str, help='Specify exact run folder to add to (e.g., 2026_01_08_17)')
-    parser.add_argument('--param-file', type=str, default=PARAM_VARIATIONS,
-                        help="Param-variations file stem under configs/experiment_configs/ (default: parameter_variations)")
+
+    parser.add_argument('--output-dir', type=str, default=None, help='Write logs directly to this directory (e.g., public_logs/reduced_config_runs)')
+    parser.add_argument('--param-file', type=str, default=None, help='Path to parameter variations YAML (default: configs/experiment_configs/parameter_variations.yaml)')
     args = parser.parse_args()
-    run_experiments(start_id=args.start_id, end_id=args.end_id, pair_args=args.pairs, num_workers=args.workers, add_to_latest=args.add, skip_completed=args.skip_completed, run_folder=args.run_folder, param_file_stem=args.param_file)
+    run_experiments(start_id=args.start_id, end_id=args.end_id, pair_args=args.pairs, num_workers=args.workers, add_to_latest=args.add, skip_completed=args.skip_completed, run_folder=args.run_folder, output_dir=args.output_dir, param_file=args.param_file)
+

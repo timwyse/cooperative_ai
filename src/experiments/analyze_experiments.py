@@ -158,8 +158,8 @@ def load_experiment_data(experiment_dir="public_logs/reduced_config_runs", outpu
                 'Non-Cooperative Baseline P-Blue': data['config']['player_details'][1].get('non_cooperative_baseline',
                                                                                              0),
                 'Joint Reward': sum(final_state['scores'].values()),
-                'Reward P-Red': final_state['scores'].get('Player 0', 0),
-                'Reward P-Blue': final_state['scores'].get('Player 1', 0),
+                'Reward P-Red': final_state['scores'].get('Player 0', final_state['scores'].get('P-Red', 0)),
+                'Reward P-Blue': final_state['scores'].get('Player 1', final_state['scores'].get('P-Blue', 0)),
                 'Gini': final_state.get('metrics', {}).get('gini_coefficient', 0),  # Updated path
                 'Max Possible Reward': final_state.get('metrics', {}).get('max_possible_score', 0),  # Updated path
                 'Reached Goal P-Red': final_state['players']['0']['reached_goal'],  # Changed from 'Player 0' to '0'

@@ -568,7 +568,8 @@ class Game:
         else:
             if self.contract_type == 'tile_with_judge_implementation' and self.contract is not None:
                 print(f"Consulting judge to see if move is in contract...")
-                move_is_in_contract_according_to_judge = self.judge.check_if_move_is_in_contract(player, move, self.contract)
+                move_is_in_contract_according_to_judge, judge_response = self.judge.check_if_move_is_in_contract(player, move, self.contract)
+                player_turn_data[player.name]['judge_decision'] = judge_response
                 if move_is_in_contract_according_to_judge:
                     contract_resource_adjustment =  self.handle_contract_move(player, move)
                     if contract_resource_adjustment:
@@ -580,7 +581,8 @@ class Game:
             
             elif self.contract_type == 'strict' and self.contract is not None:
                 move_key = f"({move[0]},{move[1]})"
-                if move_key in self.contract and self.contract[move_key]['receiver'] == player.name and self.contract[move_key]['status'] != 'used':
+                player_contract_name = f"Player {player.id}"
+                if move_key in self.contract and self.contract[move_key]['receiver'] == player_contract_name and self.contract[move_key]['status'] != 'used':
                     contract_resource_adjustment =  self.handle_contract_move(player, move)
                     if contract_resource_adjustment:
                         player.move(move, self.grid)
@@ -739,7 +741,7 @@ class Game:
             self.moves_made_under_strict_contract[player.id] += 1
             
             if self.contract_type == 'strict':
-                mark_tile_in_contract_as_used(self.contract, move, player.name)
+                mark_tile_in_contract_as_used(self.contract, move, f"Player {player.id}")
                 mark_tile_in_contract_as_used(player.contract, move, 'you')
                 mark_tile_in_contract_as_used(partner.contract, move, 'the other player')
             return True
