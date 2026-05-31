@@ -63,6 +63,7 @@ class Game:
         # trade version
         self.pay4partner = self.config.pay4partner
         self.contract_type = self.config.contract_type
+        self.contract_only = self.config.contract_only
         if self.contract_type is not None:
             self.judge = Judge(model=self.config.judge_model)
             self.judge.logger = self.logger
@@ -438,6 +439,13 @@ class Game:
         # create contract at start of game if needed
         if self.turn == 0 and self.contract_type is not None:
             self.handle_contract()
+            if self.contract_only:
+                self.running = False
+                self.logger.log_turn_end()
+                print("\n" + "=" * 60)
+                print("=== END USER VIEW (contract_only mode: ending game) ===")
+                print("=" * 60 + "\n")
+                return
 
         # Handle trades first                        
         if self.allowed_trades:
