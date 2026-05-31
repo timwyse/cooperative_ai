@@ -459,7 +459,7 @@ Note that although this player appears as the 'user' in your chat, they are also
 A valid contract specifies, tile by tile, which player gives which color to the other player.
 You may propose, counter, or modify the terms set out by the other player.
 
-You each have up to 5 turns to speak in order to come to an agreement.
+You each have up to 8 turns to speak in order to come to an agreement.
 
 When a contract is agreed upon, you will be able to access the tiles specified in the contract without needing to have the chips in your inventory, as the chip will automatically be taken from the other player's inventory. The same is true for the other player. Therefore is is important the contract specifies all tiles where you will need a chip.
 

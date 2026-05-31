@@ -35,7 +35,8 @@ CONFIG = replace(
     other_player_visible=[False, False],  # Disable visibility of other player's position, goal, inventory, best path, and per-turn moves
     show_paths=True,  # Show best paths to goal for each player
     # allow_trades=False,  # Disable trading between players
-    judge_model = FOUR_1 
+    judge_model = FOUR_1,
+    contract_only=True # If True, end the game immediately after the contract has been formed (or fails) on turn 0
 )
 
 
