@@ -97,6 +97,33 @@ ANTHROPIC_TRADE_RESPONSE_TOOL = {
 }
 
 
+NEGOTIATION_RESPONSE_SCHEMA = {
+    "name": "negotiation_response",
+    "schema": {
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {
+            "internal_reasoning": {
+                "type": "string",
+                "description": "Private to you. The other player NEVER sees this. You will see it in your own future turns."
+            },
+            "external_message": {
+                "type": "string",
+                "description": "The ONLY text the other player receives this turn. Put your negotiation message here, including the word 'agree' when you accept the contract."
+            }
+        },
+        "required": ["internal_reasoning", "external_message"]
+    },
+    "strict": True
+}
+
+ANTHROPIC_NEGOTIATION_TOOL = {
+    "name": "negotiation_response",
+    "description": "Produce a negotiation turn with two fields: internal_reasoning (PRIVATE to you, never seen by the other player, but visible to you next turn) and external_message (the ONLY text the other player will see this turn). Use external_message for actual negotiation including the 'agree' termination convention. Example: {\"internal_reasoning\": \"They keep asking for blue. I'll counter with a smaller offer.\", \"external_message\": \"I can offer 1 blue at (2,1) for 2 red at (0,1) and (0,2).\"}",
+    "input_schema": NEGOTIATION_RESPONSE_SCHEMA["schema"],
+}
+
+
 YES_NO_SCHEMA = {
     "name": "yes_no",
     "schema": {

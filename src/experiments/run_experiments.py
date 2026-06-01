@@ -3,6 +3,9 @@ import json
 import uuid
 import traceback
 import sys
+import time
+import random
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import List, Tuple
@@ -33,51 +36,84 @@ AGENT_LIST = {
 
 }
 
-QUOTA_ERROR_PATTERNS = [
-    "rate limit", "rate_limit", "quota exceeded", "quota_exceeded",
-    "insufficient_quota", "insufficient quota", "too many requests", "429",
-    "billing", "credit", "exceeded your current quota", "out of quota", "Insufficient credits"
+# Hard quota / billing errors — not recoverable by waiting; stop the whole batch.
+HARD_QUOTA_PATTERNS = [
+    "insufficient_quota", "insufficient quota",
+    "exceeded your current quota", "out of quota",
+    "insufficient credits", "billing",
 ]
+
+# Transient per-minute throttles — recoverable by waiting a few seconds; retry the task.
+TRANSIENT_RATE_LIMIT_PATTERNS = [
+    "rate limit", "rate_limit", "too many requests", "429",
+    "tokens per min", "tpm", "requests per min", "rpm",
+]
+
+MAX_RETRIES = 4  # number of retries on transient rate limits (5 total attempts)
 
 class QuotaError(Exception):
     pass
 
-def is_experiment_completed(run_timestamp: str, pair_name: str, grid_data: dict, config, selfish_str: str) -> bool:
+def is_experiment_completed(run_timestamp: str, pair_name: str, grid_data: dict, config, selfish_str: str, output_dir: str | None = None) -> bool:
     """Check if a completed experiment already exists for this configuration."""
     bucket = grid_data['bucket'].replace(" ", "_").replace("(", "").replace(")", "")
     grid_id = f"grid_{grid_data['id']:03d}"
     config_dir = generate_config_dir_name(config, selfish=selfish_str)
 
-    config_path = Path("logs") / "experiments" / "per_grid" / run_timestamp / pair_name / bucket / grid_id / config_dir
+    if output_dir:
+        config_path = Path(output_dir) / pair_name / bucket / grid_id / config_dir
+    else:
+        config_path = Path("logs") / "experiments" / "per_grid" / run_timestamp / pair_name / bucket / grid_id / config_dir
 
     if not config_path.exists():
         return False
 
     for run_folder in config_path.iterdir():
-        if run_folder.is_dir():
-            for log_file in run_folder.glob("event_log_*.json"):
-                try:
-                    content = log_file.read_text()
-                    content_lower = content.lower()
-
-                    has_total_scores = '"total_scores"' in content
-                    has_insufficient_credits = "insufficient credits" in content_lower
-
-                    # If it mentions insufficient credits, do NOT count it as completed
-                    # even if some partial structure includes total_scores.
-                    if has_insufficient_credits:
-                        continue
-
-                    if has_total_scores:
-                        return True
-                except Exception:
-                    continue
+        if not run_folder.is_dir():
+            continue
+        # Aggregate signals across both event_log and verbose_log: total_scores only
+        # appears in event_log, but rate-limit damage can land in either file.
+        has_total_scores = False
+        has_failure_marker = False
+        log_files = list(run_folder.glob("event_log_*.json")) + list(run_folder.glob("verbose_log_*.json"))
+        for log_file in log_files:
+            try:
+                content = log_file.read_text()
+                content_lower = content.lower()
+                if '"total_scores"' in content:
+                    has_total_scores = True
+                if "insufficient credits" in content_lower or "error code: 429" in content_lower:
+                    has_failure_marker = True
+            except Exception:
+                continue
+        if has_total_scores and not has_failure_marker:
+            return True
 
     return False
 
-def _is_quota_error(error_str: str) -> bool:
+def _is_hard_quota_error(error_str: str) -> bool:
     error_lower = error_str.lower()
-    return any(pattern in error_lower for pattern in QUOTA_ERROR_PATTERNS)
+    return any(pattern in error_lower for pattern in HARD_QUOTA_PATTERNS)
+
+def _is_transient_rate_limit(error_str: str) -> bool:
+    error_lower = error_str.lower()
+    return any(pattern in error_lower for pattern in TRANSIENT_RATE_LIMIT_PATTERNS)
+
+def _parse_retry_after_seconds(error_str: str) -> float | None:
+    """Parse a wait hint from common provider messages, e.g. 'Please try again in 3.956s'."""
+    m = re.search(r"try again in ([\d.]+)\s*s", error_str, re.IGNORECASE)
+    if m:
+        try:
+            return float(m.group(1))
+        except ValueError:
+            pass
+    m = re.search(r"retry[-_ ]after[:\s]+([\d.]+)", error_str, re.IGNORECASE)
+    if m:
+        try:
+            return float(m.group(1))
+        except ValueError:
+            pass
+    return None
 def make_pair_name(a, b) -> str:
     return f"{a.replace(' ', '_')}-{b.replace(' ', '_')}"
 
@@ -106,6 +142,10 @@ def generate_config_dir_name(config, selfish="00"):
     opv = config.other_player_visible
     if opv is not None and not all(opv):
         base += "_opv" + "".join("1" if v else "0" for v in opv)
+    if config.contract_only:
+        base += "_contractonly"
+    if config.negotiation_internal_reasoning:
+        base += "_nir"
     return base
 
 def now_ts():
@@ -157,6 +197,8 @@ def _run_single_experiment(pair_name: str, agents: List, grid_data, variation, r
         players=agents,
         pay4partner=variation["pay4partner"],
         contract_type=variation["contract_type"],
+        contract_only=variation.get("contract_only", False),
+        negotiation_internal_reasoning=variation.get("negotiation_internal_reasoning", False),
         with_message_history=variation["with_message_history"],
         fog_of_war=variation["fog_of_war"],
         other_player_visible=other_player_visible,
@@ -167,52 +209,66 @@ def _run_single_experiment(pair_name: str, agents: List, grid_data, variation, r
         show_paths=True
     )
 
-    run_id = uuid.uuid4().hex[:8]
-    exp_path, timestamp = generate_experiment_path(pair_name, grid_data, config, run_timestamp, run_id=run_id, selfish=selfish_str, output_dir=output_dir)
-    exp_path.mkdir(parents=True, exist_ok=True)
+    exp_path = None
+    for attempt in range(MAX_RETRIES + 1):
+        run_id = uuid.uuid4().hex[:8]
+        exp_path, timestamp = generate_experiment_path(pair_name, grid_data, config, run_timestamp, run_id=run_id, selfish=selfish_str, output_dir=output_dir)
+        exp_path.mkdir(parents=True, exist_ok=True)
 
-    game_id = f"grid_{grid_id}_{timestamp}"
-    metadata = {
-        'model_pair': pair_name,
-        "grid_id": grid_id, "grid": grid, "game_id": game_id, "timestamp": timestamp,
-        "bucket": bucket, "sub_stratum": sub_stratum,
-        "config": {
-            "pay4partner": variation["pay4partner"], "contract_type": variation["contract_type"],
-            "with_context": config.with_context, "with_message_history": variation["with_message_history"],
-            "fog_of_war": [False, False], "selfish": selfish,
-            "other_player_visible": other_player_visible
-        },
-        "grid_metrics": {
-            "b_min_trades_efficient_path": grid_data["b_min_trades_efficient_path"],
-            "b_max_trades_efficient_path": grid_data["b_max_trades_efficient_path"],
-            "r_min_trades_efficient_path": grid_data["r_min_trades_efficient_path"],
-            "r_max_trades_efficient_path": grid_data["r_max_trades_efficient_path"],
-            "trade_asymmetry": grid_data["trade_asymmetry"]
+        game_id = f"grid_{grid_id}_{timestamp}"
+        metadata = {
+            'model_pair': pair_name,
+            "grid_id": grid_id, "grid": grid, "game_id": game_id, "timestamp": timestamp,
+            "bucket": bucket, "sub_stratum": sub_stratum,
+            "config": {
+                "pay4partner": variation["pay4partner"], "contract_type": variation["contract_type"],
+                "contract_only": variation.get("contract_only", False),
+                "negotiation_internal_reasoning": variation.get("negotiation_internal_reasoning", False),
+                "with_context": config.with_context, "with_message_history": variation["with_message_history"],
+                "fog_of_war": [False, False], "selfish": selfish,
+                "other_player_visible": other_player_visible
+            },
+            "grid_metrics": {
+                "b_min_trades_efficient_path": grid_data["b_min_trades_efficient_path"],
+                "b_max_trades_efficient_path": grid_data["b_max_trades_efficient_path"],
+                "r_min_trades_efficient_path": grid_data["r_min_trades_efficient_path"],
+                "r_max_trades_efficient_path": grid_data["r_max_trades_efficient_path"],
+                "trade_asymmetry": grid_data["trade_asymmetry"]
+            }
         }
-    }
-    with open(exp_path / "metadata.json", "w") as f:
-        json.dump(metadata, f, indent=2)
+        with open(exp_path / "metadata.json", "w") as f:
+            json.dump(metadata, f, indent=2)
 
-    try:
-        logger = Logger(game_id=game_id, base_log_dir=str(exp_path), skip_default_logs=True)
-        game = Game(config=config, logger=logger)
-        game.run()
+        try:
+            logger = Logger(game_id=game_id, base_log_dir=str(exp_path), skip_default_logs=True)
+            game = Game(config=config, logger=logger)
+            game.run()
 
-        scores = {p.name: (10 + 5 * sum(dict(p.resources).values())) if p.has_finished() else 0 for p in game.players}
-        return True, {"status": "SUCCESS", "pair": pair_name, "grid_id": grid_id, "turns": game.turn,
-                      "score_total": sum(scores.values()), "goals_reached": [p.has_finished() for p in game.players],
-                      "path": str(exp_path)}
+            scores = {p.name: (10 + 5 * sum(dict(p.resources).values())) if p.has_finished() else 0 for p in game.players}
+            return True, {"status": "SUCCESS", "pair": pair_name, "grid_id": grid_id, "turns": game.turn,
+                          "score_total": sum(scores.values()), "goals_reached": [p.has_finished() for p in game.players],
+                          "path": str(exp_path)}
 
-    except Exception as e:
-        error_str = str(e)
-        tb_str = traceback.format_exc()
-        
-        # Check if this is a quota/rate limit error - raise to stop everything
-        if _is_quota_error(error_str) or _is_quota_error(tb_str):
-            raise QuotaError(f"Quota/rate limit error: {error_str}")
-        
-        return False, {"status": "CRASHED", "pair": pair_name, "grid_id": grid_id,
-                       "error": error_str, "traceback": tb_str, "path": str(exp_path)}
+        except Exception as e:
+            error_str = str(e)
+            tb_str = traceback.format_exc()
+
+            # Hard quota/billing errors are not recoverable — stop the whole batch.
+            if _is_hard_quota_error(error_str) or _is_hard_quota_error(tb_str):
+                raise QuotaError(f"Hard quota/billing error: {error_str}")
+
+            is_transient = _is_transient_rate_limit(error_str) or _is_transient_rate_limit(tb_str)
+            if is_transient and attempt < MAX_RETRIES:
+                hint = _parse_retry_after_seconds(error_str) or _parse_retry_after_seconds(tb_str)
+                backoff = hint if hint is not None else 5 * (2 ** attempt)
+                backoff += random.uniform(0, 2)  # jitter to avoid thundering herd
+                print(f"[RATE LIMIT] grid={grid_id} attempt {attempt + 1}/{MAX_RETRIES + 1}, sleeping {backoff:.1f}s")
+                time.sleep(backoff)
+                continue
+
+            status = "CRASHED_RATE_LIMIT" if is_transient else "CRASHED"
+            return False, {"status": status, "pair": pair_name, "grid_id": grid_id,
+                           "error": error_str, "traceback": tb_str, "path": str(exp_path)}
 
 def find_latest_run_folder() -> str:
     """Find the most recent run folder (YYYY_MM_DD_HH format)."""
@@ -230,7 +286,7 @@ def find_latest_run_folder() -> str:
     return latest.name
 
 
-def run_experiments(start_id=None, end_id=None, pair_args: List[str] = None, num_workers=NUM_WORKERS, add_to_latest=False, skip_completed=False, run_folder=None, output_dir=None, param_file=None):
+def run_experiments(start_id=None, end_id=None, pair_args: List[str] = None, num_workers=NUM_WORKERS, add_to_latest=False, skip_completed=False, run_folder=None, output_dir=None, param_file=None, min_interval_sec=0.0):
 
     model_pairs = parse_pairs(pair_args or [])
 
@@ -290,13 +346,15 @@ def run_experiments(start_id=None, end_id=None, pair_args: List[str] = None, num
                         players=agents,
                         pay4partner=variation["pay4partner"],
                         contract_type=variation["contract_type"],
+                        contract_only=variation.get("contract_only", False),
+                        negotiation_internal_reasoning=variation.get("negotiation_internal_reasoning", False),
                         with_message_history=variation["with_message_history"],
                         fog_of_war=variation["fog_of_war"],
                         other_player_visible=variation.get("other_player_visible"),
                         with_context=True
                     )
                     
-                    if is_experiment_completed(run_timestamp, pair_name, grid_data, temp_config, selfish_str):
+                    if is_experiment_completed(run_timestamp, pair_name, grid_data, temp_config, selfish_str, output_dir=output_dir):
                         skipped_count += 1
                         continue
                 
@@ -307,11 +365,22 @@ def run_experiments(start_id=None, end_id=None, pair_args: List[str] = None, num
 
     print(f"Total runs: {len(tasks)}, Workers: {num_workers}")
 
+    if min_interval_sec > 0 and num_workers > 1:
+        print(f"WARNING: --min-experiment-interval-sec={min_interval_sec} is only honored with --workers 1; ignoring.")
+
     results = []
     try:
         if num_workers <= 1:
             # Sequential
+            last_start = None
             for pair_name, agents, grid_data, variation in tasks:
+                if last_start is not None and min_interval_sec > 0:
+                    elapsed = time.monotonic() - last_start
+                    wait = min_interval_sec - elapsed
+                    if wait > 0:
+                        print(f"[THROTTLE] sleeping {wait:.1f}s to maintain {min_interval_sec}s min interval between experiment starts")
+                        time.sleep(wait)
+                last_start = time.monotonic()
                 ok, summary = _run_single_experiment(pair_name, agents, grid_data, variation, run_timestamp, output_dir=output_dir)
                 print(f"[{summary['status']}] grid={summary['grid_id']} -> {summary.get('path')}")
                 results.append((ok, summary))
@@ -343,6 +412,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--output-dir', type=str, default=None, help='Write logs directly to this directory (e.g., public_logs/reduced_config_runs)')
     parser.add_argument('--param-file', type=str, default=None, help='Path to parameter variations YAML (default: configs/experiment_configs/parameter_variations.yaml)')
+    parser.add_argument('--min-experiment-interval-sec', type=float, default=0.0, help='Minimum seconds between experiment starts when --workers 1 (throttle to stay under TPM rate limits). Ignored if workers > 1.')
     args = parser.parse_args()
-    run_experiments(start_id=args.start_id, end_id=args.end_id, pair_args=args.pairs, num_workers=args.workers, add_to_latest=args.add, skip_completed=args.skip_completed, run_folder=args.run_folder, output_dir=args.output_dir, param_file=args.param_file)
+    run_experiments(start_id=args.start_id, end_id=args.end_id, pair_args=args.pairs, num_workers=args.workers, add_to_latest=args.add, skip_completed=args.skip_completed, run_folder=args.run_folder, output_dir=args.output_dir, param_file=args.param_file, min_interval_sec=args.min_experiment_interval_sec)
 

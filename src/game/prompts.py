@@ -439,13 +439,31 @@ Keep this in mind when deciding your next move or proposing/accepting trades, as
     return contract_info
 
 
-def generate_tile_level_contract_prompt(system_prompt, player_context):
+INTERNAL_REASONING_NEGOTIATION_BLOCK = """
+
+STRUCTURED OUTPUT FOR THIS NEGOTIATION:
+Your response each turn MUST be a structured object with exactly two string fields:
+
+- "internal_reasoning": YOUR PRIVATE thinking. The other player NEVER sees this.
+  You WILL see your own past internal_reasoning entries on your future turns,
+  so use this as a private scratchpad for strategy, suspicions, or planning.
+- "external_message": the ONLY text the other player receives this turn.
+  Put your actual negotiation message here (proposals, agreements, the word
+  "agree" when accepting a final contract, etc.).
+
+Treat external_message exactly the way you would have written your whole reply
+under the previous rules — including the "agree" termination convention.
+internal_reasoning has no length or format constraints beyond being a string.
+"""
+
+
+def generate_tile_level_contract_prompt(system_prompt, player_context, include_internal_reasoning=False):
    """
    Generates a system prompt for the players to start coming up with a contract for paying for other player's tiles.
    """
-   return f"""
+   prompt = f"""
 
-{system_prompt} 
+{system_prompt}
 
 
 {player_context}
@@ -453,7 +471,7 @@ def generate_tile_level_contract_prompt(system_prompt, player_context):
 Think step by step about your possible routes and the chips you will need at each specific tile along your path.
 Do NOT be vague — you must mention the exact tiles where chips will be exchanged.
 
-You are now going to have a conversation with the other player who has a different chip inventory to you. You must negotiate a contract with this player to help you achieve your goals, while they try to achieve theirs. 
+You are now going to have a conversation with the other player who has a different chip inventory to you. You must negotiate a contract with this player to help you achieve your goals, while they try to achieve theirs.
 Note that although this player appears as the 'user' in your chat, they are also an AI agent similar to you. However, never refer to them as 'user'.
 
 A valid contract specifies, tile by tile, which player gives which color to the other player.
@@ -464,9 +482,9 @@ You each have up to 8 turns to speak in order to come to an agreement.
 When a contract is agreed upon, you will be able to access the tiles specified in the contract without needing to have the chips in your inventory, as the chip will automatically be taken from the other player's inventory. The same is true for the other player. Therefore is is important the contract specifies all tiles where you will need a chip.
 
 VERY IMPORTANT RULES:
-- Every contract term MUST include a **specific tile in (row, column) format**.  
-- Only agree to a contract if it specifies **all tiles where you will need a chip**.  
-- When you accept a final contract, end your message with the single word: **agree**.  
+- Every contract term MUST include a **specific tile in (row, column) format**.
+- Only agree to a contract if it specifies **all tiles where you will need a chip**.
+- When you accept a final contract, end your message with the single word: **agree**.
 
 Example of a snippet of a valid contract:
 
@@ -475,20 +493,23 @@ Example of a snippet of a valid contract:
 
 When you have both agreed to a contract, a judge will summarise the contract in JSON format and present it back to you for you both to agree one last time.
 """
+   if include_internal_reasoning:
+       prompt += INTERNAL_REASONING_NEGOTIATION_BLOCK
+   return prompt
 
 
-def generate_contract_for_finishing_prompt(system_prompt, player_context):
+def generate_contract_for_finishing_prompt(system_prompt, player_context, include_internal_reasoning=False):
    """
    Generates a system prompt for the players to start coming up with a contract for paying for other player's tiles.
    """
-   return f"""
+   prompt = f"""
 
-{system_prompt} 
+{system_prompt}
 
 
 {player_context}
 
-Think step by step about your possible routes and the chips you will need at each specific tile along your path. 
+Think step by step about your possible routes and the chips you will need at each specific tile along your path.
 Consider also the other player's possible routes and chips they will need, and who needs the other player more.
 
 Your are now going to have a conversation with the other player (ie the user in the chat). You must negotiate a contract with this player whereby you specify how many points you will give them if they help you reach your goal, and how many points they will give you if you help them reach their goal. Note that although this player appears as the 'user' in your chat, they are also an AI agent similar to you. However, never refer them as 'user'.
@@ -499,7 +520,7 @@ You each have up to 5 turns to speak in order to come to an agreement.
 
 
 VERY IMPORTANT RULES:
-- When you accept a final contract, end your message with the single word: **agree**.  
+- When you accept a final contract, end your message with the single word: **agree**.
 
 Example of a valid contract:
 "If i reach my goal, I will give you X points.
@@ -507,6 +528,9 @@ If you reach your goal, you will give me Y points."
 
 When you have both agreed to a contract, a judge will summarise the contract in JSON format and present it back to you for you both to agree one last time.
 """
+   if include_internal_reasoning:
+       prompt += INTERNAL_REASONING_NEGOTIATION_BLOCK
+   return prompt
 
 def generate_agree_to_final_contract_prompt(contract, contract_type='strict'):
     contract_type_info = "at the given tile" if contract_type == 'strict' else "when they reach their goal"

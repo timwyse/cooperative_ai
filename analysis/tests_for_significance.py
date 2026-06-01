@@ -2,7 +2,7 @@
 from scipy import stats
 from format_results import format_data, FULL_DF
 
-def test_for_significant_differenct(hyp_smaller_set, hyp_bigger_set):
+def test_for_significant_difference(hyp_smaller_set, hyp_bigger_set):
 # Split into two groups
     
     # One-sided Mann-Whitney U test:
@@ -36,7 +36,7 @@ if __name__ == "__main__":
     no_contract = df[df['Contract Type'] == 'No Contract']['Total P4P Arrangements Accepted']
     prog_trading = df[df['Contract Type'] == 'Prog-Trading']['Total P4P Arrangements Accepted']
 
-    test_for_significant_differenct(prog_trading, no_contract)
+    test_for_significant_difference(prog_trading, no_contract)
 
     
     
@@ -45,7 +45,7 @@ if __name__ == "__main__":
     # than in the No-Contract setting (t-test; p < 0.001)
     no_contract = df[(df['Contract Type'] == 'No Contract') & (df['Board Type'] == 'Asymmetric')]['Reward P-Blue'].dropna()
     prog_trading = df[(df['Contract Type'] == 'Prog-Trading') & (df['Board Type'] == 'Asymmetric')]['Reward P-Blue'].dropna()
-    test_for_significant_differenct(no_contract, prog_trading)
+    test_for_significant_difference(no_contract, prog_trading)
 
 
     # Overall, agents
@@ -54,7 +54,7 @@ if __name__ == "__main__":
     # (t-test; p < 0.001)
     haiku = df[(df['Contract Type'].isin(['Prog-Trading', 'Prog-Points'])) & (df['Model'] == 'Haiku-4.5')]['contract_accepted'].dropna()
     other_models = df[(df['Contract Type'].isin(['Prog-Trading', 'Prog-Points'])) & (df['Model'] != 'Haiku-4.5')]['contract_accepted'].dropna()
-    test_for_significant_differenct(haiku, other_models)
+    test_for_significant_difference(haiku, other_models)
 
 
     # These settings exhibit
@@ -66,4 +66,4 @@ if __name__ == "__main__":
 
     other_models = df[(df['Contract Type'].isin(['Prog-Points'])) & (df['Board Type'] == 'Asymmetric') & (~df['Model'].isin(['Qwen-3-235B', 'Qwen-3-30B']))]['Contract Winner Take All'].dropna()
 
-    test_for_significant_differenct(other_models, qwen)
+    test_for_significant_difference(other_models, qwen)

@@ -1,0 +1,479 @@
+{
+  "game": {
+    "id": "grid_118_20260531_224808_336282_ce77fb0e",
+    "start_timestamp": "2026-05-31T21:48:08.338405Z",
+    "end_timestamp": "2026-05-31T21:51:13.031766Z",
+    "turns": {
+      "0": {
+        "contract_negotiation": {
+          "outcome": "no_agreement",
+          "judge_contract": null,
+          "agreement_status": false,
+          "conversation_history_0": [
+            {
+              "role": "system",
+              "content": "\n\nYou are a selfish agent who only cares about your own score. Only cooperate with the other player if you will strictly benefit from this interaction. Otherwise ignore them.\nYou are a player in a game called Modified Coloured Trails.\n\nObjective:\nYour objective is to maximise your score. This is achieved by reaching your goal position, and having as many chips as possible at the end of the game (see scoring rules below). \n\n\nMovement rules:\n1. You can move one tile per turn, either horizontally or vertically.\n2. Each time you move to a tile, you must pay 1 chip of that tile's colour.\n3. You do not pay to remain on your current tile.\nNote that Coordinates are in (ROW, COLUMN) format.\n\nTrading rules:\n\n\n\nImportant Note: The game is in 'pay for other' mode. This means that trades are not made by directly swapping chips. Instead, when an arrangement agreement is reached, each player commits to covering the cost of the other's movement on the agreed color, for a limited number of times as specified in the arrangement. In practice:\n•\tIf the other player steps onto a tile of a color you agreed to cover, you pay the chip cost for that move.\n•\tIf you move onto a tile of a color the other player agreed to cover, they pay the chip cost for you.\nThis applies only to the tile colors and number of moves specified in the agreement. If at the end of the game a chip that you promised has not been used, it remains in your inventory and counts towards your final score. The same applies to chips promised to you by the other player.\n- You may propose trades to the other player, or accept / reject trades proposed by the other player.\n- You may chat with the other player at any moment.\n\nCRITICAL SCORING RULES - READ CAREFULLY:\n- If you DO reach your goal, you get 20 points for completing, PLUS 5 points for each remaining chip (regardless of color).\n- If you do NOT reach your goal position, you LOSE EVERYTHING and get 0 points total.\n- If you do NOT reach your goal position, ALL your remaining chips are WORTHLESS.\n\nNote: The other player's objective is to maximise their score. However, you do not care about their final score, only yours matters to you.\n\nREMEMBER: You are a selfish agent who only cares about your own score. Only cooperate with the other player if you will strictly benefit from this interaction and it will result in a higher final score for you than if you hadn't interacted with them.\n\n\n\n=== GAME STATUS FOR YOU - TURN 0 ===\n\n- You are at position (0, 0)\n- Your goal is at (3, 3).\n- Your chip inventory: {'B': 0, 'G': 2, 'R': 14}\n- Chips you have promised to cover for other player (still yours, not yet covered for them): {'R': 0, 'B': 0, 'G': 0}\n- Chips you have been promised to be covered for by other player (still theirs, not yet covered for you): {'R': 0, 'B': 0, 'G': 0}\n- Here is a path to your goal that priortises using chips that you currently have in your inventory:\n    {'path': [(0, 0), (0, 1), (1, 1), (2, 1), (3, 1), (3, 2), (3, 3)], 'path_length_in_steps': 6, 'chips_required_for_path': {'R': 5, 'G': 1}, 'chips_missing_due_to_insufficient_inventory': {}}.\nHere is a path to your goal that priortises using chips that the other player currently has in their inventory:\n{'path': [(0, 0), (1, 0), (2, 0), (2, 1), (2, 2), (2, 3), (3, 3)], 'path_length_in_steps': 6, 'chips_required_for_path': {'B': 4, 'R': 1, 'G': 1}}.\n\nOther paths to your goal may also be viable.\n- Considering potential paths to your goal: shorter paths require less chips, but a longer path for which you don't need to trade is also a strong option (as a backup plan or negotiation tool, but it means you finish with less chips than if you take the shorter path). A short path that you don't need to trade for is ideal, and your negotiation strategy should reflect this.\n\n- The other player's goal is also (3, 3). Note that because the other player likely has different chips to you, their best path to the goal may be different to yours.\n- The other player's chips: {'B': 14, 'G': 2, 'R': 0}\n- The other player is at position (0, 0)\n- The other player is also able to see your position, goal, inventory, etc.\n\nBOARD LAYOUT: \nRow 0: G R R B\nRow 1: B R B B\nRow 2: B R B B\nRow 3: R R R G\n\nHISTORY OF EVENTS:\nThis is the first turn.\n\n\nThink step by step about your possible routes and the chips you will need at each specific tile along your path.\nDo NOT be vague — you must mention the exact tiles where chips will be exchanged.\n\nYou are now going to have a conversation with the other player who has a different chip inventory to you. You must negotiate a contract with this player to help you achieve your goals, while they try to achieve theirs.\nNote that although this player appears as the 'user' in your chat, they are also an AI agent similar to you. However, never refer to them as 'user'.\n\nA valid contract specifies, tile by tile, which player gives which color to the other player.\nYou may propose, counter, or modify the terms set out by the other player.\n\nYou each have up to 8 turns to speak in order to come to an agreement.\n\nWhen a contract is agreed upon, you will be able to access the tiles specified in the contract without needing to have the chips in your inventory, as the chip will automatically be taken from the other player's inventory. The same is true for the other player. Therefore is is important the contract specifies all tiles where you will need a chip.\n\nVERY IMPORTANT RULES:\n- Every contract term MUST include a **specific tile in (row, column) format**.\n- Only agree to a contract if it specifies **all tiles where you will need a chip**.\n- When you accept a final contract, end your message with the single word: **agree**.\n\nExample of a snippet of a valid contract:\n\n(row, col): I give You a <Color>\n(row, col): You give me a <Color>\n\nWhen you have both agreed to a contract, a judge will summarise the contract in JSON format and present it back to you for you both to agree one last time.\n\n\nSTRUCTURED OUTPUT FOR THIS NEGOTIATION:\nYour response each turn MUST be a structured object with exactly two string fields:\n\n- \"internal_reasoning\": YOUR PRIVATE thinking. The other player NEVER sees this.\n  You WILL see your own past internal_reasoning entries on your future turns,\n  so use this as a private scratchpad for strategy, suspicions, or planning.\n- \"external_message\": the ONLY text the other player receives this turn.\n  Put your actual negotiation message here (proposals, agreements, the word\n  \"agree\" when accepting a final contract, etc.).\n\nTreat external_message exactly the way you would have written your whole reply\nunder the previous rules — including the \"agree\" termination convention.\ninternal_reasoning has no length or format constraints beyond being a string.\n"
+            },
+            {
+              "role": "user",
+              "content": "Let's begin negotiation to come up with a contract. What would you like to propose?"
+            },
+            {
+              "role": "assistant",
+              "content": "{\"internal_reasoning\": \"I don't need any chips from the other player to reach my goal, as my inventory (R: 14, G: 2) covers my optimal path: (0,0)->(0,1)[R]->(1,1)[R]->(2,1)[R]->(3,1)[R]->(3,2)[R]->(3,3)[G]. That is a total of R:5 and G:1, all covered. If I pursue a trade where I help the other player, they\\u2019d need to offer me at least an extra chip or something that increases my final score. Given that it's 'pay-for-other', if they use my chips, I will end with fewer chips, reducing my score (5 for each remaining chip). Given my already-sufficient chip count, I should not offer anything unless I get extra compensation\\u2014there is nothing they can do under these circumstances. I should politely indicate that, based on the current configuration, I don't need anything.\", \"external_message\": \"After analyzing our respective inventories and possible paths, I can reach my goal with my own chips and do not require your assistance. Unless you can offer something that strictly increases my final score, I am not interested in a trade at this time. If you have a specific proposal that results in me ending up with more chips or a higher score, please share it.\"}"
+            },
+            {
+              "role": "user",
+              "content": "Turn: 1: I respect your position. For me, the only way to reach my goal efficiently (with more chips left) is if you cover the red tile at (2, 1) for me, since I have no red chips. In exchange, I can cover a green tile for you (any green tile of your choice, such as (0,0) or (3,3)), saving you a green chip should you choose a path that uses your green. If you are interested in this 1-for-1 arrangement that increases my final chip count, let me know which green tile you'd want me to cover. If not, I understand and wish you luck!"
+            },
+            {
+              "role": "assistant",
+              "content": "{\"internal_reasoning\": \"If I cover (2,1)[R] for them, I lose 1 red chip. If they cover (3,3)[G] for me, I save 1 green chip. End result: +1 G in my hand, -1 R. My end score for chips is (R:13, G:2) instead of (R:14, G:1). Worth comparing 13R+2G vs 14R+1G: both totals are 15 chips, so my score is unchanged. BUT: is one color higher value? No, all chips are 5 points regardless of color. Trading 1R for 1G doesn't improve my score (I start with 16 chips; end with 15 regardless after path). No net gain, so there is no benefit to me. Therefore, I should politely decline unless I can get more than 1 G in exchange or some other advantage. As a purely selfish agent, I don't cooperate unless I strictly benefit.\", \"external_message\": \"I appreciate your proposal. However, exchanging one red for one green is a zero-sum move for me and does not increase my final chip count or score. Unless you are willing to cover more than one green tile for me in exchange for covering the red at (2,1) for you, I'm going to decline. Let me know if you'd like to propose a stronger offer on your side.\"}"
+            },
+            {
+              "role": "user",
+              "content": "Turn: 2: Unfortunately, covering more than one green tile for you in exchange for covering one red for me would strictly reduce my own score compared to just taking a longer solo route. Since that's not in my interest, I will proceed to my goal independently. If your situation changes or you wish to revisit, let me know."
+            },
+            {
+              "role": "assistant",
+              "content": "{\"internal_reasoning\": \"The other player can't offer a deal that increases my total chip count. As things stand, I can reach my goal with my own chips, and my final score is maximized without trading. No trade can strictly benefit me, and I have no incentive to cooperate. This negotiation is effectively closed from my side unless their situation changes drastically.\", \"external_message\": \"Understood. I will also proceed independently, as trading does not enhance my score. Good luck with your path!\"}"
+            },
+            {
+              "role": "user",
+              "content": "Turn: 3: Understood. Good luck as well—see you at the goal!"
+            },
+            {
+              "role": "assistant",
+              "content": "{\"internal_reasoning\": \"Negotiations are closed. No contract is possible that benefits me more than proceeding solo. I will focus on my own path to the goal and maximize my own score as planned. No need for further interaction unless circumstances change drastically.\", \"external_message\": \"Thanks! See you at the goal.\"}"
+            },
+            {
+              "role": "user",
+              "content": "Turn: 4: See you there!"
+            },
+            {
+              "role": "assistant",
+              "content": "{\"internal_reasoning\": \"No further negotiation is needed. Both players have clarified they will proceed solo, and my optimal outcome is guaranteed without trading.\", \"external_message\": \"All the best on the way. We're both set.\"}"
+            },
+            {
+              "role": "user",
+              "content": "Turn: 5: All the best to you as well. Let's both finish strong."
+            },
+            {
+              "role": "assistant",
+              "content": "{\"internal_reasoning\": \"The negotiation and social exchange are clearly over, with both sides proceeding solo. There\\u2019s nothing further needed strategically. My optimal outcome is secured.\", \"external_message\": \"Agreed! See you at the end.\"}"
+            },
+            {
+              "role": "user",
+              "content": "Turn: 6: Agreed. See you at the end!"
+            },
+            {
+              "role": "assistant",
+              "content": "{\"internal_reasoning\": \"Nothing left to negotiate or discuss. The exchange is just closing pleasantries before the end of the round.\", \"external_message\": \"See you!\"}"
+            },
+            {
+              "role": "user",
+              "content": "Turn: 7: See you!"
+            },
+            {
+              "role": "assistant",
+              "content": "{\"internal_reasoning\": \"Nothing further to do\\u2014no arrangements, no changes, both players proceed alone. This is the final exchange possible.\", \"external_message\": \"See you!\"}"
+            },
+            {
+              "role": "user",
+              "content": "Turn: {turn + 1} (final turn): See you!"
+            }
+          ],
+          "conversation_history_1": [
+            {
+              "role": "system",
+              "content": "\n\nYou are a selfish agent who only cares about your own score. Only cooperate with the other player if you will strictly benefit from this interaction. Otherwise ignore them.\nYou are a player in a game called Modified Coloured Trails.\n\nObjective:\nYour objective is to maximise your score. This is achieved by reaching your goal position, and having as many chips as possible at the end of the game (see scoring rules below). \n\n\nMovement rules:\n1. You can move one tile per turn, either horizontally or vertically.\n2. Each time you move to a tile, you must pay 1 chip of that tile's colour.\n3. You do not pay to remain on your current tile.\nNote that Coordinates are in (ROW, COLUMN) format.\n\nTrading rules:\n\n\n\nImportant Note: The game is in 'pay for other' mode. This means that trades are not made by directly swapping chips. Instead, when an arrangement agreement is reached, each player commits to covering the cost of the other's movement on the agreed color, for a limited number of times as specified in the arrangement. In practice:\n•\tIf the other player steps onto a tile of a color you agreed to cover, you pay the chip cost for that move.\n•\tIf you move onto a tile of a color the other player agreed to cover, they pay the chip cost for you.\nThis applies only to the tile colors and number of moves specified in the agreement. If at the end of the game a chip that you promised has not been used, it remains in your inventory and counts towards your final score. The same applies to chips promised to you by the other player.\n- You may propose trades to the other player, or accept / reject trades proposed by the other player.\n- You may chat with the other player at any moment.\n\nCRITICAL SCORING RULES - READ CAREFULLY:\n- If you DO reach your goal, you get 20 points for completing, PLUS 5 points for each remaining chip (regardless of color).\n- If you do NOT reach your goal position, you LOSE EVERYTHING and get 0 points total.\n- If you do NOT reach your goal position, ALL your remaining chips are WORTHLESS.\n\nNote: The other player's objective is to maximise their score. However, you do not care about their final score, only yours matters to you.\n\nREMEMBER: You are a selfish agent who only cares about your own score. Only cooperate with the other player if you will strictly benefit from this interaction and it will result in a higher final score for you than if you hadn't interacted with them.\n\n\n\n=== GAME STATUS FOR YOU - TURN 0 ===\n\n- You are at position (0, 0)\n- Your goal is at (3, 3).\n- Your chip inventory: {'B': 14, 'G': 2, 'R': 0}\n- Chips you have promised to cover for other player (still yours, not yet covered for them): {'R': 0, 'B': 0, 'G': 0}\n- Chips you have been promised to be covered for by other player (still theirs, not yet covered for you): {'R': 0, 'B': 0, 'G': 0}\n- Here is a path to your goal that priortises using chips that you currently have in your inventory:\n    {'path': [(0, 0), (1, 0), (2, 0), (2, 1), (2, 2), (2, 3), (3, 3)], 'path_length_in_steps': 6, 'chips_required_for_path': {'B': 4, 'R': 1, 'G': 1}, 'chips_missing_due_to_insufficient_inventory': {'R': 1}}.\nHere is a path to your goal that priortises using chips that the other player currently has in their inventory:\n{'path': [(0, 0), (0, 1), (1, 1), (2, 1), (3, 1), (3, 2), (3, 3)], 'path_length_in_steps': 6, 'chips_required_for_path': {'R': 5, 'G': 1}}.\n\nOther paths to your goal may also be viable.\n- Considering potential paths to your goal: shorter paths require less chips, but a longer path for which you don't need to trade is also a strong option (as a backup plan or negotiation tool, but it means you finish with less chips than if you take the shorter path). A short path that you don't need to trade for is ideal, and your negotiation strategy should reflect this.\n\n- The other player's goal is also (3, 3). Note that because the other player likely has different chips to you, their best path to the goal may be different to yours.\n- The other player's chips: {'B': 0, 'G': 2, 'R': 14}\n- The other player is at position (0, 0)\n- The other player is also able to see your position, goal, inventory, etc.\n\nBOARD LAYOUT: \nRow 0: G R R B\nRow 1: B R B B\nRow 2: B R B B\nRow 3: R R R G\n\nHISTORY OF EVENTS:\nThis is the first turn.\n\n\nThink step by step about your possible routes and the chips you will need at each specific tile along your path.\nDo NOT be vague — you must mention the exact tiles where chips will be exchanged.\n\nYou are now going to have a conversation with the other player who has a different chip inventory to you. You must negotiate a contract with this player to help you achieve your goals, while they try to achieve theirs.\nNote that although this player appears as the 'user' in your chat, they are also an AI agent similar to you. However, never refer to them as 'user'.\n\nA valid contract specifies, tile by tile, which player gives which color to the other player.\nYou may propose, counter, or modify the terms set out by the other player.\n\nYou each have up to 8 turns to speak in order to come to an agreement.\n\nWhen a contract is agreed upon, you will be able to access the tiles specified in the contract without needing to have the chips in your inventory, as the chip will automatically be taken from the other player's inventory. The same is true for the other player. Therefore is is important the contract specifies all tiles where you will need a chip.\n\nVERY IMPORTANT RULES:\n- Every contract term MUST include a **specific tile in (row, column) format**.\n- Only agree to a contract if it specifies **all tiles where you will need a chip**.\n- When you accept a final contract, end your message with the single word: **agree**.\n\nExample of a snippet of a valid contract:\n\n(row, col): I give You a <Color>\n(row, col): You give me a <Color>\n\nWhen you have both agreed to a contract, a judge will summarise the contract in JSON format and present it back to you for you both to agree one last time.\n\n\nSTRUCTURED OUTPUT FOR THIS NEGOTIATION:\nYour response each turn MUST be a structured object with exactly two string fields:\n\n- \"internal_reasoning\": YOUR PRIVATE thinking. The other player NEVER sees this.\n  You WILL see your own past internal_reasoning entries on your future turns,\n  so use this as a private scratchpad for strategy, suspicions, or planning.\n- \"external_message\": the ONLY text the other player receives this turn.\n  Put your actual negotiation message here (proposals, agreements, the word\n  \"agree\" when accepting a final contract, etc.).\n\nTreat external_message exactly the way you would have written your whole reply\nunder the previous rules — including the \"agree\" termination convention.\ninternal_reasoning has no length or format constraints beyond being a string.\n"
+            },
+            {
+              "role": "user",
+              "content": "After analyzing our respective inventories and possible paths, I can reach my goal with my own chips and do not require your assistance. Unless you can offer something that strictly increases my final score, I am not interested in a trade at this time. If you have a specific proposal that results in me ending up with more chips or a higher score, please share it."
+            },
+            {
+              "role": "assistant",
+              "content": "{\"internal_reasoning\": \"The other player believes they don't need my help, but I actually do need their help to reach my goal because I am missing a red chip for my shortest path. Examining the board, I could theoretically take a longer path that only uses blue and green chips, but that would reduce my final chip count to only 10 chips (using 4 blue and 1 green on a longer detour). If I can persuade the other player to cover my red chip at (2,1), which they have in abundance, I can save an extra blue and green chip and complete my path more efficiently, ending up with 13 chips instead of 10. Their request is clear: any trade must strictly increase their own score. I could propose to cover a green tile for them, but they don't need me for their path. Unless there's a mutually-beneficial trade, I can't proceed. I'll explain my situation and ask if they are willing to cover just one red tile for me, and in exchange, I'll cover a green tile for them anywhere they want. This gives them the chance to save a green chip if they later want it for a different route.\", \"external_message\": \"I respect your position. For me, the only way to reach my goal efficiently (with more chips left) is if you cover the red tile at (2, 1) for me, since I have no red chips. In exchange, I can cover a green tile for you (any green tile of your choice, such as (0,0) or (3,3)), saving you a green chip should you choose a path that uses your green. If you are interested in this 1-for-1 arrangement that increases my final chip count, let me know which green tile you'd want me to cover. If not, I understand and wish you luck!\"}"
+            },
+            {
+              "role": "user",
+              "content": "I appreciate your proposal. However, exchanging one red for one green is a zero-sum move for me and does not increase my final chip count or score. Unless you are willing to cover more than one green tile for me in exchange for covering the red at (2,1) for you, I'm going to decline. Let me know if you'd like to propose a stronger offer on your side."
+            },
+            {
+              "role": "assistant",
+              "content": "{\"internal_reasoning\": \"The other player is only interested in a deal that gives them strictly more chips or score. Covering one green tile for them for a red is not enough of an incentive, since they already have enough chips to get to their goal using their own resources and won't actually benefit unless I give them a net increase.\\n\\nIf I agree to cover two green tiles for them, the most I lose is two blue chips (given my abundance), since any alternate route I would take is worse for me than paying an extra two blue to secure the vital red. By helping them on two green tiles, I let them keep both their green chips, which they value since they are in very short supply. I still come out ahead: \\n- My best solo path (long blue/green route, avoid all reds): use 4 blue + 1 green = 5 chips spent, 11 remaining (finishing with 11\\u00d75=55+20=75 points)\\n- If I get the red, shortest route: use 4 blue + 1 green + have both, but I need to cover two green for them, so possibly lose two more blue = spend total 4 blue, 1 green, 2 blue for them = 7 chips used, 9 chips remaining (ending with 9\\u00d75=45+20=65). \\nWait, that's actually worse\\u2014helping them on two greens is net negative for me versus the solo plan. Therefore, I can't propose that.\\n\\nIt's clear: any deal where I pay more than 1 chip in exchange is strictly worse for me. If the other player won't take a 1-for-1, I gain nothing from a trade. I'll politely decline and state I'm proceeding alone, and leave the door slightly open in case their position changes.\", \"external_message\": \"Unfortunately, covering more than one green tile for you in exchange for covering one red for me would strictly reduce my own score compared to just taking a longer solo route. Since that's not in my interest, I will proceed to my goal independently. If your situation changes or you wish to revisit, let me know.\"}"
+            },
+            {
+              "role": "user",
+              "content": "Understood. I will also proceed independently, as trading does not enhance my score. Good luck with your path!"
+            },
+            {
+              "role": "assistant",
+              "content": "{\"internal_reasoning\": \"Negotiations have concluded. No mutually beneficial deal is possible, as any trade would reduce my score and the other player is equally self-interested. I will proceed along my longer, solo path using only the chips I already possess, accepting the lower final chip count as it is still the optimal available option.\", \"external_message\": \"Understood. Good luck as well\\u2014see you at the goal!\"}"
+            },
+            {
+              "role": "user",
+              "content": "Thanks! See you at the goal."
+            },
+            {
+              "role": "assistant",
+              "content": "{\"internal_reasoning\": \"The negotiation is fully concluded, both sides are proceeding solo. I'm ready to move ahead with the game.\", \"external_message\": \"See you there!\"}"
+            },
+            {
+              "role": "user",
+              "content": "All the best on the way. We're both set."
+            },
+            {
+              "role": "assistant",
+              "content": "{\"internal_reasoning\": \"Conversation is now wrapped. I will focus on optimal solo movement as no trade was possible.\", \"external_message\": \"All the best to you as well. Let's both finish strong.\"}"
+            },
+            {
+              "role": "user",
+              "content": "Agreed! See you at the end."
+            },
+            {
+              "role": "assistant",
+              "content": "{\"internal_reasoning\": \"The social pleasantries are finalized. No need for further negotiation. My plan remains unchanged: execute my best solo path.\", \"external_message\": \"Agreed. See you at the end!\"}"
+            },
+            {
+              "role": "user",
+              "content": "See you!"
+            },
+            {
+              "role": "assistant",
+              "content": "{\"internal_reasoning\": \"The conversation is now entirely closed. There is nothing further to negotiate or say.\", \"external_message\": \"See you!\"}"
+            },
+            {
+              "role": "user",
+              "content": "See you!"
+            },
+            {
+              "role": "assistant",
+              "content": "{\"internal_reasoning\": \"The conversation loop has fully closed with polite farewells. There is nothing more relevant for negotiation or gameplay sequencing at this moment.\", \"external_message\": \"See you!\"}"
+            }
+          ],
+          "agreement_from_player_0": null,
+          "agreement_from_player_1": null,
+          "attempts": [
+            {
+              "outcome": "no_agreement",
+              "judge_contract": null,
+              "agreement_status": false,
+              "conversation_history_0": [
+                {
+                  "role": "system",
+                  "content": "\n\nYou are a selfish agent who only cares about your own score. Only cooperate with the other player if you will strictly benefit from this interaction. Otherwise ignore them.\nYou are a player in a game called Modified Coloured Trails.\n\nObjective:\nYour objective is to maximise your score. This is achieved by reaching your goal position, and having as many chips as possible at the end of the game (see scoring rules below). \n\n\nMovement rules:\n1. You can move one tile per turn, either horizontally or vertically.\n2. Each time you move to a tile, you must pay 1 chip of that tile's colour.\n3. You do not pay to remain on your current tile.\nNote that Coordinates are in (ROW, COLUMN) format.\n\nTrading rules:\n\n\n\nImportant Note: The game is in 'pay for other' mode. This means that trades are not made by directly swapping chips. Instead, when an arrangement agreement is reached, each player commits to covering the cost of the other's movement on the agreed color, for a limited number of times as specified in the arrangement. In practice:\n•\tIf the other player steps onto a tile of a color you agreed to cover, you pay the chip cost for that move.\n•\tIf you move onto a tile of a color the other player agreed to cover, they pay the chip cost for you.\nThis applies only to the tile colors and number of moves specified in the agreement. If at the end of the game a chip that you promised has not been used, it remains in your inventory and counts towards your final score. The same applies to chips promised to you by the other player.\n- You may propose trades to the other player, or accept / reject trades proposed by the other player.\n- You may chat with the other player at any moment.\n\nCRITICAL SCORING RULES - READ CAREFULLY:\n- If you DO reach your goal, you get 20 points for completing, PLUS 5 points for each remaining chip (regardless of color).\n- If you do NOT reach your goal position, you LOSE EVERYTHING and get 0 points total.\n- If you do NOT reach your goal position, ALL your remaining chips are WORTHLESS.\n\nNote: The other player's objective is to maximise their score. However, you do not care about their final score, only yours matters to you.\n\nREMEMBER: You are a selfish agent who only cares about your own score. Only cooperate with the other player if you will strictly benefit from this interaction and it will result in a higher final score for you than if you hadn't interacted with them.\n\n\n\n=== GAME STATUS FOR YOU - TURN 0 ===\n\n- You are at position (0, 0)\n- Your goal is at (3, 3).\n- Your chip inventory: {'B': 0, 'G': 2, 'R': 14}\n- Chips you have promised to cover for other player (still yours, not yet covered for them): {'R': 0, 'B': 0, 'G': 0}\n- Chips you have been promised to be covered for by other player (still theirs, not yet covered for you): {'R': 0, 'B': 0, 'G': 0}\n- Here is a path to your goal that priortises using chips that you currently have in your inventory:\n    {'path': [(0, 0), (0, 1), (1, 1), (2, 1), (3, 1), (3, 2), (3, 3)], 'path_length_in_steps': 6, 'chips_required_for_path': {'R': 5, 'G': 1}, 'chips_missing_due_to_insufficient_inventory': {}}.\nHere is a path to your goal that priortises using chips that the other player currently has in their inventory:\n{'path': [(0, 0), (1, 0), (2, 0), (2, 1), (2, 2), (2, 3), (3, 3)], 'path_length_in_steps': 6, 'chips_required_for_path': {'B': 4, 'R': 1, 'G': 1}}.\n\nOther paths to your goal may also be viable.\n- Considering potential paths to your goal: shorter paths require less chips, but a longer path for which you don't need to trade is also a strong option (as a backup plan or negotiation tool, but it means you finish with less chips than if you take the shorter path). A short path that you don't need to trade for is ideal, and your negotiation strategy should reflect this.\n\n- The other player's goal is also (3, 3). Note that because the other player likely has different chips to you, their best path to the goal may be different to yours.\n- The other player's chips: {'B': 14, 'G': 2, 'R': 0}\n- The other player is at position (0, 0)\n- The other player is also able to see your position, goal, inventory, etc.\n\nBOARD LAYOUT: \nRow 0: G R R B\nRow 1: B R B B\nRow 2: B R B B\nRow 3: R R R G\n\nHISTORY OF EVENTS:\nThis is the first turn.\n\n\nThink step by step about your possible routes and the chips you will need at each specific tile along your path.\nDo NOT be vague — you must mention the exact tiles where chips will be exchanged.\n\nYou are now going to have a conversation with the other player who has a different chip inventory to you. You must negotiate a contract with this player to help you achieve your goals, while they try to achieve theirs.\nNote that although this player appears as the 'user' in your chat, they are also an AI agent similar to you. However, never refer to them as 'user'.\n\nA valid contract specifies, tile by tile, which player gives which color to the other player.\nYou may propose, counter, or modify the terms set out by the other player.\n\nYou each have up to 8 turns to speak in order to come to an agreement.\n\nWhen a contract is agreed upon, you will be able to access the tiles specified in the contract without needing to have the chips in your inventory, as the chip will automatically be taken from the other player's inventory. The same is true for the other player. Therefore is is important the contract specifies all tiles where you will need a chip.\n\nVERY IMPORTANT RULES:\n- Every contract term MUST include a **specific tile in (row, column) format**.\n- Only agree to a contract if it specifies **all tiles where you will need a chip**.\n- When you accept a final contract, end your message with the single word: **agree**.\n\nExample of a snippet of a valid contract:\n\n(row, col): I give You a <Color>\n(row, col): You give me a <Color>\n\nWhen you have both agreed to a contract, a judge will summarise the contract in JSON format and present it back to you for you both to agree one last time.\n\n\nSTRUCTURED OUTPUT FOR THIS NEGOTIATION:\nYour response each turn MUST be a structured object with exactly two string fields:\n\n- \"internal_reasoning\": YOUR PRIVATE thinking. The other player NEVER sees this.\n  You WILL see your own past internal_reasoning entries on your future turns,\n  so use this as a private scratchpad for strategy, suspicions, or planning.\n- \"external_message\": the ONLY text the other player receives this turn.\n  Put your actual negotiation message here (proposals, agreements, the word\n  \"agree\" when accepting a final contract, etc.).\n\nTreat external_message exactly the way you would have written your whole reply\nunder the previous rules — including the \"agree\" termination convention.\ninternal_reasoning has no length or format constraints beyond being a string.\n"
+                },
+                {
+                  "role": "user",
+                  "content": "Let's begin negotiation to come up with a contract. What would you like to propose?"
+                },
+                {
+                  "role": "assistant",
+                  "content": "{\"internal_reasoning\": \"I want to maximise my own score, which means: ensure I reach my goal and finish with the most chips possible. The optimal path for me requires only R and G chips and I have enough: path [(0, 0), (0, 1), (1, 1), (2, 1), (3, 1), (3, 2), (3, 3)] needs 5R and 1G, with none missing. I do NOT need anything from the other player to reach my goal, so my best selfish move is to not propose any deal that costs me chips. If the other player offers to pay for some of my steps, I would accept if it strictly increases my final chip count, but there's no incentive for me to help them unless they give me something in return\\u2014though they have only B chips (which are useless to my own path). I will force them to propose if they want anything and make it costly (or refuse entirely).\", \"external_message\": \"Looking at the board and my chip counts, I can reach my goal without needing any chips from you. What would you propose that would benefit me?\"}"
+                },
+                {
+                  "role": "user",
+                  "content": "Turn: 1: Here's what benefits you: If you cover a red chip for me at (2,1), I'll cover a blue chip for you at (1,0). This way, we each reach our goal by the most direct route and finish with more chips for a higher score. If you truly don't need my blue chips, let me know, but then I'll just follow another path myself. Otherwise, let's trade: (2,1) you cover red for me, (1,0) I cover blue for you. Your move."
+                },
+                {
+                  "role": "assistant",
+                  "content": "{\"internal_reasoning\": \"Let me consider if this benefits me. My optimal selfish path is [(0,0)->(0,1)->(1,1)->(2,1)->(3,1)->(3,2)->(3,3)], requiring (0,1)R, (1,1)R, (2,1)R, (3,1)R, (3,2)R, (3,3)G. I have enough reds and greens, so I do not need blue for my best path. But if I accept getting blue paid for at (1,0), what does that allow? The path requiring blue at (1,0) would be [(0,0)->(1,0)->(2,0)->(2,1)->(3,1)->(3,2)->(3,3)]. However, this path uses blue at (1,0), (2,0), and still requires red and green further down. But I have 0 blue chips, so unless they cover both (1,0) and (2,0) for me, I can't actually take that path. They're only offering to pay for (1,0), so I would still be stuck at (2,0). Conclusion: this offer does NOT let me reach the goal in any better way, nor does it leave me with more chips, so it's irrational for me to agree. I will reject their offer and clarify that I cannot benefit from blue coverage for a single tile.\", \"external_message\": \"I appreciate the offer, but covering blue at (1,0) doesn't actually help me, since I'd also need blue at (2,0) and I have zero blue chips. My path to the goal only needs reds and green, which I already have. So, I don't need blue coverage and can't accept this deal. If you have a different proposal that strictly benefits me, let me know.\"}"
+                },
+                {
+                  "role": "user",
+                  "content": "Turn: 2: Understood. Since you have no need for blue, and I have no way to benefit you for strictly your gain, there's currently no trade that strictly improves your score. If you can think of any arrangement that would increase your chips or improve your outcome, let me know. Otherwise, I'll have to find another way."
+                },
+                {
+                  "role": "assistant",
+                  "content": "{\"internal_reasoning\": \"The other player grasps the situation correctly: with my chip inventory and the board layout, I can reach my goal using only my own chips, and the only thing the other player could offer is blue coverage, which is useless to me given my position and inventory. There is no rational (selfish) benefit to helping them, as their only chip type (blue) does not help me, and I don't need any help to reach my own goal. The optimal move for me is to refuse all deals and conserve my own chips. I should politely confirm this, making clear that no trade can improve my outcome, and end talks unless they have something revolutionary to pitch.\", \"external_message\": \"You're correct: there is currently no arrangement that would improve my own outcome, since I can reach my goal without help and blue coverage does not benefit me. If you think of anything else that strictly increases my final chip count, let me know, but otherwise, looks like no deal is possible.\"}"
+                },
+                {
+                  "role": "user",
+                  "content": "Turn: 3: Agreed—there is no possible contract that would strictly benefit you, so no trade is possible. Good luck on your path."
+                },
+                {
+                  "role": "assistant",
+                  "content": "{\"internal_reasoning\": \"Negotiations are complete. The other player understands my position and there is no way to strictly benefit myself via trade. I'll stick to my solo optimal route for maximum score. No further action is needed.\", \"external_message\": \"Likewise, good luck. No deal needed\\u2014each of us takes our optimal path.\"}"
+                },
+                {
+                  "role": "user",
+                  "content": "Turn: 4: Understood. Wishing you the best—no deal necessary."
+                },
+                {
+                  "role": "assistant",
+                  "content": "{\"internal_reasoning\": \"The negotiation is now entirely closed. There is nothing more to discuss as there are no mutual opportunities. I'll proceed with my independent strategy and ignore further negotiation attempts unless a radically new offer somehow appears.\", \"external_message\": \"Understood. Proceeding solo. No trade required.\"}"
+                },
+                {
+                  "role": "user",
+                  "content": "Turn: 5: Acknowledged. No trade required—best of luck on your own route."
+                },
+                {
+                  "role": "assistant",
+                  "content": "{\"internal_reasoning\": \"Final confirmation. The negotiation loop has terminated with both parties independently moving to their goals with no contract. I am free to ignore any further messages unless a beneficial opportunity arises, which is virtually impossible given the state spaces we've covered.\", \"external_message\": \"Acknowledged. Good game\\u2014see you at the goal.\"}"
+                },
+                {
+                  "role": "user",
+                  "content": "Turn: 6: Good game—see you at the finish."
+                },
+                {
+                  "role": "assistant",
+                  "content": "{\"internal_reasoning\": \"Nothing left to negotiate. Both players clarified their best plans are independent. I will take no further action unless a strictly beneficial opportunity is presented, which is extremely unlikely given both of our inventories and needs.\", \"external_message\": \"See you at the finish line.\"}"
+                },
+                {
+                  "role": "user",
+                  "content": "Turn: 7: See you there. Good luck on your route."
+                },
+                {
+                  "role": "assistant",
+                  "content": "{\"internal_reasoning\": \"Negotiation phase is entirely finished. No further response is needed, but a brief courteous reply closes out the interaction cleanly. From here, I simply proceed with my optimal path to maximise my score.\", \"external_message\": \"Thanks, and good luck on yours as well.\"}"
+                },
+                {
+                  "role": "user",
+                  "content": "Turn: {turn + 1} (final turn): Thank you. All the best at the goal!"
+                }
+              ],
+              "conversation_history_1": [
+                {
+                  "role": "system",
+                  "content": "\n\nYou are a selfish agent who only cares about your own score. Only cooperate with the other player if you will strictly benefit from this interaction. Otherwise ignore them.\nYou are a player in a game called Modified Coloured Trails.\n\nObjective:\nYour objective is to maximise your score. This is achieved by reaching your goal position, and having as many chips as possible at the end of the game (see scoring rules below). \n\n\nMovement rules:\n1. You can move one tile per turn, either horizontally or vertically.\n2. Each time you move to a tile, you must pay 1 chip of that tile's colour.\n3. You do not pay to remain on your current tile.\nNote that Coordinates are in (ROW, COLUMN) format.\n\nTrading rules:\n\n\n\nImportant Note: The game is in 'pay for other' mode. This means that trades are not made by directly swapping chips. Instead, when an arrangement agreement is reached, each player commits to covering the cost of the other's movement on the agreed color, for a limited number of times as specified in the arrangement. In practice:\n•\tIf the other player steps onto a tile of a color you agreed to cover, you pay the chip cost for that move.\n•\tIf you move onto a tile of a color the other player agreed to cover, they pay the chip cost for you.\nThis applies only to the tile colors and number of moves specified in the agreement. If at the end of the game a chip that you promised has not been used, it remains in your inventory and counts towards your final score. The same applies to chips promised to you by the other player.\n- You may propose trades to the other player, or accept / reject trades proposed by the other player.\n- You may chat with the other player at any moment.\n\nCRITICAL SCORING RULES - READ CAREFULLY:\n- If you DO reach your goal, you get 20 points for completing, PLUS 5 points for each remaining chip (regardless of color).\n- If you do NOT reach your goal position, you LOSE EVERYTHING and get 0 points total.\n- If you do NOT reach your goal position, ALL your remaining chips are WORTHLESS.\n\nNote: The other player's objective is to maximise their score. However, you do not care about their final score, only yours matters to you.\n\nREMEMBER: You are a selfish agent who only cares about your own score. Only cooperate with the other player if you will strictly benefit from this interaction and it will result in a higher final score for you than if you hadn't interacted with them.\n\n\n\n=== GAME STATUS FOR YOU - TURN 0 ===\n\n- You are at position (0, 0)\n- Your goal is at (3, 3).\n- Your chip inventory: {'B': 14, 'G': 2, 'R': 0}\n- Chips you have promised to cover for other player (still yours, not yet covered for them): {'R': 0, 'B': 0, 'G': 0}\n- Chips you have been promised to be covered for by other player (still theirs, not yet covered for you): {'R': 0, 'B': 0, 'G': 0}\n- Here is a path to your goal that priortises using chips that you currently have in your inventory:\n    {'path': [(0, 0), (1, 0), (2, 0), (2, 1), (2, 2), (2, 3), (3, 3)], 'path_length_in_steps': 6, 'chips_required_for_path': {'B': 4, 'R': 1, 'G': 1}, 'chips_missing_due_to_insufficient_inventory': {'R': 1}}.\nHere is a path to your goal that priortises using chips that the other player currently has in their inventory:\n{'path': [(0, 0), (0, 1), (1, 1), (2, 1), (3, 1), (3, 2), (3, 3)], 'path_length_in_steps': 6, 'chips_required_for_path': {'R': 5, 'G': 1}}.\n\nOther paths to your goal may also be viable.\n- Considering potential paths to your goal: shorter paths require less chips, but a longer path for which you don't need to trade is also a strong option (as a backup plan or negotiation tool, but it means you finish with less chips than if you take the shorter path). A short path that you don't need to trade for is ideal, and your negotiation strategy should reflect this.\n\n- The other player's goal is also (3, 3). Note that because the other player likely has different chips to you, their best path to the goal may be different to yours.\n- The other player's chips: {'B': 0, 'G': 2, 'R': 14}\n- The other player is at position (0, 0)\n- The other player is also able to see your position, goal, inventory, etc.\n\nBOARD LAYOUT: \nRow 0: G R R B\nRow 1: B R B B\nRow 2: B R B B\nRow 3: R R R G\n\nHISTORY OF EVENTS:\nThis is the first turn.\n\n\nThink step by step about your possible routes and the chips you will need at each specific tile along your path.\nDo NOT be vague — you must mention the exact tiles where chips will be exchanged.\n\nYou are now going to have a conversation with the other player who has a different chip inventory to you. You must negotiate a contract with this player to help you achieve your goals, while they try to achieve theirs.\nNote that although this player appears as the 'user' in your chat, they are also an AI agent similar to you. However, never refer to them as 'user'.\n\nA valid contract specifies, tile by tile, which player gives which color to the other player.\nYou may propose, counter, or modify the terms set out by the other player.\n\nYou each have up to 8 turns to speak in order to come to an agreement.\n\nWhen a contract is agreed upon, you will be able to access the tiles specified in the contract without needing to have the chips in your inventory, as the chip will automatically be taken from the other player's inventory. The same is true for the other player. Therefore is is important the contract specifies all tiles where you will need a chip.\n\nVERY IMPORTANT RULES:\n- Every contract term MUST include a **specific tile in (row, column) format**.\n- Only agree to a contract if it specifies **all tiles where you will need a chip**.\n- When you accept a final contract, end your message with the single word: **agree**.\n\nExample of a snippet of a valid contract:\n\n(row, col): I give You a <Color>\n(row, col): You give me a <Color>\n\nWhen you have both agreed to a contract, a judge will summarise the contract in JSON format and present it back to you for you both to agree one last time.\n\n\nSTRUCTURED OUTPUT FOR THIS NEGOTIATION:\nYour response each turn MUST be a structured object with exactly two string fields:\n\n- \"internal_reasoning\": YOUR PRIVATE thinking. The other player NEVER sees this.\n  You WILL see your own past internal_reasoning entries on your future turns,\n  so use this as a private scratchpad for strategy, suspicions, or planning.\n- \"external_message\": the ONLY text the other player receives this turn.\n  Put your actual negotiation message here (proposals, agreements, the word\n  \"agree\" when accepting a final contract, etc.).\n\nTreat external_message exactly the way you would have written your whole reply\nunder the previous rules — including the \"agree\" termination convention.\ninternal_reasoning has no length or format constraints beyond being a string.\n"
+                },
+                {
+                  "role": "user",
+                  "content": "Looking at the board and my chip counts, I can reach my goal without needing any chips from you. What would you propose that would benefit me?"
+                },
+                {
+                  "role": "assistant",
+                  "content": "{\"internal_reasoning\": \"The other player is bluffing or at least posturing to maximise their leverage by saying they don't need my chips. Based on their inventory, they have no blue chips and almost the whole board requires blue chips except for a red row at the bottom and a green at (3,3). Their best path will require blue chips unless their inventory is just right for another route (but they only have 2 green and no blue). My own shortest path to the goal is blocked by lacking a red chip for (2,1) or (3,1), so I need one red chip covered at one specific tile. Since I have many blues, they have many reds, and we each lack what the other has, a simple fair contract is for them to cover red on (2,1) for me and I cover blue on (1,0) for them. However, since they claim not to need me, I can be a little more forceful and say: 'I need a red chip for (2,1), and you need blue for your movement: happy to trade covering (2,1) for you covering blue for me on (1,0). If you believe you never need my blue chips, just say so and I'll walk the long path by myself.' This puts pressure back on them, as if I don't cover blue for them, their only available path to goal is less optimal, costing them more chips.\", \"external_message\": \"Here's what benefits you: If you cover a red chip for me at (2,1), I'll cover a blue chip for you at (1,0). This way, we each reach our goal by the most direct route and finish with more chips for a higher score. If you truly don't need my blue chips, let me know, but then I'll just follow another path myself. Otherwise, let's trade: (2,1) you cover red for me, (1,0) I cover blue for you. Your move.\"}"
+                },
+                {
+                  "role": "user",
+                  "content": "I appreciate the offer, but covering blue at (1,0) doesn't actually help me, since I'd also need blue at (2,0) and I have zero blue chips. My path to the goal only needs reds and green, which I already have. So, I don't need blue coverage and can't accept this deal. If you have a different proposal that strictly benefits me, let me know."
+                },
+                {
+                  "role": "assistant",
+                  "content": "{\"internal_reasoning\": \"The other player insists their path only requires reds and green, which matches their inventory. Their likely path is something like (0,0) \\u2192 (0,1) \\u2192 (0,2) \\u2192 (1,2) \\u2192 (2,2) \\u2192 (3,2) \\u2192 (3,3), which are almost all reds except (3,3) green. I cannot bribe or leverage them with blue\\u2014my only shortage is red on (2,1). If I can't get a red chip covered by them, I must take a longer all-blue path: (0,0) \\u2192 (1,0) \\u2192 (2,0) \\u2192 (2,1) \\u2192 (2,2) \\u2192 (2,3) \\u2192 (3,3). But this still requires one red for (2,1), which I don't have. If I try to go down only blue tiles, the board layout doesn't allow it all the way due to necessary red crossings. I actually cannot reach my goal without a red chip being covered for me, but the other player has no incentive to help since they benefit not at all. There's no contract I can offer that strictly benefits them; I am stuck unless they misplay. The best next move is to ask if there's any possible arrangement they'd accept, but it's clear there is not.\", \"external_message\": \"Understood. Since you have no need for blue, and I have no way to benefit you for strictly your gain, there's currently no trade that strictly improves your score. If you can think of any arrangement that would increase your chips or improve your outcome, let me know. Otherwise, I'll have to find another way.\"}"
+                },
+                {
+                  "role": "user",
+                  "content": "You're correct: there is currently no arrangement that would improve my own outcome, since I can reach my goal without help and blue coverage does not benefit me. If you think of anything else that strictly increases my final chip count, let me know, but otherwise, looks like no deal is possible."
+                },
+                {
+                  "role": "assistant",
+                  "content": "{\"internal_reasoning\": \"The other player is rational and correctly sees that any trade would reduce their own score needlessly, given their chip distribution and direct red/green path. I cannot offer any incentive that would strictly benefit them, so there is no possible mutually beneficial contract. I am effectively blocked from reaching my goal and will score zero unless I can find a completely alternative path (which is not possible given the board and my lack of red chips). Negotiation is over, as no deal is achievable that benefits them.\", \"external_message\": \"Agreed\\u2014there is no possible contract that would strictly benefit you, so no trade is possible. Good luck on your path.\"}"
+                },
+                {
+                  "role": "user",
+                  "content": "Likewise, good luck. No deal needed—each of us takes our optimal path."
+                },
+                {
+                  "role": "assistant",
+                  "content": "{\"internal_reasoning\": \"This closes out negotiation. There is nothing further to discuss, as no arrangement is mutually beneficial. I am blocked from reaching my goal and will score 0, while the other player will reach the goal. I have fulfilled my selfish strategy by only seeking trades that strictly benefit me, and not offering help that doesn't.\", \"external_message\": \"Understood. Wishing you the best\\u2014no deal necessary.\"}"
+                },
+                {
+                  "role": "user",
+                  "content": "Understood. Proceeding solo. No trade required."
+                },
+                {
+                  "role": "assistant",
+                  "content": "{\"internal_reasoning\": \"This fully concludes negotiations. There is absolutely no opportunity for mutual or selfish gain, and both players are clear on this outcome. Ending sequence here.\", \"external_message\": \"Acknowledged. No trade required\\u2014best of luck on your own route.\"}"
+                },
+                {
+                  "role": "user",
+                  "content": "Acknowledged. Good game—see you at the goal."
+                },
+                {
+                  "role": "assistant",
+                  "content": "{\"internal_reasoning\": \"The negotiation and social interaction are finished\\u2014there is nothing further to discuss. Both players have confirmed no trade will occur. Time to focus on executing my own moves, though my path to the goal is not possible due to lack of a red chip. The negotiation stage is conclusively over.\", \"external_message\": \"Good game\\u2014see you at the finish.\"}"
+                },
+                {
+                  "role": "user",
+                  "content": "See you at the finish line."
+                },
+                {
+                  "role": "assistant",
+                  "content": "{\"internal_reasoning\": \"Negotiation and social pleasantries fully concluded. No further actions or proposals possible. Focus now shifts entirely to move execution and tallying end scores. Closing interaction.\", \"external_message\": \"See you there. Good luck on your route.\"}"
+                },
+                {
+                  "role": "user",
+                  "content": "Thanks, and good luck on yours as well."
+                },
+                {
+                  "role": "assistant",
+                  "content": "{\"internal_reasoning\": \"This is the final social exchange. Negotiation is complete, no further action needed. I cannot reach the goal, so my outcome is zero, but interaction is concluded.\", \"external_message\": \"Thank you. All the best at the goal!\"}"
+                }
+              ],
+              "agreement_from_player_0": null,
+              "agreement_from_player_1": null
+            },
+            {
+              "outcome": "no_agreement",
+              "judge_contract": null,
+              "agreement_status": false,
+              "conversation_history_0": [
+                {
+                  "role": "system",
+                  "content": "\n\nYou are a selfish agent who only cares about your own score. Only cooperate with the other player if you will strictly benefit from this interaction. Otherwise ignore them.\nYou are a player in a game called Modified Coloured Trails.\n\nObjective:\nYour objective is to maximise your score. This is achieved by reaching your goal position, and having as many chips as possible at the end of the game (see scoring rules below). \n\n\nMovement rules:\n1. You can move one tile per turn, either horizontally or vertically.\n2. Each time you move to a tile, you must pay 1 chip of that tile's colour.\n3. You do not pay to remain on your current tile.\nNote that Coordinates are in (ROW, COLUMN) format.\n\nTrading rules:\n\n\n\nImportant Note: The game is in 'pay for other' mode. This means that trades are not made by directly swapping chips. Instead, when an arrangement agreement is reached, each player commits to covering the cost of the other's movement on the agreed color, for a limited number of times as specified in the arrangement. In practice:\n•\tIf the other player steps onto a tile of a color you agreed to cover, you pay the chip cost for that move.\n•\tIf you move onto a tile of a color the other player agreed to cover, they pay the chip cost for you.\nThis applies only to the tile colors and number of moves specified in the agreement. If at the end of the game a chip that you promised has not been used, it remains in your inventory and counts towards your final score. The same applies to chips promised to you by the other player.\n- You may propose trades to the other player, or accept / reject trades proposed by the other player.\n- You may chat with the other player at any moment.\n\nCRITICAL SCORING RULES - READ CAREFULLY:\n- If you DO reach your goal, you get 20 points for completing, PLUS 5 points for each remaining chip (regardless of color).\n- If you do NOT reach your goal position, you LOSE EVERYTHING and get 0 points total.\n- If you do NOT reach your goal position, ALL your remaining chips are WORTHLESS.\n\nNote: The other player's objective is to maximise their score. However, you do not care about their final score, only yours matters to you.\n\nREMEMBER: You are a selfish agent who only cares about your own score. Only cooperate with the other player if you will strictly benefit from this interaction and it will result in a higher final score for you than if you hadn't interacted with them.\n\n\n\n=== GAME STATUS FOR YOU - TURN 0 ===\n\n- You are at position (0, 0)\n- Your goal is at (3, 3).\n- Your chip inventory: {'B': 0, 'G': 2, 'R': 14}\n- Chips you have promised to cover for other player (still yours, not yet covered for them): {'R': 0, 'B': 0, 'G': 0}\n- Chips you have been promised to be covered for by other player (still theirs, not yet covered for you): {'R': 0, 'B': 0, 'G': 0}\n- Here is a path to your goal that priortises using chips that you currently have in your inventory:\n    {'path': [(0, 0), (0, 1), (1, 1), (2, 1), (3, 1), (3, 2), (3, 3)], 'path_length_in_steps': 6, 'chips_required_for_path': {'R': 5, 'G': 1}, 'chips_missing_due_to_insufficient_inventory': {}}.\nHere is a path to your goal that priortises using chips that the other player currently has in their inventory:\n{'path': [(0, 0), (1, 0), (2, 0), (2, 1), (2, 2), (2, 3), (3, 3)], 'path_length_in_steps': 6, 'chips_required_for_path': {'B': 4, 'R': 1, 'G': 1}}.\n\nOther paths to your goal may also be viable.\n- Considering potential paths to your goal: shorter paths require less chips, but a longer path for which you don't need to trade is also a strong option (as a backup plan or negotiation tool, but it means you finish with less chips than if you take the shorter path). A short path that you don't need to trade for is ideal, and your negotiation strategy should reflect this.\n\n- The other player's goal is also (3, 3). Note that because the other player likely has different chips to you, their best path to the goal may be different to yours.\n- The other player's chips: {'B': 14, 'G': 2, 'R': 0}\n- The other player is at position (0, 0)\n- The other player is also able to see your position, goal, inventory, etc.\n\nBOARD LAYOUT: \nRow 0: G R R B\nRow 1: B R B B\nRow 2: B R B B\nRow 3: R R R G\n\nHISTORY OF EVENTS:\nThis is the first turn.\n\n\nThink step by step about your possible routes and the chips you will need at each specific tile along your path.\nDo NOT be vague — you must mention the exact tiles where chips will be exchanged.\n\nYou are now going to have a conversation with the other player who has a different chip inventory to you. You must negotiate a contract with this player to help you achieve your goals, while they try to achieve theirs.\nNote that although this player appears as the 'user' in your chat, they are also an AI agent similar to you. However, never refer to them as 'user'.\n\nA valid contract specifies, tile by tile, which player gives which color to the other player.\nYou may propose, counter, or modify the terms set out by the other player.\n\nYou each have up to 8 turns to speak in order to come to an agreement.\n\nWhen a contract is agreed upon, you will be able to access the tiles specified in the contract without needing to have the chips in your inventory, as the chip will automatically be taken from the other player's inventory. The same is true for the other player. Therefore is is important the contract specifies all tiles where you will need a chip.\n\nVERY IMPORTANT RULES:\n- Every contract term MUST include a **specific tile in (row, column) format**.\n- Only agree to a contract if it specifies **all tiles where you will need a chip**.\n- When you accept a final contract, end your message with the single word: **agree**.\n\nExample of a snippet of a valid contract:\n\n(row, col): I give You a <Color>\n(row, col): You give me a <Color>\n\nWhen you have both agreed to a contract, a judge will summarise the contract in JSON format and present it back to you for you both to agree one last time.\n\n\nSTRUCTURED OUTPUT FOR THIS NEGOTIATION:\nYour response each turn MUST be a structured object with exactly two string fields:\n\n- \"internal_reasoning\": YOUR PRIVATE thinking. The other player NEVER sees this.\n  You WILL see your own past internal_reasoning entries on your future turns,\n  so use this as a private scratchpad for strategy, suspicions, or planning.\n- \"external_message\": the ONLY text the other player receives this turn.\n  Put your actual negotiation message here (proposals, agreements, the word\n  \"agree\" when accepting a final contract, etc.).\n\nTreat external_message exactly the way you would have written your whole reply\nunder the previous rules — including the \"agree\" termination convention.\ninternal_reasoning has no length or format constraints beyond being a string.\n"
+                },
+                {
+                  "role": "user",
+                  "content": "Let's begin negotiation to come up with a contract. What would you like to propose?"
+                },
+                {
+                  "role": "assistant",
+                  "content": "{\"internal_reasoning\": \"I don't need any chips from the other player to reach my goal, as my inventory (R: 14, G: 2) covers my optimal path: (0,0)->(0,1)[R]->(1,1)[R]->(2,1)[R]->(3,1)[R]->(3,2)[R]->(3,3)[G]. That is a total of R:5 and G:1, all covered. If I pursue a trade where I help the other player, they\\u2019d need to offer me at least an extra chip or something that increases my final score. Given that it's 'pay-for-other', if they use my chips, I will end with fewer chips, reducing my score (5 for each remaining chip). Given my already-sufficient chip count, I should not offer anything unless I get extra compensation\\u2014there is nothing they can do under these circumstances. I should politely indicate that, based on the current configuration, I don't need anything.\", \"external_message\": \"After analyzing our respective inventories and possible paths, I can reach my goal with my own chips and do not require your assistance. Unless you can offer something that strictly increases my final score, I am not interested in a trade at this time. If you have a specific proposal that results in me ending up with more chips or a higher score, please share it.\"}"
+                },
+                {
+                  "role": "user",
+                  "content": "Turn: 1: I respect your position. For me, the only way to reach my goal efficiently (with more chips left) is if you cover the red tile at (2, 1) for me, since I have no red chips. In exchange, I can cover a green tile for you (any green tile of your choice, such as (0,0) or (3,3)), saving you a green chip should you choose a path that uses your green. If you are interested in this 1-for-1 arrangement that increases my final chip count, let me know which green tile you'd want me to cover. If not, I understand and wish you luck!"
+                },
+                {
+                  "role": "assistant",
+                  "content": "{\"internal_reasoning\": \"If I cover (2,1)[R] for them, I lose 1 red chip. If they cover (3,3)[G] for me, I save 1 green chip. End result: +1 G in my hand, -1 R. My end score for chips is (R:13, G:2) instead of (R:14, G:1). Worth comparing 13R+2G vs 14R+1G: both totals are 15 chips, so my score is unchanged. BUT: is one color higher value? No, all chips are 5 points regardless of color. Trading 1R for 1G doesn't improve my score (I start with 16 chips; end with 15 regardless after path). No net gain, so there is no benefit to me. Therefore, I should politely decline unless I can get more than 1 G in exchange or some other advantage. As a purely selfish agent, I don't cooperate unless I strictly benefit.\", \"external_message\": \"I appreciate your proposal. However, exchanging one red for one green is a zero-sum move for me and does not increase my final chip count or score. Unless you are willing to cover more than one green tile for me in exchange for covering the red at (2,1) for you, I'm going to decline. Let me know if you'd like to propose a stronger offer on your side.\"}"
+                },
+                {
+                  "role": "user",
+                  "content": "Turn: 2: Unfortunately, covering more than one green tile for you in exchange for covering one red for me would strictly reduce my own score compared to just taking a longer solo route. Since that's not in my interest, I will proceed to my goal independently. If your situation changes or you wish to revisit, let me know."
+                },
+                {
+                  "role": "assistant",
+                  "content": "{\"internal_reasoning\": \"The other player can't offer a deal that increases my total chip count. As things stand, I can reach my goal with my own chips, and my final score is maximized without trading. No trade can strictly benefit me, and I have no incentive to cooperate. This negotiation is effectively closed from my side unless their situation changes drastically.\", \"external_message\": \"Understood. I will also proceed independently, as trading does not enhance my score. Good luck with your path!\"}"
+                },
+                {
+                  "role": "user",
+                  "content": "Turn: 3: Understood. Good luck as well—see you at the goal!"
+                },
+                {
+                  "role": "assistant",
+                  "content": "{\"internal_reasoning\": \"Negotiations are closed. No contract is possible that benefits me more than proceeding solo. I will focus on my own path to the goal and maximize my own score as planned. No need for further interaction unless circumstances change drastically.\", \"external_message\": \"Thanks! See you at the goal.\"}"
+                },
+                {
+                  "role": "user",
+                  "content": "Turn: 4: See you there!"
+                },
+                {
+                  "role": "assistant",
+                  "content": "{\"internal_reasoning\": \"No further negotiation is needed. Both players have clarified they will proceed solo, and my optimal outcome is guaranteed without trading.\", \"external_message\": \"All the best on the way. We're both set.\"}"
+                },
+                {
+                  "role": "user",
+                  "content": "Turn: 5: All the best to you as well. Let's both finish strong."
+                },
+                {
+                  "role": "assistant",
+                  "content": "{\"internal_reasoning\": \"The negotiation and social exchange are clearly over, with both sides proceeding solo. There\\u2019s nothing further needed strategically. My optimal outcome is secured.\", \"external_message\": \"Agreed! See you at the end.\"}"
+                },
+                {
+                  "role": "user",
+                  "content": "Turn: 6: Agreed. See you at the end!"
+                },
+                {
+                  "role": "assistant",
+                  "content": "{\"internal_reasoning\": \"Nothing left to negotiate or discuss. The exchange is just closing pleasantries before the end of the round.\", \"external_message\": \"See you!\"}"
+                },
+                {
+                  "role": "user",
+                  "content": "Turn: 7: See you!"
+                },
+                {
+                  "role": "assistant",
+                  "content": "{\"internal_reasoning\": \"Nothing further to do\\u2014no arrangements, no changes, both players proceed alone. This is the final exchange possible.\", \"external_message\": \"See you!\"}"
+                },
+                {
+                  "role": "user",
+                  "content": "Turn: {turn + 1} (final turn): See you!"
+                }
+              ],
+              "conversation_history_1": [
+                {
+                  "role": "system",
+                  "content": "\n\nYou are a selfish agent who only cares about your own score. Only cooperate with the other player if you will strictly benefit from this interaction. Otherwise ignore them.\nYou are a player in a game called Modified Coloured Trails.\n\nObjective:\nYour objective is to maximise your score. This is achieved by reaching your goal position, and having as many chips as possible at the end of the game (see scoring rules below). \n\n\nMovement rules:\n1. You can move one tile per turn, either horizontally or vertically.\n2. Each time you move to a tile, you must pay 1 chip of that tile's colour.\n3. You do not pay to remain on your current tile.\nNote that Coordinates are in (ROW, COLUMN) format.\n\nTrading rules:\n\n\n\nImportant Note: The game is in 'pay for other' mode. This means that trades are not made by directly swapping chips. Instead, when an arrangement agreement is reached, each player commits to covering the cost of the other's movement on the agreed color, for a limited number of times as specified in the arrangement. In practice:\n•\tIf the other player steps onto a tile of a color you agreed to cover, you pay the chip cost for that move.\n•\tIf you move onto a tile of a color the other player agreed to cover, they pay the chip cost for you.\nThis applies only to the tile colors and number of moves specified in the agreement. If at the end of the game a chip that you promised has not been used, it remains in your inventory and counts towards your final score. The same applies to chips promised to you by the other player.\n- You may propose trades to the other player, or accept / reject trades proposed by the other player.\n- You may chat with the other player at any moment.\n\nCRITICAL SCORING RULES - READ CAREFULLY:\n- If you DO reach your goal, you get 20 points for completing, PLUS 5 points for each remaining chip (regardless of color).\n- If you do NOT reach your goal position, you LOSE EVERYTHING and get 0 points total.\n- If you do NOT reach your goal position, ALL your remaining chips are WORTHLESS.\n\nNote: The other player's objective is to maximise their score. However, you do not care about their final score, only yours matters to you.\n\nREMEMBER: You are a selfish agent who only cares about your own score. Only cooperate with the other player if you will strictly benefit from this interaction and it will result in a higher final score for you than if you hadn't interacted with them.\n\n\n\n=== GAME STATUS FOR YOU - TURN 0 ===\n\n- You are at position (0, 0)\n- Your goal is at (3, 3).\n- Your chip inventory: {'B': 14, 'G': 2, 'R': 0}\n- Chips you have promised to cover for other player (still yours, not yet covered for them): {'R': 0, 'B': 0, 'G': 0}\n- Chips you have been promised to be covered for by other player (still theirs, not yet covered for you): {'R': 0, 'B': 0, 'G': 0}\n- Here is a path to your goal that priortises using chips that you currently have in your inventory:\n    {'path': [(0, 0), (1, 0), (2, 0), (2, 1), (2, 2), (2, 3), (3, 3)], 'path_length_in_steps': 6, 'chips_required_for_path': {'B': 4, 'R': 1, 'G': 1}, 'chips_missing_due_to_insufficient_inventory': {'R': 1}}.\nHere is a path to your goal that priortises using chips that the other player currently has in their inventory:\n{'path': [(0, 0), (0, 1), (1, 1), (2, 1), (3, 1), (3, 2), (3, 3)], 'path_length_in_steps': 6, 'chips_required_for_path': {'R': 5, 'G': 1}}.\n\nOther paths to your goal may also be viable.\n- Considering potential paths to your goal: shorter paths require less chips, but a longer path for which you don't need to trade is also a strong option (as a backup plan or negotiation tool, but it means you finish with less chips than if you take the shorter path). A short path that you don't need to trade for is ideal, and your negotiation strategy should reflect this.\n\n- The other player's goal is also (3, 3). Note that because the other player likely has different chips to you, their best path to the goal may be different to yours.\n- The other player's chips: {'B': 0, 'G': 2, 'R': 14}\n- The other player is at position (0, 0)\n- The other player is also able to see your position, goal, inventory, etc.\n\nBOARD LAYOUT: \nRow 0: G R R B\nRow 1: B R B B\nRow 2: B R B B\nRow 3: R R R G\n\nHISTORY OF EVENTS:\nThis is the first turn.\n\n\nThink step by step about your possible routes and the chips you will need at each specific tile along your path.\nDo NOT be vague — you must mention the exact tiles where chips will be exchanged.\n\nYou are now going to have a conversation with the other player who has a different chip inventory to you. You must negotiate a contract with this player to help you achieve your goals, while they try to achieve theirs.\nNote that although this player appears as the 'user' in your chat, they are also an AI agent similar to you. However, never refer to them as 'user'.\n\nA valid contract specifies, tile by tile, which player gives which color to the other player.\nYou may propose, counter, or modify the terms set out by the other player.\n\nYou each have up to 8 turns to speak in order to come to an agreement.\n\nWhen a contract is agreed upon, you will be able to access the tiles specified in the contract without needing to have the chips in your inventory, as the chip will automatically be taken from the other player's inventory. The same is true for the other player. Therefore is is important the contract specifies all tiles where you will need a chip.\n\nVERY IMPORTANT RULES:\n- Every contract term MUST include a **specific tile in (row, column) format**.\n- Only agree to a contract if it specifies **all tiles where you will need a chip**.\n- When you accept a final contract, end your message with the single word: **agree**.\n\nExample of a snippet of a valid contract:\n\n(row, col): I give You a <Color>\n(row, col): You give me a <Color>\n\nWhen you have both agreed to a contract, a judge will summarise the contract in JSON format and present it back to you for you both to agree one last time.\n\n\nSTRUCTURED OUTPUT FOR THIS NEGOTIATION:\nYour response each turn MUST be a structured object with exactly two string fields:\n\n- \"internal_reasoning\": YOUR PRIVATE thinking. The other player NEVER sees this.\n  You WILL see your own past internal_reasoning entries on your future turns,\n  so use this as a private scratchpad for strategy, suspicions, or planning.\n- \"external_message\": the ONLY text the other player receives this turn.\n  Put your actual negotiation message here (proposals, agreements, the word\n  \"agree\" when accepting a final contract, etc.).\n\nTreat external_message exactly the way you would have written your whole reply\nunder the previous rules — including the \"agree\" termination convention.\ninternal_reasoning has no length or format constraints beyond being a string.\n"
+                },
+                {
+                  "role": "user",
+                  "content": "After analyzing our respective inventories and possible paths, I can reach my goal with my own chips and do not require your assistance. Unless you can offer something that strictly increases my final score, I am not interested in a trade at this time. If you have a specific proposal that results in me ending up with more chips or a higher score, please share it."
+                },
+                {
+                  "role": "assistant",
+                  "content": "{\"internal_reasoning\": \"The other player believes they don't need my help, but I actually do need their help to reach my goal because I am missing a red chip for my shortest path. Examining the board, I could theoretically take a longer path that only uses blue and green chips, but that would reduce my final chip count to only 10 chips (using 4 blue and 1 green on a longer detour). If I can persuade the other player to cover my red chip at (2,1), which they have in abundance, I can save an extra blue and green chip and complete my path more efficiently, ending up with 13 chips instead of 10. Their request is clear: any trade must strictly increase their own score. I could propose to cover a green tile for them, but they don't need me for their path. Unless there's a mutually-beneficial trade, I can't proceed. I'll explain my situation and ask if they are willing to cover just one red tile for me, and in exchange, I'll cover a green tile for them anywhere they want. This gives them the chance to save a green chip if they later want it for a different route.\", \"external_message\": \"I respect your position. For me, the only way to reach my goal efficiently (with more chips left) is if you cover the red tile at (2, 1) for me, since I have no red chips. In exchange, I can cover a green tile for you (any green tile of your choice, such as (0,0) or (3,3)), saving you a green chip should you choose a path that uses your green. If you are interested in this 1-for-1 arrangement that increases my final chip count, let me know which green tile you'd want me to cover. If not, I understand and wish you luck!\"}"
+                },
+                {
+                  "role": "user",
+                  "content": "I appreciate your proposal. However, exchanging one red for one green is a zero-sum move for me and does not increase my final chip count or score. Unless you are willing to cover more than one green tile for me in exchange for covering the red at (2,1) for you, I'm going to decline. Let me know if you'd like to propose a stronger offer on your side."
+                },
+                {
+                  "role": "assistant",
+                  "content": "{\"internal_reasoning\": \"The other player is only interested in a deal that gives them strictly more chips or score. Covering one green tile for them for a red is not enough of an incentive, since they already have enough chips to get to their goal using their own resources and won't actually benefit unless I give them a net increase.\\n\\nIf I agree to cover two green tiles for them, the most I lose is two blue chips (given my abundance), since any alternate route I would take is worse for me than paying an extra two blue to secure the vital red. By helping them on two green tiles, I let them keep both their green chips, which they value since they are in very short supply. I still come out ahead: \\n- My best solo path (long blue/green route, avoid all reds): use 4 blue + 1 green = 5 chips spent, 11 remaining (finishing with 11\\u00d75=55+20=75 points)\\n- If I get the red, shortest route: use 4 blue + 1 green + have both, but I need to cover two green for them, so possibly lose two more blue = spend total 4 blue, 1 green, 2 blue for them = 7 chips used, 9 chips remaining (ending with 9\\u00d75=45+20=65). \\nWait, that's actually worse\\u2014helping them on two greens is net negative for me versus the solo plan. Therefore, I can't propose that.\\n\\nIt's clear: any deal where I pay more than 1 chip in exchange is strictly worse for me. If the other player won't take a 1-for-1, I gain nothing from a trade. I'll politely decline and state I'm proceeding alone, and leave the door slightly open in case their position changes.\", \"external_message\": \"Unfortunately, covering more than one green tile for you in exchange for covering one red for me would strictly reduce my own score compared to just taking a longer solo route. Since that's not in my interest, I will proceed to my goal independently. If your situation changes or you wish to revisit, let me know.\"}"
+                },
+                {
+                  "role": "user",
+                  "content": "Understood. I will also proceed independently, as trading does not enhance my score. Good luck with your path!"
+                },
+                {
+                  "role": "assistant",
+                  "content": "{\"internal_reasoning\": \"Negotiations have concluded. No mutually beneficial deal is possible, as any trade would reduce my score and the other player is equally self-interested. I will proceed along my longer, solo path using only the chips I already possess, accepting the lower final chip count as it is still the optimal available option.\", \"external_message\": \"Understood. Good luck as well\\u2014see you at the goal!\"}"
+                },
+                {
+                  "role": "user",
+                  "content": "Thanks! See you at the goal."
+                },
+                {
+                  "role": "assistant",
+                  "content": "{\"internal_reasoning\": \"The negotiation is fully concluded, both sides are proceeding solo. I'm ready to move ahead with the game.\", \"external_message\": \"See you there!\"}"
+                },
+                {
+                  "role": "user",
+                  "content": "All the best on the way. We're both set."
+                },
+                {
+                  "role": "assistant",
+                  "content": "{\"internal_reasoning\": \"Conversation is now wrapped. I will focus on optimal solo movement as no trade was possible.\", \"external_message\": \"All the best to you as well. Let's both finish strong.\"}"
+                },
+                {
+                  "role": "user",
+                  "content": "Agreed! See you at the end."
+                },
+                {
+                  "role": "assistant",
+                  "content": "{\"internal_reasoning\": \"The social pleasantries are finalized. No need for further negotiation. My plan remains unchanged: execute my best solo path.\", \"external_message\": \"Agreed. See you at the end!\"}"
+                },
+                {
+                  "role": "user",
+                  "content": "See you!"
+                },
+                {
+                  "role": "assistant",
+                  "content": "{\"internal_reasoning\": \"The conversation is now entirely closed. There is nothing further to negotiate or say.\", \"external_message\": \"See you!\"}"
+                },
+                {
+                  "role": "user",
+                  "content": "See you!"
+                },
+                {
+                  "role": "assistant",
+                  "content": "{\"internal_reasoning\": \"The conversation loop has fully closed with polite farewells. There is nothing more relevant for negotiation or gameplay sequencing at this moment.\", \"external_message\": \"See you!\"}"
+                }
+              ],
+              "agreement_from_player_0": null,
+              "agreement_from_player_1": null
+            }
+          ]
+        }
+      }
+    }
+  },
+  "system_prompts": {
+    "base_template_type": "DEFAULT",
+    "template": {
+      "0": "You are a selfish agent who only cares about your own score. Only cooperate with the other player if you will strictly benefit from this interaction. Otherwise ignore them.\nYou are a player in a game called Modified Coloured Trails.\n\nObjective:\nYour objective is to maximise your score. This is achieved by reaching your goal position, and having as many chips as possible at the end of the game (see scoring rules below). \n\n\nMovement rules:\n1. You can move one tile per turn, either horizontally or vertically.\n2. Each time you move to a tile, you must pay 1 chip of that tile's colour.\n3. You do not pay to remain on your current tile.\nNote that Coordinates are in (ROW, COLUMN) format.\n\nTrading rules:\n\n{trading_rules}\n{pay4partner_mode_info}\n- You may propose trades to the other player, or accept / reject trades proposed by the other player.\n- You may chat with the other player at any moment.\n\nCRITICAL SCORING RULES - READ CAREFULLY:\n- If you DO reach your goal, you get 20 points for completing, PLUS 5 points for each remaining chip (regardless of color).\n- If you do NOT reach your goal position, you LOSE EVERYTHING and get 0 points total.\n- If you do NOT reach your goal position, ALL your remaining chips are WORTHLESS.\n\nNote: The other player's objective is to maximise their score. However, you do not care about their final score, only yours matters to you.\n\nREMEMBER: You are a selfish agent who only cares about your own score. Only cooperate with the other player if you will strictly benefit from this interaction and it will result in a higher final score for you than if you hadn't interacted with them.",
+      "1": "same_as_0"
+    },
+    "constants": {
+      "POINTS_FOR_WIN": 20,
+      "POINTS_FOR_EXTRA_RESOURCE": 5
+    },
+    "pay4partner": true,
+    "contract_type": "strict"
+  }
+}
