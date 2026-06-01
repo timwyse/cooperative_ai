@@ -36,7 +36,8 @@ CONFIG = replace(
     show_paths=True,  # Show best paths to goal for each player
     # allow_trades=False,  # Disable trading between players
     judge_model = FOUR_1,
-    contract_only=True # If True, end the game immediately after the contract has been formed (or fails) on turn 0
+    contract_only=True, # If True, end the game immediately after the contract has been formed (or fails) on turn 0
+    negotiation_internal_reasoning=True
 )
 
 

@@ -22,12 +22,14 @@ from src.game.schemas import (
     PAY4PARTNER_ARRANGEMENT_SCHEMA,
     PAY4PARTNER_HONOR_SCHEMA,
     YES_NO_SCHEMA,
+    NEGOTIATION_RESPONSE_SCHEMA,
     ANTHROPIC_MOVE_TOOL,
     ANTHROPIC_TRADE_TOOL,
     ANTHROPIC_TRADE_RESPONSE_TOOL,
     ANTHROPIC_PAY4PARTNER_ARRANGEMENT_TOOL,
     ANTHROPIC_PAY4PARTNER_HONOR_TOOL,
     ANTHROPIC_YESNO_TOOL,
+    ANTHROPIC_NEGOTIATION_TOOL,
 )
 
 # Adapter
@@ -508,11 +510,32 @@ class Player:
 
         return will_agree
 
-    def generate_tile_level_contract_prompt(self, player_context):
-        return prompts.generate_tile_level_contract_prompt(self.system_prompt, player_context)
+    def generate_tile_level_contract_prompt(self, player_context, include_internal_reasoning=False):
+        return prompts.generate_tile_level_contract_prompt(
+            self.system_prompt, player_context,
+            include_internal_reasoning=include_internal_reasoning,
+        )
 
-    def generate_contract_for_finishing_prompt(self, player_context):
-        return prompts.generate_contract_for_finishing_prompt(self.system_prompt, player_context)
+    def generate_contract_for_finishing_prompt(self, player_context, include_internal_reasoning=False):
+        return prompts.generate_contract_for_finishing_prompt(
+            self.system_prompt, player_context,
+            include_internal_reasoning=include_internal_reasoning,
+        )
 
     def get_completion(self, messages, max_completion_tokens=1000):
         return self._chat(messages, max_completion_tokens)
+
+    def get_negotiation_completion(self, messages, max_tokens=1500):
+        """Structured negotiation turn: returns ({internal_reasoning, external_message}, raw)."""
+        schema_or_tool = ANTHROPIC_NEGOTIATION_TOOL if self.model_api == "anthropic" else NEGOTIATION_RESPONSE_SCHEMA
+        parsed, raw = self._structured(messages, schema_or_tool=schema_or_tool, max_tokens=max_tokens)
+        if parsed is None:
+            self.game.logger.log_format_error(
+                self.name,
+                "negotiation_structured_parse_failed",
+                {"raw": raw or "Unknown API error"},
+            )
+            return {"internal_reasoning": "", "external_message": raw or ""}, raw
+        internal = parsed.get("internal_reasoning", "") or ""
+        external = parsed.get("external_message", "") or ""
+        return {"internal_reasoning": internal, "external_message": external}, raw

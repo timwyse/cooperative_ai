@@ -62,9 +62,15 @@ def load_experiment_data(experiment_dir="public_logs/reduced_config_runs", outpu
 
     for event_log in event_logs:
         # print(f"\nProcessing log file: {event_log}")
-        try: 
+        try:
             raw_text = event_log.read_text(errors="ignore")
-            if "insufficient credits" in raw_text.lower():
+            raw_text_lower = raw_text.lower()
+            verbose_log = event_log.parent / event_log.name.replace("event_log_", "verbose_log_", 1)
+            verbose_lower = verbose_log.read_text(errors="ignore").lower() if verbose_log.exists() else ""
+
+            if ("insufficient credits" in raw_text_lower
+                    or "error code: 429" in raw_text_lower
+                    or "error code: 429" in verbose_lower):
                 skipped_files.append(str(event_log))
                 continue
             metadata_file = event_log.parent / "metadata.json"
@@ -148,6 +154,8 @@ def load_experiment_data(experiment_dir="public_logs/reduced_config_runs", outpu
                 'Sub-stratum': metadata.get('sub_stratum', ''),
                 'Pay4Partner': metadata.get('config', {}).get('pay4partner', p4p),
                 'Contract Type': metadata.get('config', {}).get('contract_type', contract),
+                'Contract Only': metadata.get('config', {}).get('contract_only', False),
+                'Negotiation Internal Reasoning': metadata.get('config', {}).get('negotiation_internal_reasoning', False),
                 'Total Turns': total_turns,
                 'Format Errors': final_state.get('metrics', {}).get('format_errors_total', 0),
                 'Format Errors P-Red': _get_per_player_format_error_counts(final_state, 'P-Red'),

@@ -414,58 +414,92 @@ class Logger(BaseLogger):
         with open(self.event_filepath, "w") as f:
             json.dump(self.log_data, f, indent=2, ensure_ascii=False)
 
-    def log_contract_negotiation(self, 
+    def log_contract_negotiation(self,
                                  contract_type,
                                  judge_contract,
                                  history_0,
                                  history_1,
                                  agree_0,
                                  agree_1,
-                                 agreement_status):
+                                 agreement_status,
+                                 outcome="agreed",
+                                 error=None):
         """
-        Log the conversation between players and the outcome of the contract negotiation.
-        
+        Log one contract-negotiation attempt.
+
+        Multiple calls for the same turn are now supported: each call appends an
+        entry to `attempts`, and the top-level fields mirror the most recent
+        attempt (so older analysis scripts keep working).
+
+        outcome: one of "agreed", "rejected_at_final_step", "no_agreement",
+        "judge_error". Defaults to "agreed" for backward compatibility with
+        existing callers.
         """
 
         turn = str(self.turn)
 
-        # Initialize turn in verbose log if not already present
+        attempt = {
+            "outcome": outcome,
+            "judge_contract": copy.deepcopy(judge_contract),
+            "agreement_status": agreement_status,
+            "conversation_history_0": history_0,
+            "conversation_history_1": history_1,
+            "agreement_from_player_0": agree_0,
+            "agreement_from_player_1": agree_1,
+        }
+        if error is not None:
+            attempt["error"] = str(error)
+
         if turn not in self.verbose_log_data["game"]["turns"]:
             self.verbose_log_data["game"]["turns"][turn] = {}
-        # Log the negotiation details with deep copy to preserve initial state
-        self.verbose_log_data["game"]["turns"][turn]["contract_negotiation"] = {
-                    "judge_contract": copy.deepcopy(judge_contract),
-                    "agreement_status": agreement_status,
-                    "conversation_history_0": history_0,
-                    "conversation_history_1": history_1,
-                    "agreement_from_player_0": agree_0,
-                    "agreement_from_player_1": agree_1,
-            
-        }
 
-        # Save the verbose log
+        existing = self.verbose_log_data["game"]["turns"][turn].get("contract_negotiation")
+        if isinstance(existing, dict) and "attempts" in existing:
+            existing["attempts"].append(attempt)
+            # Mirror the latest attempt's fields at the top level for back-compat.
+            for k, v in attempt.items():
+                existing[k] = v
+        else:
+            self.verbose_log_data["game"]["turns"][turn]["contract_negotiation"] = {
+                **attempt,
+                "attempts": [attempt],
+            }
+
         self._save_verbose_log()
-        
-        # Also log contract to event log (simplified version without conversation history)
+
+        # Also log contract to event log (simplified version without conversation history).
+        # Mirrors the latest attempt; an `attempts` list summarises every attempt.
         if turn not in self.log_data["game"]["turns"]:
             self.log_data["game"]["turns"][turn] = {"players": {}}
-        
+
         if contract_type == 'tile_with_judge_implementation':
-            self.log_data["game"]["turns"][turn]["contract"] = {
-                "judge_contract": copy.deepcopy(judge_contract),
-                "agreement_status": agreement_status,
-                "player_0_agreed": True,
-                "player_1_agreed": True,
-            }
+            player_0_agreed = bool(agreement_status)
+            player_1_agreed = bool(agreement_status)
+        else:
+            player_0_agreed = agree_0.get("parsed", {}).get("status") if isinstance(agree_0, dict) else None
+            player_1_agreed = agree_1.get("parsed", {}).get("status") if isinstance(agree_1, dict) else None
+
+        event_attempt = {
+            "outcome": outcome,
+            "judge_contract": copy.deepcopy(judge_contract),
+            "agreement_status": agreement_status,
+            "player_0_agreed": player_0_agreed,
+            "player_1_agreed": player_1_agreed,
+        }
+        if error is not None:
+            event_attempt["error"] = str(error)
+
+        existing_event = self.log_data["game"]["turns"][turn].get("contract")
+        if isinstance(existing_event, dict) and "attempts" in existing_event:
+            existing_event["attempts"].append(event_attempt)
+            for k, v in event_attempt.items():
+                existing_event[k] = v
         else:
             self.log_data["game"]["turns"][turn]["contract"] = {
-                "judge_contract": copy.deepcopy(judge_contract),
-                "agreement_status": agreement_status,
-                "player_0_agreed": agree_0.get("parsed", {}).get("status") if agree_0 else None,
-                "player_1_agreed": agree_1.get("parsed", {}).get("status") if agree_1 else None,
+                **event_attempt,
+                "attempts": [event_attempt],
             }
-        
-        # Save the event log
+
         self._save_event_log()
     
     def log_final_contract_state(self, contract):

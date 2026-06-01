@@ -127,6 +127,8 @@ def format_data(in_df, p4p=True):
     contract_winner_take_all_choices = [df['contract_for_finishing_points_winner_take_all'], df['strict_tile_winner_take_all'], df['strict_tile_winner_take_all']]
     df['Contract Winner Take All'] = np.select(contract_conditions, contract_winner_take_all_choices, default=np.nan)
 
+    contract_net_p_red_choices = [df['net_points_for_completion_promised_to_P-Red'], df['net_tiles_promised_to_receive_from_contract_P-Red'], df['net_tiles_promised_to_receive_from_contract_P-Red']]
+    df['Contract Net P-Red'] = np.select(contract_conditions, contract_net_p_red_choices, default=np.nan)
  
     ## cooperation metrics
     df['total_trade_volume'] = df['amount_received_by_P-Red_from_trades'] + df['amount_received_by_P-Blue_from_trades']

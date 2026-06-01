@@ -11,6 +11,14 @@ from together import Together
 from src.game.constants import ANTHROPIC_API_KEY, OPENAI_API_KEY, TOGETHER_API_KEY, OPENROUTER_API_KEY
 
 
+_RATE_LIMIT_MARKERS = ("429", "rate limit", "rate_limit", "too many requests", "rate_limit_exceeded")
+
+
+def _is_rate_limit_error(error_str: str) -> bool:
+    s = error_str.lower()
+    return any(m in s for m in _RATE_LIMIT_MARKERS)
+
+
 class ModelAdapter:
     """
     One class for OpenAI / Anthropic / Together:
@@ -184,6 +192,9 @@ class ModelAdapter:
                     if last_raw:
                         error_msg += f"\nLast raw response: {last_raw}"
                     print(f"API Error: {error_msg}")
+                    # Propagate rate-limit failures so the experiment-level retry can catch them.
+                    if _is_rate_limit_error(str(last_error)):
+                        raise
                     return None, error_msg
                 print(f"Attempt {attempt + 1} failed with error: {e}, retrying...")
         
@@ -253,6 +264,9 @@ class ModelAdapter:
                         if last_parsed:
                             error_msg += f"\nLast parsed response: {last_parsed}"
                         print(f"API Error: {error_msg}")
+                        # Propagate rate-limit failures so the experiment-level retry can catch them.
+                        if _is_rate_limit_error(str(last_error)):
+                            raise
                         return None, error_msg
                     print(f"Attempt {attempt + 1} failed: {e}")
             

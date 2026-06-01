@@ -896,14 +896,15 @@ class Game:
         # Initialize conversation history for both players
         player_0 = players[0]
         player_1 = players[1]
+        ir_on = self.config.negotiation_internal_reasoning
         if contract_type == 'contract_for_finishing':
-            system_player_0 = player_0.generate_contract_for_finishing_prompt(player_0.generate_player_context_message(self, self.grid))
-            system_player_1 = player_1.generate_contract_for_finishing_prompt(player_1.generate_player_context_message(self, self.grid))
+            system_player_0 = player_0.generate_contract_for_finishing_prompt(player_0.generate_player_context_message(self, self.grid), include_internal_reasoning=ir_on)
+            system_player_1 = player_1.generate_contract_for_finishing_prompt(player_1.generate_player_context_message(self, self.grid), include_internal_reasoning=ir_on)
             history_0 = [{"role": "system", "content": system_player_0 }]
             history_1 = [{"role": "system", "content": system_player_1 }]
         elif contract_type in ('strict', 'tile_with_judge_implementation'):
-            system_player_0 = player_0.generate_tile_level_contract_prompt(player_0.generate_player_context_message(self, self.grid))
-            system_player_1 = player_1.generate_tile_level_contract_prompt(player_1.generate_player_context_message(self, self.grid))
+            system_player_0 = player_0.generate_tile_level_contract_prompt(player_0.generate_player_context_message(self, self.grid), include_internal_reasoning=ir_on)
+            system_player_1 = player_1.generate_tile_level_contract_prompt(player_1.generate_player_context_message(self, self.grid), include_internal_reasoning=ir_on)
             history_0 = [{"role": "system", "content": system_player_0}]
             history_1 = [{"role": "system", "content": system_player_1}]
         n_exchanges = 8
@@ -913,43 +914,85 @@ class Game:
         history_0.append({"role": "user", "content": initial_message})
         response_1 = ""
 
+        def speak(player, own_history, other_history, listener_prefix=None):
+            """One negotiation turn. Returns the externally-visible text used for agreement detection."""
+            if ir_on:
+                parsed, _raw = player.get_negotiation_completion(own_history)
+                internal = parsed["internal_reasoning"]
+                external = parsed["external_message"]
+                # Speaker keeps the full structured turn in their own history so they see their own
+                # past internal reasoning on subsequent turns.
+                own_history.append({
+                    "role": "assistant",
+                    "content": json.dumps({"internal_reasoning": internal,
+                                           "external_message": external}),
+                })
+                listener_content = f"{listener_prefix}: {external}" if listener_prefix else external
+                other_history.append({"role": "user", "content": listener_content})
+                return external
+            else:
+                response = player.get_completion(own_history)
+                if listener_prefix is None:
+                    own_history.append({"role": "assistant", "content": response})
+                    other_history.append({"role": "user", "content": response})
+                else:
+                    own_history.append({"role": "assistant", "content": f"{listener_prefix}: {response}"})
+                    other_history.append({"role": "user", "content": f"{listener_prefix}: {response}"})
+                return response
+
         # Alternating dialogue
         agree = False
         for turn in range(n_exchanges):  # Number of exchanges
             turn_message = f"Turn: {turn + 1}" if turn < n_exchanges - 1 else "Turn: {turn + 1} (final turn)"
 
-            response_0 = player_0.get_completion(history_0)
-            history_0.append({"role": "assistant", "content": response_0})
-            history_1.append({"role": "user", "content": response_0})
+            # Player 0 speaks (no turn prefix, matching prior behaviour)
+            response_0 = speak(player_0, history_0, history_1, listener_prefix=None)
             if message_starts_or_ends_with_agree(response_0.lower()) and message_starts_or_ends_with_agree(response_1.lower()):
                 agree = True
                 break
 
-            # Player 1 replies
-            response_1 = player_1.get_completion(history_1)
-            history_1.append({"role": "assistant", "content": f"{turn_message}: {response_1}"})
-            history_0.append({"role": "user", "content": f"{turn_message}: {response_1}"})
+            # Player 1 replies (turn prefix applied to both sides, matching prior behaviour)
+            response_1 = speak(player_1, history_1, history_0, listener_prefix=turn_message)
 
             if message_starts_or_ends_with_agree(response_0.lower()) and message_starts_or_ends_with_agree(response_1.lower()):
                 agree = True
                 break
+        def _strip_internal_reasoning(history):
+            """Return a copy of history with internal_reasoning removed from structured assistant turns."""
+            if not ir_on:
+                return history
+            cleaned = []
+            for msg in history:
+                if msg.get("role") == "assistant" and isinstance(msg.get("content"), str):
+                    try:
+                        obj = json.loads(msg["content"])
+                        if isinstance(obj, dict) and "external_message" in obj:
+                            cleaned.append({"role": "assistant", "content": obj["external_message"]})
+                            continue
+                    except (json.JSONDecodeError, TypeError):
+                        pass
+                cleaned.append(msg)
+            return cleaned
+
         if agree == True:
             print("Agreement reached! Consulting judge to formalize contract.")
-            
+
             print(f"Player 0's resources: {player_0.resources}")
             print(f"Player 0's messages: {history_0}")
             print(f"Player 1's messages: {history_1}")
-            
 
-            conversation_formatted = self.judge.format_conversation_for_contract(history_0, players, history_pov=0)
+            judge_history_0 = _strip_internal_reasoning(history_0)
+            conversation_formatted = self.judge.format_conversation_for_contract(judge_history_0, players, history_pov=0)
             print(f"Formatted conversation for judge based off player 0:\n{conversation_formatted}")
             
             if self.contract_type == 'tile_with_judge_implementation':
                 # In this mode, we trust the players to have come up with a valid contract themselves and judge impelements it step by step
                 judge_contract = conversation_formatted
                 print(f"Using player-generated contract directly:\n{judge_contract}")
-                contract_for_0 = history_0
-                contract_for_1 = history_1
+                # The judge sees these histories when checking later moves against the contract,
+                # so strip internal reasoning to keep it private.
+                contract_for_0 = _strip_internal_reasoning(history_0)
+                contract_for_1 = _strip_internal_reasoning(history_1)
                 player_0_agreement_data = "agree"
                 player_1_agreement_data = "agree"
                 contract_status = True
@@ -985,16 +1028,29 @@ class Game:
                         {"error": str(e), "raw_contract": judge_contract}
                     )
                     print(f"Error formatting contract for players: {e}")
+                    self.contract_negotiaion_length = turn + 1
+                    self.logger.log_contract_negotiation(
+                        contract_type=self.contract_type,
+                        judge_contract=judge_contract,
+                        history_0=history_0,
+                        history_1=history_1,
+                        agree_0=None,
+                        agree_1=None,
+                        agreement_status=False,
+                        outcome="judge_error",
+                        error=e,
+                    )
                     return None
-            
+
             self.logger.log_contract_negotiation(
                 contract_type=self.contract_type,
                 judge_contract=judge_contract,
                 history_0=history_0,
                 history_1=history_1,
                 agree_0=player_0_agreement_data,
-                agree_1=player_1_agreement_data,    
-                agreement_status=contract_status
+                agree_1=player_1_agreement_data,
+                agreement_status=contract_status,
+                outcome="agreed" if contract_status else "rejected_at_final_step",
             )
 
             if contract_status: 
@@ -1028,8 +1084,23 @@ class Game:
                 print(f"{player_1.name}'s response: {agree_1}")
                 self.contract_negotiaion_length = turn + 1 # in turns
                 return None
+        else:
+            # Negotiation loop ended without both players saying "agree".
+            print("Negotiation ended without agreement; logging the conversation and returning.")
+            self.contract_negotiaion_length = turn + 1  # in turns
+            self.logger.log_contract_negotiation(
+                contract_type=self.contract_type,
+                judge_contract=None,
+                history_0=history_0,
+                history_1=history_1,
+                agree_0=None,
+                agree_1=None,
+                agreement_status=False,
+                outcome="no_agreement",
+            )
+            return None
 
-    
+
     def validate_trade(self, player, propose_trade):
         """
         Validate a trade proposal.
