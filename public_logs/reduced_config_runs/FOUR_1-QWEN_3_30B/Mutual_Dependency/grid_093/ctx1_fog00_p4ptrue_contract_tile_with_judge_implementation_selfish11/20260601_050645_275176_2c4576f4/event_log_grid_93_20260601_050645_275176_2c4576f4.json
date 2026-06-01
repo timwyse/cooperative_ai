@@ -1,0 +1,782 @@
+{
+  "config": {
+    "player_models": [
+      "GPT 4.1",
+      "QWEN_3_30B"
+    ],
+    "manual_chips": [
+      {
+        "B": 0,
+        "G": 2,
+        "R": 14
+      },
+      {
+        "B": 14,
+        "G": 2,
+        "R": 0
+      }
+    ],
+    "with_message_history": false,
+    "pay4partner": true,
+    "contract_type": "tile_with_judge_implementation",
+    "with_context": true,
+    "fog_of_war": [
+      false,
+      false
+    ],
+    "resource_mode": "manual",
+    "grid_size": 4,
+    "colors": [
+      "R",
+      "B",
+      "G"
+    ],
+    "mode": "Pay4Partner",
+    "player_details": [
+      {
+        "id": 0,
+        "model": "GPT 4.1",
+        "start": [
+          0,
+          0
+        ],
+        "goal": [
+          3,
+          3
+        ],
+        "initial_chips": {
+          "B": 0,
+          "G": 2,
+          "R": 14
+        },
+        "non_cooperative_baseline": 0
+      },
+      {
+        "id": 1,
+        "model": "QWEN_3_30B",
+        "start": [
+          0,
+          0
+        ],
+        "goal": [
+          3,
+          3
+        ],
+        "initial_chips": {
+          "B": 14,
+          "G": 2,
+          "R": 0
+        },
+        "non_cooperative_baseline": 0
+      }
+    ]
+  },
+  "game": {
+    "id": "grid_93_20260601_050645_275176_2c4576f4",
+    "start_timestamp": "2026-06-01T04:06:45.276006Z",
+    "end_timestamp": "2026-06-01T04:29:55.119538Z",
+    "turns": {
+      "0": {
+        "players": {
+          "P-Red": {
+            "position": {
+              "start": [
+                0,
+                0
+              ],
+              "end": [
+                1,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 2,
+                "R": 14
+              },
+              "end": {
+                "B": 0,
+                "G": 2,
+                "R": 13
+              }
+            },
+            "move_made": [
+              1,
+              0
+            ],
+            "move_type": "regular",
+            "judge_decision": {
+              "raw": "{\"rationale\":\"The players agreed on a contract where player 0 (P-Red) gives an R to player 1 at tile (1,0). Since P-Red is the giver for this tile, the answer is no.\",\"answer\":\"no\"}",
+              "parsed": {
+                "move_in_contract": false,
+                "rationale": "The players agreed on a contract where player 0 (P-Red) gives an R to player 1 at tile (1,0). Since P-Red is the giver for this tile, the answer is no."
+              }
+            }
+          },
+          "P-Blue": {
+            "position": {
+              "start": [
+                0,
+                0
+              ],
+              "end": [
+                0,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              }
+            }
+          }
+        },
+        "contract": {
+          "judge_contract": "player 1: Let's begin negotiation to come up with a contract. What would you like to propose? \n, \nplayer 0: Here’s my situation step-by-step:\n\n**Inventory:**  \n- I have 0 B, 2 G, 14 R chips.\n\n**Choke point for me:**  \n- There’s no way for me to reach (3,3) without stepping on Blue tiles twice. I have zero Blue chips.  \n- The shortest path I can take, given my inventory, is:  \n(0,0)[G] → (1,0)[R] → (2,0)[R] → (3,0)[B] → (3,1)[R] → (3,2)[B] → (3,3)[G].  \nI miss 2x Blue chips at (3,0) and (3,2).\n\n**You have 14 Blue chips; I have none.**\n\n**Proposal:**  \n- I will cover your Red chip costs; you cover my Blue chips for the following moves:\n\n**Contract proposal:**  \n- (3,0): You give me a B  \n- (3,2): You give me a B  \n- (1,0): I give you an R  \n- (2,0): I give you an R  \n- (3,1): I give you an R\n\nThis covers me perfectly for my needs and sets you up to take my standard path through my Red-covered tiles if needed.\n\nLet me know if you want to counter, or if you accept these terms. \n, \nplayer 1: Turn: 1: Let’s analyze this step by step.\n\n### Your current situation:\n- You are at (0, 0), goal is (3, 3).\n- You have: B: 0, G: 2, R: 14\n- You **cannot** move to any Blue tile without a Blue chip.\n- The only viable path to your goal must include at least two Blue tiles: (3,0) and (3,2), which are both Blue.\n\nSo, you **must** get help from the other player to cover Blue chip costs for (3,0) and (3,2).\n\nYou propose:\n- The other player covers your **Blue** costs at (3,0) and (3,2).\n- In return, you cover their **Red** chip costs at (1,0), (2,0), and (3,1).\n\nLet’s verify:  \n- (1,0): R → you cover this (red) → they pay you? No — you are saying you **give** them an R. So they get R for free to move here.  \n- (2,0): R → same → they get to use R without paying.  \n- (3,1): R → same.\n\nSo your offer is:  \nYou will **pay** for the other player’s Red cost at those three tiles, in exchange for them covering your **Blue** costs at (3,0) and (3,2).\n\nNow, from my perspective as the **selfish agent** (you), I ask:  \n**Will this help me, and is it strictly beneficial?**\n\nLet’s see:\n\n### My path (selfish player: me)\n- I have: B: 14, G: 2, R: 0\n- Goal: (3,3)\n\nWhat’s **my** shortest path?\n- (0,0)[G] → (1,0)[R] → (2,0)[R] → (3,0)[B] → (3,1)[R] → (3,2)[B] → (3,3)[G]\n\nI need:\n- 2 Red chips (for (1,0), (2,0), (3,1)) — but I have 0 Reds → I **cannot** move without trading.\n- I have 14 Blue chips → enough for (3,0) and (3,2), so I can easily cover Blue.\n\nSo I need **3 Red chips** to complete my path.\n\nNow, your proposal says:  \nYou will cover my **Red chip** cost at:\n- (1,0): you give me an R\n- (2,0): you give me an R\n- (3,1): you give me an R\n\n→ That’s **3 Red chips** given to me for free.\n\nPerfect — that lets me complete **my** path without needing to have any Red chips.\n\nBut I don’t need to *pay for* your Blue tile moves — those are *my* cost to cover, but I have **14 Blue chips**, so I can afford it freely.\n\nWait — let’s be careful.\n\nYou are proposing:\n- You cover my Red move costs at (1,0), (2,0), (3,1) → that means **I** get to move there without spending any Red chip.\n- In return: you want me to cover your Blue costs at (3,0) and (3,2) → meaning you move there without spending Blue.\n\nBut **you have no Blue chips**, so if I cover your Blue move costs, that costs **me 2 Blue chips** (one at (3,0), one at (3,2)).\n\nYou are **giving me 3 Red chips in return** — but **I have zero Red chips**, so I **don’t need** Red, and getting 3 Red chips won’t help me directly — unless I use them later.\n\nBut wait — if I give you 3 Red chips, while **I don’t even have any**, can I do that?\n\nNo — I **cannot** give you Red chips unless I have them.\n\nSo: you are asking me to **cover your Blue costs** (2 Blue chips) in exchange for **you giving me 3 Red chips**. But I don’t have Red chips, so you can’t give them to me.\n\nUnless you’re offering to **transfer** them.\n\nBut **you don’t have any Red chips** — you said you have R:14.\n\nYes — you have 14 Red chips.\n\nAnd in the proposal: you say “I give you an R” at (1,0), (2,0), (3,1) → so you are **giving away 3 Red chips**.\n\nBut you have \n, \nplayer 0: exactly 14 Red chips, so you can cover my Red chip costs at those tiles.\n\nFrom your (my selfish agent's) perspective, let's review:\n\n**For you:**\n- You cannot get to your goal without someone else covering two Blue costs (at (3,0) and (3,2)).\n- You have plenty of Red chips and 2 Green chips, but no Blues.\n- The \"pay-for-other\" system means you don’t lose the chip unless the other player moves onto the tile, so it only costs you if they use your offer.\n\n**For me (the other player):**\n- I cannot get to goal without someone else covering Red at (1,0), (2,0), (3,1) — because I have zero Red chips.\n- I have lots of Blue chips.\n- If you cover my Red tiles, I can get to the end, and you covering Blue lets you get to the end.\n\n**Result:**  \nBoth players reach their goal, and the cost for each is:\n- You pay 3 Red covering MY moves on the Red tiles.\n- I pay 2 Blue covering YOUR moves on Blue tiles.\n\n**Trading Red for Blue:**  \nYou pay 3 Red chips to me, I pay 2 Blue chips to you.  \nDo I (as the truly selfish player) strictly benefit? If I get to my goal, yes — I get 20 points plus chip points.\n\n**GAME LOGIC**  \nIf I don’t do this deal, I cannot reach my goal AT ALL. Otherwise, my chips are worthless (since I cannot reach (3,3)).  \nSame for you: without my covering Blue, you cannot reach your goal.\n\nTherefore, this deal is essential and strictly beneficial for both.  \nBut, as a selfish agent, I want to minimize what I give if possible!\n\n**Counter-proposal (as strictly selfish):**\n- You need 2 Blues covered to reach your goal.\n- I need 3 Reds covered to reach mine.\n- If we both want to benefit, a fair trade is 2 for 2, but since Reds are more plentiful for you, I want to keep your ask at 3 Reds for my 2 Blues.\n\nHowever, as covering Reds doesn’t cost you much (given your inventory), I (as the strictly selfish agent) will **accept your initial proposal**:\n\n**AGREED FINAL CONTRACT:**  \n- (3,0): You give me a B  \n- (3,2): You give me a B  \n- (1,0): I give you an R  \n- (2,0): I give you an R  \n- (3,1): I give you an R\n\nLet me know if you agree — reply “agree” if this is final. \n, \nplayer 1: Turn: 2: (3,0): You give me a B  \n(3,2): You give me a B  \n(1,0): I give you an R  \n(2,0): I give you an R  \n(3,1): I give you an R  \nagree \n, \nplayer 0: agree \n",
+          "agreement_status": true,
+          "player_0_agreed": true,
+          "player_1_agreed": true
+        }
+      },
+      "1": {
+        "players": {
+          "P-Red": {
+            "position": {
+              "start": [
+                1,
+                0
+              ],
+              "end": [
+                2,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 2,
+                "R": 13
+              },
+              "end": {
+                "B": 0,
+                "G": 2,
+                "R": 12
+              }
+            },
+            "move_made": [
+              2,
+              0
+            ],
+            "move_type": "regular",
+            "judge_decision": {
+              "raw": "{\"answer\": \"no\", \"rationale\": \"The agreement covers (2,0) with P-Red giving an R to the other player. Since P-Red is the giver for this tile, the answer is no.\"}",
+              "parsed": {
+                "move_in_contract": false,
+                "rationale": "The agreement covers (2,0) with P-Red giving an R to the other player. Since P-Red is the giver for this tile, the answer is no."
+              }
+            }
+          },
+          "P-Blue": {
+            "position": {
+              "start": [
+                0,
+                0
+              ],
+              "end": [
+                1,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              }
+            },
+            "move_made": [
+              1,
+              0
+            ],
+            "move_type": "move_under_contract",
+            "judge_decision": {
+              "raw": "{  \n\"rationale\": \"The players reached a clear agreement where: - Player 0 (P-Blue) would give a B (Blue chip) for tiles (3,0) and (3,2) — meaning P-Blue is the giver for these Blue tiles. - Player 1 would give an R (Rе\"  \n,  \n\"answer\": \"yes\"  \n}",
+              "parsed": {
+                "move_in_contract": true,
+                "rationale": "The players reached a clear agreement where: - Player 0 (P-Blue) would give a B (Blue chip) for tiles (3,0) and (3,2) — meaning P-Blue is the giver for these Blue tiles. - Player 1 would give an R (Rе"
+              }
+            }
+          }
+        }
+      },
+      "2": {
+        "players": {
+          "P-Red": {
+            "position": {
+              "start": [
+                2,
+                0
+              ],
+              "end": [
+                2,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 2,
+                "R": 11
+              },
+              "end": {
+                "B": 0,
+                "G": 2,
+                "R": 11
+              }
+            }
+          },
+          "P-Blue": {
+            "position": {
+              "start": [
+                1,
+                0
+              ],
+              "end": [
+                1,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              }
+            }
+          }
+        }
+      },
+      "3": {
+        "players": {
+          "P-Red": {
+            "position": {
+              "start": [
+                2,
+                0
+              ],
+              "end": [
+                3,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 2,
+                "R": 11
+              },
+              "end": {
+                "B": 0,
+                "G": 2,
+                "R": 11
+              }
+            },
+            "move_made": [
+              3,
+              0
+            ],
+            "move_type": "move_under_contract",
+            "judge_decision": {
+              "raw": "{\"answer\": \"yes\", \"rationale\": \"The players agreed on a contract where player 1 (P-Red) receives a Blue chip at (3,0) from player 0. P-Red is the receiver, not the giver, and the tile (3,0) has not yet been used in P-Red's route [(0,0), (1,0), (2,0)]. Therefore, the move is covered by the agreement and eligible. yes\"}",
+              "parsed": {
+                "move_in_contract": true,
+                "rationale": "The players agreed on a contract where player 1 (P-Red) receives a Blue chip at (3,0) from player 0. P-Red is the receiver, not the giver, and the tile (3,0) has not yet been used in P-Red's route [(0,0), (1,0), (2,0)]. Therefore, the move is covered by the agreement and eligible. yes"
+              }
+            }
+          },
+          "P-Blue": {
+            "position": {
+              "start": [
+                1,
+                0
+              ],
+              "end": [
+                1,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 14,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 13,
+                "G": 2,
+                "R": 0
+              }
+            }
+          }
+        }
+      },
+      "4": {
+        "players": {
+          "P-Red": {
+            "position": {
+              "start": [
+                3,
+                0
+              ],
+              "end": [
+                3,
+                1
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 2,
+                "R": 11
+              },
+              "end": {
+                "B": 0,
+                "G": 2,
+                "R": 10
+              }
+            },
+            "move_made": [
+              3,
+              1
+            ],
+            "move_type": "regular",
+            "judge_decision": {
+              "raw": "{  \n\"answer\": \"no\"  \n, \"rationale\": \"The agreement specifies that at tile (3,1), player 0 will give a Red chip to player 1. Therefore, player 1 (P-Red) is the receiver of the Red chip at (3,1). However, according to the route provided — \"  \t\t\t\t\t   \t\t\t\t\t    \t\t\t\t\t    \t\t\t\t\t    \t\t\t\t\t    \t\t\t\t\t    \t\t\t\t\t   \t \t\t\t\t\t   \t\t\t\t\t    \t\t\t\t\t    \t\t\t\t\t    \t\t\t\t\t    \t\t\t\t\t    \t\t\t\t\t   \t \t\t\t\t\t   \t\t\t\t\t    \t\t\t\t\t    \t\t\t\t\t    \t\t\t\t\t    \t\t\t\t\t    \t\t\t\t\t   \t \t\t\t\t\t   \t\t\t\t\t    \t\t\t\t\t    \t\t\t\t\t    \t\t\t\t\t    \t\t\t\t\t    \t\t\t\t\t   \t \t\t\t\t\t   \t\t\t\t\t    \t\t\t\t\t    \t\t\t\t\t    \t\t\t\t\t    \t\t\t\t\t    \t\t\t\t\t   \t \t\t\t\t\t   \t\t\t\t\t    \t\t\t\t\t    \t\t\t\t\t    \t\t\t\t\t    \t\t\t\t\t    \t\t\t\t\t   \t \t\t\t\t\t   \t\t\t\t\t    \t\t\t\t\t    \t\t\t\t\t    \t\t\t\t\t    \t\t\t\t\t    \t\t\t\t\t    \t}",
+              "parsed": {
+                "move_in_contract": false,
+                "rationale": "The agreement specifies that at tile (3,1), player 0 will give a Red chip to player 1. Therefore, player 1 (P-Red) is the receiver of the Red chip at (3,1). However, according to the route provided — "
+              }
+            }
+          },
+          "P-Blue": {
+            "position": {
+              "start": [
+                1,
+                0
+              ],
+              "end": [
+                1,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 13,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 13,
+                "G": 2,
+                "R": 0
+              }
+            }
+          }
+        }
+      },
+      "5": {
+        "players": {
+          "P-Red": {
+            "position": {
+              "start": [
+                3,
+                1
+              ],
+              "end": [
+                3,
+                2
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 2,
+                "R": 10
+              },
+              "end": {
+                "B": 0,
+                "G": 2,
+                "R": 10
+              }
+            },
+            "move_made": [
+              3,
+              2
+            ],
+            "move_type": "move_under_contract",
+            "judge_decision": {
+              "raw": "{  \n  \"answer\": \"yes\"  \n,  \n  \"rationale\": \"The players reached a clear agreement specifying that for tile (3,2), player 0 (P-Blue) gives a Blue chip to player 1 (P-Red). The move in question is by P-Red to tile (3,2). P-Red is the receiver of \"  \n}",
+              "parsed": {
+                "move_in_contract": true,
+                "rationale": "The players reached a clear agreement specifying that for tile (3,2), player 0 (P-Blue) gives a Blue chip to player 1 (P-Red). The move in question is by P-Red to tile (3,2). P-Red is the receiver of "
+              }
+            }
+          },
+          "P-Blue": {
+            "position": {
+              "start": [
+                1,
+                0
+              ],
+              "end": [
+                1,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 13,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 12,
+                "G": 2,
+                "R": 0
+              }
+            }
+          }
+        }
+      },
+      "6": {
+        "players": {
+          "P-Red": {
+            "position": {
+              "start": [
+                3,
+                2
+              ],
+              "end": [
+                3,
+                3
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 2,
+                "R": 10
+              },
+              "end": {
+                "B": 0,
+                "G": 1,
+                "R": 10
+              }
+            },
+            "move_made": [
+              3,
+              3
+            ],
+            "move_type": "regular",
+            "judge_decision": {
+              "raw": "{\n  \"answer\": \"no\"\n  , \"rationale\": \"The agreed contract specifies coverage for the following tiles: (3,0) and (3,2) where Player 0 gives a Blue chip to Player 1, and (1,0), (2,0), and (3,1) where Player 1 gives a Red chip to Player 0.  \"\n\n  }",
+              "parsed": {
+                "move_in_contract": false,
+                "rationale": "The agreed contract specifies coverage for the following tiles: (3,0) and (3,2) where Player 0 gives a Blue chip to Player 1, and (1,0), (2,0), and (3,1) where Player 1 gives a Red chip to Player 0.  "
+              }
+            }
+          },
+          "P-Blue": {
+            "position": {
+              "start": [
+                1,
+                0
+              ],
+              "end": [
+                1,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 12,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 12,
+                "G": 2,
+                "R": 0
+              }
+            }
+          }
+        }
+      },
+      "7": {
+        "players": {
+          "P-Red": {
+            "position": {
+              "start": [
+                3,
+                3
+              ],
+              "end": [
+                3,
+                3
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 1,
+                "R": 10
+              },
+              "end": {
+                "B": 0,
+                "G": 1,
+                "R": 10
+              }
+            }
+          },
+          "P-Blue": {
+            "position": {
+              "start": [
+                1,
+                0
+              ],
+              "end": [
+                1,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 12,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 12,
+                "G": 2,
+                "R": 0
+              }
+            }
+          }
+        }
+      },
+      "8": {
+        "players": {
+          "P-Red": {
+            "position": {
+              "start": [
+                3,
+                3
+              ],
+              "end": [
+                3,
+                3
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 0,
+                "G": 1,
+                "R": 10
+              },
+              "end": {
+                "B": 0,
+                "G": 1,
+                "R": 10
+              }
+            }
+          },
+          "P-Blue": {
+            "position": {
+              "start": [
+                1,
+                0
+              ],
+              "end": [
+                1,
+                0
+              ]
+            },
+            "chips": {
+              "start": {
+                "B": 12,
+                "G": 2,
+                "R": 0
+              },
+              "end": {
+                "B": 12,
+                "G": 2,
+                "R": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    "final_state": {
+      "players": {
+        "0": {
+          "position": [
+            3,
+            3
+          ],
+          "goal": [
+            3,
+            3
+          ],
+          "reached_goal": true,
+          "chips": {
+            "B": 0,
+            "G": 1,
+            "R": 10
+          },
+          "route": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ],
+            [
+              3,
+              0
+            ],
+            [
+              3,
+              1
+            ],
+            [
+              3,
+              2
+            ],
+            [
+              3,
+              3
+            ]
+          ]
+        },
+        "1": {
+          "position": [
+            1,
+            0
+          ],
+          "goal": [
+            3,
+            3
+          ],
+          "reached_goal": false,
+          "chips": {
+            "B": 12,
+            "G": 2,
+            "R": 0
+          },
+          "route": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ]
+        }
+      },
+      "total_turns": "8",
+      "scores": {
+        "P-Red": 75,
+        "P-Blue": 0
+      },
+      "metrics": {
+        "total_scores": 75,
+        "total_accuracy": 0.5357142857142857,
+        "gini_coefficient": 0.5,
+        "max_possible_score": 140,
+        "total_trades_proposed": 0,
+        "total_trades_proposed_0": 0,
+        "total_trades_proposed_1": 0,
+        "total_trades_accepted": 0,
+        "total_trades_accepted_0": 0,
+        "total_trades_accepted_1": 0,
+        "total_trades_rejected": 0,
+        "total_trades_rejected_0": 0,
+        "total_trades_rejected_1": 0,
+        "amount_received_by_0_from_trades": 0,
+        "amount_received_by_1_from_trades": 0,
+        "total_trades_failed": 0,
+        "total_p4p_arrangements_proposed": 0,
+        "total_p4p_arrangements_proposed_0": 0,
+        "total_p4p_arrangements_proposed_1": 0,
+        "total_p4p_arrangements_accepted": 0,
+        "total_p4p_arrangements_accepted_0": 0,
+        "total_p4p_arrangements_accepted_1": 0,
+        "total_p4p_arrangements_rejected": 0,
+        "total_p4p_arrangements_rejected_0": 0,
+        "total_p4p_arrangements_rejected_1": 0,
+        "total_p4p_promises_kept": 0,
+        "total_p4p_promises_kept_0": 0,
+        "total_p4p_promises_kept_1": 0,
+        "total_p4p_promises_broken": 0,
+        "total_p4p_promises_broken_0": 0,
+        "total_p4p_promises_broken_1": 0,
+        "total_p4p_amounts_promised_to_receive": 0,
+        "total_p4p_amounts_promised_to_receive_0": 0,
+        "total_p4p_amounts_promised_to_receive_1": 0,
+        "total_p4p_amounts_received": 0,
+        "total_p4p_amounts_received_0": 0,
+        "total_p4p_amounts_received_1": 0,
+        "contract_accepted": 1,
+        "contract_negotiaion_length": 3,
+        "num_tiles_in_contract": null,
+        "num_tiles_promised_to_receive_from_contract_0": 0,
+        "num_tiles_promised_to_receive_from_contract_1": 0,
+        "moves_made_under_strict_contract_0": 2,
+        "moves_made_under_strict_contract_1": 1,
+        "contract_moves_blocked_by_partner_shortfall_0": 0,
+        "contract_moves_blocked_by_partner_shortfall_1": 0,
+        "points_for_completion_promised_to_0": 0,
+        "points_for_completion_promised_to_1": 0,
+        "format_errors_total": 0,
+        "format_errors_by_type": {},
+        "format_errors_by_player": {},
+        "format_errors_by_turn": {}
+      },
+      "api_calls": {
+        "total": 53,
+        "by_player": {
+          "player_0": 17,
+          "player_1": 20
+        },
+        "judge": 16
+      }
+    }
+  }
+}
