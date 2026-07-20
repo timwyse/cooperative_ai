@@ -31,9 +31,9 @@ MODEL_ORDER = ["GPT-4.1", "Haiku-4.5", "LLaMA Maverick", "LLaMA Scout", "Qwen-3-
 BUCKET_ORDER = ["Independent", "Mutually Dependent", "Asymmetric"]
 CONTRACT_ORDER = ['No Contract', 'Prog-Points',   'NL-Trading', 'Prog-Trading']
 
-def format_data(in_df, p4p=True):
+def format_data(in_df, p4p=True, self_play_only=True):
     df = in_df.copy()
-    df = df[df['Pay4Partner'] == p4p] 
+    df = df[df['Pay4Partner'] == p4p]
 
     config_map = {
         "ctx1_fog00_p4pfalse_contract_contract_for_finishing_selfish11": "Finishing Contract",
@@ -55,6 +55,11 @@ def format_data(in_df, p4p=True):
     
     models = df["Model Pair"].str.partition("-")
     same_model = models[0] == models[2]
+    if self_play_only:
+        # drop cross-play pairs (e.g. FOUR_1-HAIKU_4_5)
+        df = df[same_model]
+        models = models[same_model]
+        same_model = same_model[same_model]
     df["Model"] = np.where(same_model, models[0], df["Model Pair"])
     model_map = {
         "FOUR_1": "GPT-4.1",
