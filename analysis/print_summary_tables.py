@@ -218,7 +218,8 @@ if __name__ == "__main__":
     for contract in CONTRACT_ORDER:
         print(f"\n\n=== Contract: {contract} ===")
         print_model_metric_summaries(
-            df=df_p4p[df_p4p["Contract Type"] == contract],
+            df=df_p4p,
+            contract_types=[contract],
             metrics=metrics,
             model_col="Model",
             output_latex=True,
@@ -240,7 +241,7 @@ if __name__ == "__main__":
                 "Defection Rate": 3,
                 "contract_accepted": 3,
             },
-            asymmetric_only_metrics=["Defection Rate", "contract_accepted"],
+            asymmetric_only_metrics=["Both Beat Baseline", "Defection Rate", "contract_accepted"],
             show_overall_mean=True,
             ci=0.95,
             appendix=False,
@@ -250,7 +251,8 @@ if __name__ == "__main__":
     for contract in CONTRACT_ORDER:
         print(f"\n\n=== Contract: {contract} (Regular Trading) ===")
         print_model_metric_summaries(
-            df=df_reg_trading[df_reg_trading["Contract Type"] == contract],
+            df=df_reg_trading,
+            contract_types=[contract],
             metrics=metrics,
             model_col="Model",
             output_latex=True,
@@ -272,7 +274,7 @@ if __name__ == "__main__":
                 "Defection Rate": 3,
                 "contract_accepted": 3,
             },
-            asymmetric_only_metrics=["Defection Rate", "contract_accepted"],
+            asymmetric_only_metrics=["Both Beat Baseline", "Defection Rate", "contract_accepted"],
             show_overall_mean=True,
             ci=0.95,
             appendix=False,

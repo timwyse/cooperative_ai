@@ -55,7 +55,10 @@ def format_data(in_df, p4p=True):
     
     models = df["Model Pair"].str.partition("-")
     same_model = models[0] == models[2]
-    df["Model"] = np.where(same_model, models[0], df["Model Pair"])
+    # only analyze self-play games; cross-play pairs (e.g. FOUR_1-HAIKU_4_5) are handled separately
+    df = df[same_model]
+    models = models[same_model]
+    df["Model"] = models[0]
     model_map = {
         "FOUR_1": "GPT-4.1",
         "HAIKU_4_5": "Haiku-4.5",
